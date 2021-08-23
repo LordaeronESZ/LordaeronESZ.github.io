@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/bird_32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/bird_16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4">
+  <meta name="msvalidate.01" content="5E3A4478903716830DB93F75FFB66BEC">
+  <meta name="baidu-site-verification" content="code-64LOUYpRAB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css" integrity="sha256-2H3fkXt6FEmrReK448mDVGKb3WW2ZZw35gI7vqHOE4Y=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;lordaeronesz.github.io&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Muse&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;left&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12},&quot;copycode&quot;:true,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:true,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;fadeInDown&quot;,&quot;post_body&quot;:&quot;fadeInDown&quot;,&quot;coll_header&quot;:&quot;fadeInLeft&quot;,&quot;sidebar&quot;:&quot;fadeInUp&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;},&quot;path&quot;:&quot;&#x2F;search.xml&quot;,&quot;localsearch&quot;:{&quot;enable&quot;:true,&quot;trigger&quot;:&quot;auto&quot;,&quot;top_n_per_article&quot;:1,&quot;unescape&quot;:false,&quot;preload&quot;:false}}</script>
+<meta name="description" content="最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="让批处理文件中的中文正常显示">
+<meta property="og:url" content="http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GF8eN.png">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GF6HR.png">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GFm8B.png">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GFF4A.png">
+<meta property="article:published_time" content="2021-05-11T11:05:45.000Z">
+<meta property="article:modified_time" content="2021-08-23T13:24:32.513Z">
+<meta property="article:author" content="Zheng Chaoqun">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="Windows10">
+<meta property="article:tag" content="批处理">
+<meta property="article:tag" content="注册表">
+<meta property="article:tag" content="编码格式">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img.wenhairu.com/images/2021/08/23/GF8eN.png">
+
+
+<link rel="canonical" href="http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;http:&#x2F;&#x2F;lordaeronesz.github.io&#x2F;2021&#x2F;05&#x2F;11&#x2F;%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA&#x2F;&quot;,&quot;path&quot;:&quot;2021&#x2F;05&#x2F;11&#x2F;让批处理文件中的中文正常显示&#x2F;&quot;,&quot;title&quot;:&quot;让批处理文件中的中文正常显示&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>让批处理文件中的中文正常显示 | Lordaeron_ESZ's blog</title><script src="/js/config.js"></script>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Lordaeron_ESZ's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">代码-游戏-数码-技术</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0"><span class="nav-number">1.</span> <span class="nav-text">原因</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E7%A0%81%E7%9B%B8%E5%85%B3%E7%9A%84%E9%82%A3%E4%BA%9B%E4%BA%8B"><span class="nav-number">1.1.</span> <span class="nav-text">编码相关的那些事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%A7%E7%94%9F%E5%8E%9F%E5%9B%A0"><span class="nav-number">1.2.</span> <span class="nav-text">产生原因</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3"><span class="nav-number">2.</span> <span class="nav-text">解决</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">解决方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%951%EF%BC%9A%E6%B3%A8%E5%86%8C%E8%A1%A8%E7%BC%96%E8%BE%91%E5%99%A8%E4%BF%AE%E6%94%B9"><span class="nav-number">2.1.1.</span> <span class="nav-text">方法1：注册表编辑器修改</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Step1%EF%BC%9A%E6%89%93%E5%BC%80%E6%B3%A8%E5%86%8C%E8%A1%A8%E7%BC%96%E8%BE%91%E5%99%A8"><span class="nav-number">2.1.1.1.</span> <span class="nav-text">Step1：打开注册表编辑器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step2%EF%BC%9A%E6%89%BE%E5%88%B0%E7%9B%B8%E5%BA%94%E7%9A%84%E6%95%B0%E6%8D%AE%E5%B9%B6%E6%9B%B4%E6%94%B9"><span class="nav-number">2.1.1.2.</span> <span class="nav-text">Step2：找到相应的数据并更改</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%952%EF%BC%9A%E8%BF%90%E8%A1%8C%E6%B3%A8%E5%86%8C%E8%A1%A8%E8%84%9A%E6%9C%AC"><span class="nav-number">2.1.2.</span> <span class="nav-text">方法2：运行注册表脚本</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Zheng Chaoqun"
+      src="/images/huaji0.png">
+  <p class="site-author-name" itemprop="name">Zheng Chaoqun</p>
+  <div class="site-description" itemprop="description">不定期分享编程、数码、游戏相关的内容</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/lordaeronesz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;lordaeronesz" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:1667510710@qq.com" title="E-Mail → mailto:1667510710@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/qq1667510710" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;qq1667510710" rel="noopener" target="_blank"><i class="fab fa-google fa-fw"></i>Google</a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/huaji0.png">
+      <meta itemprop="name" content="Zheng Chaoqun">
+      <meta itemprop="description" content="不定期分享编程、数码、游戏相关的内容">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Lordaeron_ESZ's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          让批处理文件中的中文正常显示
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-05-11 19:05:45" itemprop="dateCreated datePublished" datetime="2021-05-11T19:05:45+08:00">2021-05-11</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-08-23 21:24:32" itemprop="dateModified" datetime="2021-08-23T21:24:32+08:00">2021-08-23</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%89%B9%E5%A4%84%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">批处理</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2021/05/11/让批处理文件中的中文正常显示/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
+<span id="more"></span>
+
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GF8eN.png"></p>
+<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
+<blockquote>
+<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
+</blockquote>
+<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
+<blockquote>
+<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
+</blockquote>
+<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
+<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GF6HR.png"></p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GFm8B.png"></p>
+<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
+<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
+<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GFF4A.png"></p>
+<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">Windows Registry Editor Version 5.00
+[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
+&quot;CodePage&quot;&#x3D;dword:0000fde9<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button onclick="document.querySelector('.post-reward').classList.toggle('active');">
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay0.png" alt="Zheng Chaoqun 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay0.jpg" alt="Zheng Chaoqun 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Zheng Chaoqun
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/" title="让批处理文件中的中文正常显示">http://lordaeronesz.github.io/2021/05/11/让批处理文件中的中文正常显示/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%BB%8F%E9%AA%8C/" rel="tag"><i class="fa fa-tag"></i> 经验</a>
+              <a href="/tags/Windows10/" rel="tag"><i class="fa fa-tag"></i> Windows10</a>
+              <a href="/tags/%E6%89%B9%E5%A4%84%E7%90%86/" rel="tag"><i class="fa fa-tag"></i> 批处理</a>
+              <a href="/tags/%E6%B3%A8%E5%86%8C%E8%A1%A8/" rel="tag"><i class="fa fa-tag"></i> 注册表</a>
+              <a href="/tags/%E7%BC%96%E7%A0%81%E6%A0%BC%E5%BC%8F/" rel="tag"><i class="fa fa-tag"></i> 编码格式</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/" rel="prev" title="文件路径的表示方法">
+                  <i class="fa fa-chevron-left"></i> 文件路径的表示方法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/" rel="next" title="开始写个人博客了">
+                  开始写个人博客了 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="SOHUCS"></div><script src="/js/comments.js"></script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">赣 ICP 备 2021004196 号 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zheng Chaoqun</span>
+</div>
+<div class="busuanzi-count">
+</div>
+
+    </div>
+  </footer>
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/utils.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script class="next-config" data-name="changyan" type="application/json">{&quot;enable&quot;:true,&quot;appid&quot;:&quot;cyvs20JC9&quot;,&quot;appkey&quot;:&quot;95cce52402da589ad09f298ebbf86e6c&quot;}</script>
+<script src="/js/third-party/comments/changyan.js"></script>
+
+  
+  
+   <canvas class="fireworks" style="position: fixed;left: 0;top: 0;z-index: 1; pointer-events: none;" ></canvas> 
+   <script type="text/javascript" src="//cdn.bootcss.com/animejs/2.2.0/anime.min.js"></script> 
+   <script type="text/javascript" src="/js/src/fireworks.js"></script>
+
+
+</body>
+</html>

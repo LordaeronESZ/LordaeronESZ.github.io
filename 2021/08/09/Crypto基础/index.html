@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/bird_32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/bird_16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4">
+  <meta name="msvalidate.01" content="5E3A4478903716830DB93F75FFB66BEC">
+  <meta name="baidu-site-verification" content="code-64LOUYpRAB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/all.min.css" integrity="sha256-2H3fkXt6FEmrReK448mDVGKb3WW2ZZw35gI7vqHOE4Y=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{&quot;hostname&quot;:&quot;lordaeronesz.github.io&quot;,&quot;root&quot;:&quot;&#x2F;&quot;,&quot;images&quot;:&quot;&#x2F;images&quot;,&quot;scheme&quot;:&quot;Muse&quot;,&quot;version&quot;:&quot;8.4.0&quot;,&quot;exturl&quot;:false,&quot;sidebar&quot;:{&quot;position&quot;:&quot;left&quot;,&quot;display&quot;:&quot;post&quot;,&quot;padding&quot;:18,&quot;offset&quot;:12},&quot;copycode&quot;:true,&quot;bookmark&quot;:{&quot;enable&quot;:false,&quot;color&quot;:&quot;#222&quot;,&quot;save&quot;:&quot;auto&quot;},&quot;fancybox&quot;:true,&quot;mediumzoom&quot;:false,&quot;lazyload&quot;:false,&quot;pangu&quot;:false,&quot;comments&quot;:{&quot;style&quot;:&quot;tabs&quot;,&quot;active&quot;:null,&quot;storage&quot;:true,&quot;lazyload&quot;:false,&quot;nav&quot;:null},&quot;motion&quot;:{&quot;enable&quot;:false,&quot;async&quot;:false,&quot;transition&quot;:{&quot;post_block&quot;:&quot;fadeIn&quot;,&quot;post_header&quot;:&quot;fadeInDown&quot;,&quot;post_body&quot;:&quot;fadeInDown&quot;,&quot;coll_header&quot;:&quot;fadeInLeft&quot;,&quot;sidebar&quot;:&quot;fadeInUp&quot;}},&quot;prism&quot;:false,&quot;i18n&quot;:{&quot;placeholder&quot;:&quot;搜索...&quot;,&quot;empty&quot;:&quot;没有找到任何搜索结果：${query}&quot;,&quot;hits_time&quot;:&quot;找到 ${hits} 个搜索结果（用时 ${time} 毫秒）&quot;,&quot;hits&quot;:&quot;找到 ${hits} 个搜索结果&quot;},&quot;path&quot;:&quot;&#x2F;search.xml&quot;,&quot;localsearch&quot;:{&quot;enable&quot;:true,&quot;trigger&quot;:&quot;auto&quot;,&quot;top_n_per_article&quot;:1,&quot;unescape&quot;:false,&quot;preload&quot;:false}}</script>
+<meta name="description" content="密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以攻防世界新手练习区例题为例进行分析。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Crypto基础">
+<meta property="og:url" content="http://lordaeronesz.github.io/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以攻防世界新手练习区例题为例进行分析。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GFKfU.png">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GFDeg.png">
+<meta property="og:image" content="https://img.wenhairu.com/images/2021/08/23/GFWHj.png">
+<meta property="article:published_time" content="2021-08-09T01:35:15.000Z">
+<meta property="article:modified_time" content="2021-08-23T13:33:14.622Z">
+<meta property="article:author" content="Zheng Chaoqun">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Crypto">
+<meta property="article:tag" content="信息安全">
+<meta property="article:tag" content="攻防世界">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img.wenhairu.com/images/2021/08/23/GFKfU.png">
+
+
+<link rel="canonical" href="http://lordaeronesz.github.io/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{&quot;sidebar&quot;:&quot;&quot;,&quot;isHome&quot;:false,&quot;isPost&quot;:true,&quot;lang&quot;:&quot;zh-CN&quot;,&quot;comments&quot;:true,&quot;permalink&quot;:&quot;http:&#x2F;&#x2F;lordaeronesz.github.io&#x2F;2021&#x2F;08&#x2F;09&#x2F;Crypto%E5%9F%BA%E7%A1%80&#x2F;&quot;,&quot;path&quot;:&quot;2021&#x2F;08&#x2F;09&#x2F;Crypto基础&#x2F;&quot;,&quot;title&quot;:&quot;Crypto基础&quot;}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">&quot;&quot;</script>
+<title>Crypto基础 | Lordaeron_ESZ's blog</title><script src="/js/config.js"></script>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a"></script>
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Lordaeron_ESZ's blog</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">代码-游戏-数码-技术</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Base64"><span class="nav-number">1.</span> <span class="nav-text">Base64</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">加密原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Base32-Base16"><span class="nav-number">1.2.</span> <span class="nav-text">Base32,Base16</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90"><span class="nav-number">1.3.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5"><span class="nav-number">1.3.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94"><span class="nav-number">1.3.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%AF%E6%92%92%E5%AF%86%E7%A0%81-Caesar-Cipher"><span class="nav-number">2.</span> <span class="nav-text">凯撒密码(Caesar Cipher)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-1"><span class="nav-number">2.1.</span> <span class="nav-text">加密原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-1"><span class="nav-number">2.2.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-1"><span class="nav-number">2.2.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%A9%E5%B0%94%E6%96%AF%E7%94%B5%E7%A0%81-Morse-Code"><span class="nav-number">3.</span> <span class="nav-text">摩尔斯电码(Morse Code)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-2"><span class="nav-number">3.1.</span> <span class="nav-text">加密原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-2"><span class="nav-number">3.2.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-2"><span class="nav-number">3.2.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-2"><span class="nav-number">3.2.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%B9%82%E6%95%B0%E5%8A%A0%E5%AF%86-Binary-idempotent-encryption"><span class="nav-number">4.</span> <span class="nav-text">二进制幂数加密(Binary idempotent encryption)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-3"><span class="nav-number">4.1.</span> <span class="nav-text">加密原理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81-Rail-fence-Cipher"><span class="nav-number">5.</span> <span class="nav-text">栅栏密码(Rail-fence Cipher)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81"><span class="nav-number">5.1.</span> <span class="nav-text">传统栅栏密码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-4"><span class="nav-number">5.1.1.</span> <span class="nav-text">加密原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#W%E5%9E%8B%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81"><span class="nav-number">5.2.</span> <span class="nav-text">W型栅栏密码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-5"><span class="nav-number">5.2.1.</span> <span class="nav-text">加密原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-3"><span class="nav-number">5.2.2.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-3"><span class="nav-number">5.2.2.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-3"><span class="nav-number">5.2.2.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9F%B9%E6%A0%B9%E5%AF%86%E7%A0%81-Bacon-Cipher"><span class="nav-number">6.</span> <span class="nav-text">培根密码(Bacon Cipher)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-6"><span class="nav-number">6.1.</span> <span class="nav-text">加密原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-4"><span class="nav-number">6.2.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-4"><span class="nav-number">6.2.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-4"><span class="nav-number">6.2.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RSA%E7%AE%97%E6%B3%95-RSA-algorithm"><span class="nav-number">7.</span> <span class="nav-text">RSA算法(RSA algorithm)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-7"><span class="nav-number">7.1.</span> <span class="nav-text">加密原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E5%AD%A6%E5%8E%9F%E7%90%86"><span class="nav-number">7.1.1.</span> <span class="nav-text">数学原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E6%B5%81%E7%A8%8B"><span class="nav-number">7.1.2.</span> <span class="nav-text">算法流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-5"><span class="nav-number">7.2.</span> <span class="nav-text">例题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-5"><span class="nav-number">7.2.1.</span> <span class="nav-text">题目链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-5"><span class="nav-number">7.2.2.</span> <span class="nav-text">分析与解答</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Zheng Chaoqun"
+      src="/images/huaji0.png">
+  <p class="site-author-name" itemprop="name">Zheng Chaoqun</p>
+  <div class="site-description" itemprop="description">不定期分享编程、数码、游戏相关的内容</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/lordaeronesz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;lordaeronesz" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:1667510710@qq.com" title="E-Mail → mailto:1667510710@qq.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/qq1667510710" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;qq1667510710" rel="noopener" target="_blank"><i class="fab fa-google fa-fw"></i>Google</a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://lordaeronesz.github.io/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/huaji0.png">
+      <meta itemprop="name" content="Zheng Chaoqun">
+      <meta itemprop="description" content="不定期分享编程、数码、游戏相关的内容">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Lordaeron_ESZ's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Crypto基础
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-08-09 09:35:15" itemprop="dateCreated datePublished" datetime="2021-08-09T09:35:15+08:00">2021-08-09</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-08-23 21:33:14" itemprop="dateModified" datetime="2021-08-23T21:33:14+08:00">2021-08-23</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Crypto/" itemprop="url" rel="index"><span itemprop="name">Crypto</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Changyan：</span>
+    
+    
+      <a title="changyan" href="/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/#SOHUCS" itemprop="discussionUrl">
+        <span id="changyan_count_unit" class="post-comments-count hc-comment-count" data-xid="2021/08/09/Crypto基础/" itemprop="commentCount"></span>
+      </a>
+    
+  </span>
+  
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以<strong>攻防世界</strong>新手练习区例题为例进行分析。</p>
+<span id="more"></span>
+
+<h1 id="Base64"><a href="#Base64" class="headerlink" title="Base64"></a>Base64</h1><blockquote>
+<p>Base64是网络上最常见的用于传输8Bit字节码的编码方式之一，Base64就是一种基于64个可打印字符来表示二进制数据的方法。<br>Base64编码是从二进制到字符的过程，可用于在HTTP环境下传递较长的标识信息。采用Base64编码具有不可读性，需要解码后才能阅读。</p>
+</blockquote>
+<h2 id="加密原理"><a href="#加密原理" class="headerlink" title="加密原理"></a>加密原理</h2><p>Base64中的<strong>64</strong>表示64个可打印的字符（具体范围如下表所示），而要完全表示64个不同的字符至少需要6位二进制数(2^6=64)，我们知道一个字符类型数据在计算机中占用1Byte的存储空间，而1Byte为8bit，即一个字符实际在计算机中存储的是一个8位二进制数。</p>
+<p>Base64加密的实质是将每三个8bit字节转换为四个6bit字节（8*3=4*6），再在6bit字节的高位添0以补全为8位，最终转换为四个8bit字节，完成加密。例如：字符串<strong>s13</strong>，对应的ascii码为115 49 51，转换为二进制：01110011  00110001  00110011，将其分为4组：011100  110011  000100  110011，向高位补零：00011100  00110011  00000100  00110011，十进制为28 51 4 51，对照Base64编码表得到加密后的结果为：czEz，加密完成。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GFKfU.png"></p>
+<p>我们发现这样貌似只能加密3的整数个字符，当末尾的字符无法凑成3的整数个的时候我们在用一个不在编码表中的字符加以代替，这个字符通常使用“=”，举个简单的例子：字符“A”，ascii码为65，转换成二进制数：01000001，由于此时末尾字符个数不为3的整数倍（1个），我们仍然将其分成四组，并且空位用“=”代替：010000  010===  ======  ======，对于不全为空的字节，在其末尾空位添零，全为空的字节在转换时用“=”代替：010000  010000  ======  ======，对应字符为：QQ==，加密完成。</p>
+<p>通过以上示例不难发现Base64加密的密文中，“=”最多只能出现<strong>两个</strong>且只会在<strong>末尾</strong>出现。</p>
+<h2 id="Base32-Base16"><a href="#Base32-Base16" class="headerlink" title="Base32,Base16"></a>Base32,Base16</h2><p>Base32,Base16与Base64类似，区别是他们分别得到5bit字节和4bit字节。Base32是将每5个8bit字节转换成8个5bit字节，编码字符范围为：大写字母A~Z和数字2~7，密文末尾最多可能出现<strong>7个</strong>“=”。Base16是将每个8bit字节转换成2个4bit字节，编码范围为：数字0~9和大写字母A~F，密文末尾不会出现“=”。</p>
+<h2 id="例题分析"><a href="#例题分析" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5109&page=1">base64</a></p>
+<h3 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>文本很明显是一串base64密文，直接解密即可，可以使用在线解密工具也可以直接用python的base64包解密，以下是python解密代码：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> base64
+
+cipher <span class="token operator">=</span> <span class="token string">"Y3liZXJwZWFjZXtXZWxjb21lX3RvX25ld19Xb3JsZCF9"</span>
+res <span class="token operator">=</span> base64<span class="token punctuation">.</span>b64decode<span class="token punctuation">(</span>cipher<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>res<span class="token punctuation">.</span>decode<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行，得到结果：cyberpeace{Welcome_to_new_World!}</p>
+<h1 id="凯撒密码-Caesar-Cipher"><a href="#凯撒密码-Caesar-Cipher" class="headerlink" title="凯撒密码(Caesar Cipher)"></a>凯撒密码(Caesar Cipher)</h1><blockquote>
+<p>在密码学中，<strong>恺撒密码</strong>（英语：Caesar cipher），或称<strong>恺撒加密</strong>、<strong>恺撒变换</strong>、<strong>变换加密</strong>，是一种最简单且最广为人知的加密技术。它是一种替换加密的技术，明文中的所有字母都在字母表上向后（或向前）按照一个固定数目进行偏移后被替换成密文。这个加密方法是以罗马共和时期恺撒的名字命名的，当年恺撒曾用此方法与其将军们进行联系。</p>
+</blockquote>
+<h2 id="加密原理-1"><a href="#加密原理-1" class="headerlink" title="加密原理"></a>加密原理</h2><p>在加密时，明文中的每个字母按照字母表的顺序向前或向后移动某一特定的位数并替换得到密文。例如明文为：FLAGISHERE，偏移量为3，那么密文就得到了：IODJLVKHUH，解密时则反向移动3位或正向移动26-3=23位。</p>
+<h2 id="例题分析-1"><a href="#例题分析-1" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-1"><a href="#题目链接-1" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5110&page=1">Caesar</a></p>
+<h3 id="分析与解答-1"><a href="#分析与解答-1" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>根据字母的个数以及排列方式来看很明显对字母采用了凯撒加密，只需根据攻防世界常见的“cyberpeace”开头的flag格式得到正向偏移量为14，以此编写代码如下：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">wordList <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'d'</span><span class="token punctuation">,</span> <span class="token string">'e'</span><span class="token punctuation">,</span> <span class="token string">'f'</span><span class="token punctuation">,</span> <span class="token string">'g'</span><span class="token punctuation">,</span> <span class="token string">'h'</span><span class="token punctuation">,</span> <span class="token string">'i'</span><span class="token punctuation">,</span> <span class="token string">'j'</span><span class="token punctuation">,</span> <span class="token string">'k'</span><span class="token punctuation">,</span> <span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token string">'m'</span><span class="token punctuation">,</span> <span class="token string">'n'</span><span class="token punctuation">,</span>
+            <span class="token string">'o'</span><span class="token punctuation">,</span> <span class="token string">'p'</span><span class="token punctuation">,</span> <span class="token string">'q'</span><span class="token punctuation">,</span> <span class="token string">'r'</span><span class="token punctuation">,</span> <span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token string">'t'</span><span class="token punctuation">,</span> <span class="token string">'u'</span><span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">,</span> <span class="token string">'w'</span><span class="token punctuation">,</span> <span class="token string">'x'</span><span class="token punctuation">,</span> <span class="token string">'y'</span><span class="token punctuation">,</span> <span class="token string">'z'</span><span class="token punctuation">]</span>
+t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'1.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 1.txt为题目附件</span>
+string <span class="token operator">=</span> t<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+n_str <span class="token operator">=</span> <span class="token string">''</span>
+n <span class="token operator">=</span> <span class="token number">14</span>
+<span class="token keyword">for</span> s <span class="token keyword">in</span> string<span class="token punctuation">:</span>
+    <span class="token keyword">if</span> <span class="token string">'a'</span> <span class="token operator">&lt;=</span> s <span class="token operator">&lt;=</span> <span class="token string">'z'</span><span class="token punctuation">:</span>
+        index <span class="token operator">=</span> wordList<span class="token punctuation">.</span>index<span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+        n_index <span class="token operator">=</span> <span class="token punctuation">(</span>index <span class="token operator">+</span> n<span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">26</span>
+        n_str <span class="token operator">+=</span> wordList<span class="token punctuation">[</span>n_index<span class="token punctuation">]</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        n_str <span class="token operator">+=</span> s
+<span class="token keyword">print</span><span class="token punctuation">(</span>n_str<span class="token punctuation">)</span>
+t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行，得到flag：cyberpeace{you_have_learned_caesar_encryption}</p>
+<h1 id="摩尔斯电码-Morse-Code"><a href="#摩尔斯电码-Morse-Code" class="headerlink" title="摩尔斯电码(Morse Code)"></a>摩尔斯电码(Morse Code)</h1><blockquote>
+<p>摩尔斯电码也被称作摩斯密码，是一种时通时断的信号代码，通过不同的排列顺序来表达不同的英文字母、数字和标点符号。它发明于1837年，是一种早期的数字化通信形式。不同于现代化的数字通讯，摩尔斯电码只使用零和一两种状态的二进制代码，它的代码包括五种：短促的点信号“・”，保持一定时间的长信号“—”，表示点和划之间的停顿、每个词之间中等的停顿，以及句子之间长的停顿。</p>
+</blockquote>
+<h2 id="加密原理-2"><a href="#加密原理-2" class="headerlink" title="加密原理"></a>加密原理</h2><p>摩尔斯电码的加密原理比较简单，就是长信号（一般为“—”）与短信号（一般为“·”）的组合来替换常见的字符，比如明文为：SOS，对应摩尔斯电码表加密后得到：··· — — — ···</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GFDeg.png"></p>
+<h2 id="例题分析-2"><a href="#例题分析-2" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5111&page=1">Morse</a></p>
+<h3 id="分析与解答-2"><a href="#分析与解答-2" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>附件中仅由“0”和“1”构成，且每一部分以空格分开，则考虑采用了摩尔斯加密。将摩尔斯电码表中的对应关系定义为一个字典类型，遍历密文中的每一部分并得到明文字符，python代码如下：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'2.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 2.txt为题目附件</span>
+codes <span class="token operator">=</span> t<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">' '</span><span class="token punctuation">)</span>
+dic <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token string">'01'</span><span class="token punctuation">:</span> <span class="token string">'A'</span><span class="token punctuation">,</span> <span class="token string">'1000'</span><span class="token punctuation">:</span> <span class="token string">'B'</span><span class="token punctuation">,</span> <span class="token string">'1010'</span><span class="token punctuation">:</span> <span class="token string">'C'</span><span class="token punctuation">,</span> <span class="token string">'100'</span><span class="token punctuation">:</span> <span class="token string">'D'</span><span class="token punctuation">,</span> <span class="token string">'0'</span><span class="token punctuation">:</span> <span class="token string">'E'</span><span class="token punctuation">,</span> <span class="token string">'0010'</span><span class="token punctuation">:</span> <span class="token string">'F'</span><span class="token punctuation">,</span> <span class="token string">'110'</span><span class="token punctuation">:</span> <span class="token string">'G'</span><span class="token punctuation">,</span>
+       <span class="token string">'0000'</span><span class="token punctuation">:</span> <span class="token string">'H'</span><span class="token punctuation">,</span> <span class="token string">'00'</span><span class="token punctuation">:</span> <span class="token string">'I'</span><span class="token punctuation">,</span> <span class="token string">'0111'</span><span class="token punctuation">:</span> <span class="token string">'J'</span><span class="token punctuation">,</span> <span class="token string">'101'</span><span class="token punctuation">:</span> <span class="token string">'K'</span><span class="token punctuation">,</span> <span class="token string">'0100'</span><span class="token punctuation">:</span> <span class="token string">'L'</span><span class="token punctuation">,</span> <span class="token string">'11'</span><span class="token punctuation">:</span> <span class="token string">'M'</span><span class="token punctuation">,</span> <span class="token string">'10'</span><span class="token punctuation">:</span> <span class="token string">'N'</span><span class="token punctuation">,</span> <span class="token string">'111'</span><span class="token punctuation">:</span> <span class="token string">'O'</span><span class="token punctuation">,</span> <span class="token string">'0110'</span><span class="token punctuation">:</span> <span class="token string">'P'</span><span class="token punctuation">,</span>
+       <span class="token string">'1101'</span><span class="token punctuation">:</span> <span class="token string">'Q'</span><span class="token punctuation">,</span> <span class="token string">'010'</span><span class="token punctuation">:</span> <span class="token string">'R'</span><span class="token punctuation">,</span> <span class="token string">'000'</span><span class="token punctuation">:</span> <span class="token string">'S'</span><span class="token punctuation">,</span> <span class="token string">'1'</span><span class="token punctuation">:</span> <span class="token string">'T'</span><span class="token punctuation">,</span> <span class="token string">'001'</span><span class="token punctuation">:</span> <span class="token string">'U'</span><span class="token punctuation">,</span> <span class="token string">'0001'</span><span class="token punctuation">:</span> <span class="token string">'V'</span><span class="token punctuation">,</span> <span class="token string">'011'</span><span class="token punctuation">:</span> <span class="token string">'W'</span><span class="token punctuation">,</span> <span class="token string">'1001'</span><span class="token punctuation">:</span> <span class="token string">'X'</span><span class="token punctuation">,</span> <span class="token string">'1011'</span><span class="token punctuation">:</span> <span class="token string">'Y'</span><span class="token punctuation">,</span>
+       <span class="token string">'1100'</span><span class="token punctuation">:</span> <span class="token string">'Z'</span><span class="token punctuation">,</span> <span class="token string">'01111'</span><span class="token punctuation">:</span> <span class="token string">'1'</span><span class="token punctuation">,</span> <span class="token string">'00111'</span><span class="token punctuation">:</span> <span class="token string">'2'</span><span class="token punctuation">,</span> <span class="token string">'00011'</span><span class="token punctuation">:</span> <span class="token string">'3'</span><span class="token punctuation">,</span> <span class="token string">'00001'</span><span class="token punctuation">:</span> <span class="token string">'4'</span><span class="token punctuation">,</span> <span class="token string">'00000'</span><span class="token punctuation">:</span> <span class="token string">'5'</span><span class="token punctuation">,</span> <span class="token string">'10000'</span><span class="token punctuation">:</span> <span class="token string">'6'</span><span class="token punctuation">,</span> <span class="token string">'11000'</span><span class="token punctuation">:</span> <span class="token string">'7'</span><span class="token punctuation">,</span>
+       <span class="token string">'11100'</span><span class="token punctuation">:</span> <span class="token string">'8'</span><span class="token punctuation">,</span> <span class="token string">'11110'</span><span class="token punctuation">:</span> <span class="token string">'9'</span><span class="token punctuation">,</span> <span class="token string">'11111'</span><span class="token punctuation">:</span> <span class="token string">'0'</span><span class="token punctuation">,</span> <span class="token string">'001100'</span><span class="token punctuation">:</span> <span class="token string">'?'</span><span class="token punctuation">,</span> <span class="token string">'10010'</span><span class="token punctuation">:</span> <span class="token string">'/'</span><span class="token punctuation">,</span> <span class="token string">'101101'</span><span class="token punctuation">:</span> <span class="token string">'()'</span><span class="token punctuation">,</span> <span class="token string">'100001'</span><span class="token punctuation">:</span> <span class="token string">'-'</span><span class="token punctuation">,</span>
+       <span class="token string">'010101'</span><span class="token punctuation">:</span> <span class="token string">'.'</span><span class="token punctuation">&#125;</span>
+flag <span class="token operator">=</span> <span class="token string">''</span>
+<span class="token keyword">for</span> c <span class="token keyword">in</span> codes<span class="token punctuation">:</span>
+    <span class="token keyword">if</span> c <span class="token keyword">in</span> dic<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        flag <span class="token operator">+=</span> dic<span class="token punctuation">[</span>c<span class="token punctuation">]</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        flag <span class="token operator">+=</span> <span class="token string">'*'</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行，flag以小写字母输出并格式化：cyberpeace{morsecodeissointeresting}</p>
+<h1 id="二进制幂数加密-Binary-idempotent-encryption"><a href="#二进制幂数加密-Binary-idempotent-encryption" class="headerlink" title="二进制幂数加密(Binary idempotent encryption)"></a>二进制幂数加密(Binary idempotent encryption)</h1><blockquote>
+<p>二进制幂数加密法，由于英文字母只有26个字母。只要2的0、1、2、3、4、5次幂就可以表示31个单元。通过用二进制幂数表示字母序号数来加密。</p>
+</blockquote>
+<h2 id="加密原理-3"><a href="#加密原理-3" class="headerlink" title="加密原理"></a>加密原理</h2><p>在进行二进制数转十进制数的结果为二进制各位数的幂数之和，例如1010转换成十进制数时：2^1+2^3=10，并且N位二进制数能表示的最大十进制数为2^n-1，如四位二进制数最多可表示的十进制数为1111，即15。</p>
+<p>由于英文字母总数为26，因此我们只需5位二进制数即可表示所有的英文字母(2^5-1=31)，例如：</p>
+<p>明文：I LOVE CRYPTO</p>
+<p>字母序号：9/12 15 22 5/3 18 25 16 20 15（空格表示字母的间隔，斜杠表示单词的间隔）</p>
+<p>由于9=2^0+2^3，因此加密结果为：03，以此类推</p>
+<p>密文：  03/23 0123 124 02/01 14 034 4 24 0123</p>
+<h1 id="栅栏密码-Rail-fence-Cipher"><a href="#栅栏密码-Rail-fence-Cipher" class="headerlink" title="栅栏密码(Rail-fence Cipher)"></a>栅栏密码(Rail-fence Cipher)</h1><h2 id="传统栅栏密码"><a href="#传统栅栏密码" class="headerlink" title="传统栅栏密码"></a>传统栅栏密码</h2><h3 id="加密原理-4"><a href="#加密原理-4" class="headerlink" title="加密原理"></a>加密原理</h3><p>首先确定一个key值，将明文字母按从上往下的顺序依次交替排列成key行，最后每行字母依次连接组成新字符串，得到密文。例如：</p>
+<p>明文：HAVE A GOOD DAY        key值：3</p>
+<p>将字母依次交替排列成3行： </p>
+<table>
+<thead>
+<tr>
+<th>H</th>
+<th>E</th>
+<th>O</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>A</td>
+<td>O</td>
+<td>A</td>
+</tr>
+<tr>
+<td>V</td>
+<td>G</td>
+<td>D</td>
+<td>Y</td>
+</tr>
+</tbody></table>
+<p>最后每行字母依次连接得到密文：HEODAAOAVGDY</p>
+<p>值得一提的是，栅栏密码本身有一个潜规则，就是组成栅栏的字母一般不会太多。（一般不超过30个，也就是一、两句话）</p>
+<h2 id="W型栅栏密码"><a href="#W型栅栏密码" class="headerlink" title="W型栅栏密码"></a>W型栅栏密码</h2><h3 id="加密原理-5"><a href="#加密原理-5" class="headerlink" title="加密原理"></a>加密原理</h3><p>与传统栅栏密码类似，第一步先确定key值，在排列明文字母时不是垂直纵向排列，而是斜向45度角进行排列，且在排列key行后，变换方向后继续排列（右下变右上，右上变右下），组成多个“W”形，最后每行字母依次连接组成新字符串，得到密文。例如：</p>
+<p>明文：HAVE A GOOD DAY        key值：3</p>
+<p>将字母按“W”形排列成3行：  </p>
+<table>
+<thead>
+<tr>
+<th>H</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+<th>A</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+<th>D</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.</td>
+<td>A</td>
+<td>.</td>
+<td>E</td>
+<td>.</td>
+<td>G</td>
+<td>.</td>
+<td>o</td>
+<td>.</td>
+<td>D</td>
+<td>.</td>
+<td>Y</td>
+</tr>
+<tr>
+<td>.</td>
+<td>.</td>
+<td>V</td>
+<td>.</td>
+<td>.</td>
+<td>.</td>
+<td>O</td>
+<td>.</td>
+<td>.</td>
+<td>.</td>
+<td>A</td>
+<td>.</td>
+</tr>
+</tbody></table>
+<p>最后每行依次连接得到密文：HADAEGODYVOA</p>
+<h3 id="例题分析-3"><a href="#例题分析-3" class="headerlink" title="例题分析"></a>例题分析</h3><h4 id="题目链接-3"><a href="#题目链接-3" class="headerlink" title="题目链接"></a>题目链接</h4><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5112&page=1">Railfence</a></p>
+<h4 id="分析与解答-3"><a href="#分析与解答-3" class="headerlink" title="分析与解答"></a>分析与解答</h4><p>密文看上去就是被打乱的flag值，基本上就是栅栏加密的结果，并且发现是W型栅栏加密。可以直接使用在线栅栏解密：</p>
+<p><a target="_blank" rel="noopener" href="http://www.atoolbox.net/Tool.php?Id=777">在线栅栏解密</a></p>
+<h1 id="培根密码-Bacon-Cipher"><a href="#培根密码-Bacon-Cipher" class="headerlink" title="培根密码(Bacon Cipher)"></a>培根密码(Bacon Cipher)</h1><h2 id="加密原理-6"><a href="#加密原理-6" class="headerlink" title="加密原理"></a>加密原理</h2><p>培根加密时，明文中每个字母会转换成一组五个由<strong>a</strong>和<strong>b</strong>组成的字母，其转换关系表如下：</p>
+<table>
+<thead>
+<tr>
+<th>A/a</th>
+<th>aaaaa</th>
+<th>H/h</th>
+<th>aabbb</th>
+<th>O/o</th>
+<th>abbba</th>
+<th>V/v</th>
+<th>babab</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B/b</td>
+<td>aaaab</td>
+<td>I/i</td>
+<td>abaaa</td>
+<td>P/p</td>
+<td>abbbb</td>
+<td>W/w</td>
+<td>babba</td>
+</tr>
+<tr>
+<td>C/c</td>
+<td>aaaba</td>
+<td>J/j</td>
+<td>abaab</td>
+<td>Q/q</td>
+<td>baaaa</td>
+<td>X/x</td>
+<td>babbb</td>
+</tr>
+<tr>
+<td>D/d</td>
+<td>aaabb</td>
+<td>K/k</td>
+<td>ababa</td>
+<td>R/r</td>
+<td>baaab</td>
+<td>Y/y</td>
+<td>bbaaa</td>
+</tr>
+<tr>
+<td>E/e</td>
+<td>aabaa</td>
+<td>L/l</td>
+<td>ababb</td>
+<td>S/s</td>
+<td>baaba</td>
+<td>Z/z</td>
+<td>bbaab</td>
+</tr>
+<tr>
+<td>F/f</td>
+<td>aabab</td>
+<td>M/m</td>
+<td>abbaa</td>
+<td>T/t</td>
+<td>baabb</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>G/g</td>
+<td>aabba</td>
+<td>N/n</td>
+<td>abbab</td>
+<td>U/u</td>
+<td>babaa</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>事实上，一般情况下，密文最终形式并不会由a和b组成，加密者通常会准备两种不同的字体，分别代表a和b，并且用一段由这两种字体所格式化的虚假信息作为密文，例如密文为：flag<strong>is</strong>he<strong>re</strong>，根据字体的差异，将未加粗字体看作a，加粗字体看作b，得到：aaaab baabb，对照关系表得到明文为：bt.</p>
+<p>弗朗西斯·培根还另外准备了一种方法，将大小写分别看作a和b，这样可以适用在无法使用不同字体的场合，比如在处理纯文字的数据时。</p>
+<p>其实培根密码还有另外一种加密关系：</p>
+<table>
+<thead>
+<tr>
+<th>a</th>
+<th>AAAAA</th>
+<th>g</th>
+<th>AABBA</th>
+<th>n</th>
+<th>ABBAA</th>
+<th>t</th>
+<th>BAABA</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>b</td>
+<td>AAAAB</td>
+<td>h</td>
+<td>AABBB</td>
+<td>o</td>
+<td>ABBAB</td>
+<td>u-v</td>
+<td>BAABB</td>
+</tr>
+<tr>
+<td>c</td>
+<td>AAABA</td>
+<td>i-j</td>
+<td>ABAAA</td>
+<td>p</td>
+<td>ABBBA</td>
+<td>w</td>
+<td>BABAA</td>
+</tr>
+<tr>
+<td>d</td>
+<td>AAABB</td>
+<td>k</td>
+<td>ABAAB</td>
+<td>q</td>
+<td>ABBBB</td>
+<td>x</td>
+<td>BABAB</td>
+</tr>
+<tr>
+<td>e</td>
+<td>AABAA</td>
+<td>l</td>
+<td>ABABA</td>
+<td>r</td>
+<td>BAAAA</td>
+<td>y</td>
+<td>BABBA</td>
+</tr>
+<tr>
+<td>f</td>
+<td>AABAB</td>
+<td>m</td>
+<td>ABABB</td>
+<td>s</td>
+<td>BAAAB</td>
+<td>z</td>
+<td>BABBB</td>
+</tr>
+</tbody></table>
+<p>在解密培根密码时两种加密关系都要考虑。</p>
+<h2 id="例题分析-4"><a href="#例题分析-4" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-4"><a href="#题目链接-4" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5117&page=1">不仅仅是Morse</a></p>
+<h3 id="分析与解答-4"><a href="#分析与解答-4" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>观察密文，很明显是莫尔斯电码的形式，摩尔斯解密之后，得到如下结果：</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/23/GFWHj.png"></p>
+<p><strong>may be have another deconde</strong>  提示我们这并不是最终结果，后面还有另外一种加密方式，可以看到后面字母由a和b组成，考虑是培根加密，可以编写python程序解密：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> re
+
+
+<span class="token keyword">def</span> <span class="token function">Bacon</span><span class="token punctuation">(</span>in_string<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    first_cipher <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">"aaaaa"</span><span class="token punctuation">,</span> <span class="token string">"aaaab"</span><span class="token punctuation">,</span> <span class="token string">"aaaba"</span><span class="token punctuation">,</span> <span class="token string">"aaabb"</span><span class="token punctuation">,</span> <span class="token string">"aabaa"</span><span class="token punctuation">,</span> <span class="token string">"aabab"</span><span class="token punctuation">,</span> <span class="token string">"aabba"</span><span class="token punctuation">,</span> <span class="token string">"aabbb"</span><span class="token punctuation">,</span> <span class="token string">"abaaa"</span><span class="token punctuation">,</span> <span class="token string">"abaab"</span><span class="token punctuation">,</span> <span class="token string">"ababa"</span><span class="token punctuation">,</span>
+                    <span class="token string">"ababb"</span><span class="token punctuation">,</span> <span class="token string">"abbaa"</span><span class="token punctuation">,</span> <span class="token string">"abbab"</span><span class="token punctuation">,</span> <span class="token string">"abbba"</span><span class="token punctuation">,</span> <span class="token string">"abbbb"</span><span class="token punctuation">,</span> <span class="token string">"baaaa"</span><span class="token punctuation">,</span> <span class="token string">"baaab"</span><span class="token punctuation">,</span> <span class="token string">"baaba"</span><span class="token punctuation">,</span> <span class="token string">"baabb"</span><span class="token punctuation">,</span> <span class="token string">"babaa"</span><span class="token punctuation">,</span> <span class="token string">"babab"</span><span class="token punctuation">,</span>
+                    <span class="token string">"babba"</span><span class="token punctuation">,</span> <span class="token string">"babbb"</span><span class="token punctuation">,</span> <span class="token string">"bbaaa"</span><span class="token punctuation">,</span> <span class="token string">"bbaab"</span><span class="token punctuation">]</span>
+
+    second_cipher <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">"aaaaa"</span><span class="token punctuation">,</span> <span class="token string">"aaaab"</span><span class="token punctuation">,</span> <span class="token string">"aaaba"</span><span class="token punctuation">,</span> <span class="token string">"aaabb"</span><span class="token punctuation">,</span> <span class="token string">"aabaa"</span><span class="token punctuation">,</span> <span class="token string">"aabab"</span><span class="token punctuation">,</span> <span class="token string">"aabba"</span><span class="token punctuation">,</span> <span class="token string">"aabbb"</span><span class="token punctuation">,</span> <span class="token string">"abaaa"</span><span class="token punctuation">,</span> <span class="token string">"abaaa"</span><span class="token punctuation">,</span> <span class="token string">"abaab"</span><span class="token punctuation">,</span>
+                     <span class="token string">"ababa"</span><span class="token punctuation">,</span> <span class="token string">"ababb"</span><span class="token punctuation">,</span> <span class="token string">"abbaa"</span><span class="token punctuation">,</span> <span class="token string">"abbab"</span><span class="token punctuation">,</span> <span class="token string">"abbba"</span><span class="token punctuation">,</span> <span class="token string">"abbbb"</span><span class="token punctuation">,</span> <span class="token string">"baaaa"</span><span class="token punctuation">,</span> <span class="token string">"baaab"</span><span class="token punctuation">,</span> <span class="token string">"baaba"</span><span class="token punctuation">,</span> <span class="token string">"baabb"</span><span class="token punctuation">,</span> <span class="token string">"baabb"</span><span class="token punctuation">,</span>
+                     <span class="token string">"babaa"</span><span class="token punctuation">,</span> <span class="token string">"babab"</span><span class="token punctuation">,</span> <span class="token string">"babba"</span><span class="token punctuation">,</span> <span class="token string">"babbb"</span><span class="token punctuation">]</span>
+    res1 <span class="token operator">=</span> <span class="token string">""</span>
+    res2 <span class="token operator">=</span> <span class="token string">""</span>
+    in_string <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">.</span>lower<span class="token punctuation">(</span>in_string<span class="token punctuation">)</span>
+    str_group <span class="token operator">=</span> re<span class="token punctuation">.</span>findall<span class="token punctuation">(</span><span class="token string">".&#123;5&#125;"</span><span class="token punctuation">,</span> in_string<span class="token punctuation">)</span>
+    <span class="token keyword">for</span> s_g <span class="token keyword">in</span> str_group<span class="token punctuation">:</span>
+        n1 <span class="token operator">=</span> first_cipher<span class="token punctuation">.</span>index<span class="token punctuation">(</span>s_g<span class="token punctuation">)</span>
+        n2 <span class="token operator">=</span> second_cipher<span class="token punctuation">.</span>index<span class="token punctuation">(</span>s_g<span class="token punctuation">)</span>
+        res1 <span class="token operator">+=</span> <span class="token builtin">chr</span><span class="token punctuation">(</span>n1 <span class="token operator">+</span> <span class="token number">65</span><span class="token punctuation">)</span>
+        res2 <span class="token operator">+=</span> <span class="token builtin">chr</span><span class="token punctuation">(</span>n1 <span class="token operator">+</span> <span class="token number">65</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"first_cypher: "</span><span class="token punctuation">,</span> res1<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"second_cypher: "</span><span class="token punctuation">,</span> res2<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>解密得到结果：ATTACKANDDEFENCEWORLDISINTERESTING</p>
+<p>格式化后得到flag值：cyberpeace{attackanddefenceworldisinteresting}</p>
+<h1 id="RSA算法-RSA-algorithm"><a href="#RSA算法-RSA-algorithm" class="headerlink" title="RSA算法(RSA algorithm)"></a>RSA算法(RSA algorithm)</h1><blockquote>
+<p>RSA是1977年由罗纳德·李维斯特（Ron Rivest）、阿迪·萨莫尔（Adi Shamir）和伦纳德·阿德曼（Leonard Adleman）一起提出的。当时他们三人都在麻省理工学院工作。RSA就是他们三人姓氏开头字母拼在一起组成的</p>
+</blockquote>
+<p>RSA算法是引用最为广泛的一种公钥加密算法，所谓公钥加密(public key encryption)，也叫非对称加密。加密过程中，用于对数据加密的密钥称为公钥，对所有人公开，而对数据解密的密钥称为私钥，由接收者所保存，不对外公开。</p>
+<h2 id="加密原理-7"><a href="#加密原理-7" class="headerlink" title="加密原理"></a>加密原理</h2><h3 id="数学原理"><a href="#数学原理" class="headerlink" title="数学原理"></a>数学原理</h3><p>因为用以加密的公钥是对外公开的，那么我们应当保证解密的密钥无法被根据公钥反推出来，那要达到此目的必须使用到单向函数(One-way function)，即对于每一个输入，函数值都容易计算，但给出一个随机的函数值，要计算出原始的输入数据却很困难。常见的比如模运算：m^e mod n = c，已知m,e,n要求出密文c很简单，而已知e,n,c要求出明文m却很困难，RSA算法正是运用了这一特性。</p>
+<p>将加密方程变换：c^d mod n = m，其中d就是用以解密的密钥，它本身也不能被公开的n和e反推出来，根据数论：寻求两个大素数比较简单，而将它们的乘积质因数分解却极为困难。加密方程可以写成：m^e =  kn + c (k为正整数)，将c^d = (m^e - kn)^d带入解密方程中得到：(m^e - kn)^d mod n = m，由于(m^e - kn)^d多项式展开后的结果中只有m^ed项不包含n的乘积，因此方程化简为：m^ed mod n = m，可见，正确选取e和d使其满足此方程成为了算法的核心所在。</p>
+<p>根据欧拉定理：m，n为正整数，且gcd(m,n) = 1，则有m^φ(n) ≡ 1(mod n)，其中φ(n)称为对模n缩系的元素个数，即在小于等于n的正整数中与n互质的数的个数。对于一个大数n而言，要求出φ(n)的值是很困难的，但如果这个数本身就是质数，那么显然φ(n)=n-1。此外，φ(n)还有一个特性：对于互质的两个正整数p,q而言，φ(pq) = φ(p)φ(q)，那么我们在选取n的值时可以先选取互质的两个数p和q，根据以上定理，n = pq，φ(n) = φ(pq) = (p-1)(q-1)。</p>
+<p>根据以上原理，我们将欧拉定理方程进行变换，等式两端同时取k次幂并乘上m，最后变换成模运算的形式得到：m^{kφ(n)+1} mod n = m，与我们之前得到的 m^ed mod n = m 相比照，联立两式：ed = kφ(n) + 1，写成模运算形式：ed mod φ(n) = 1，因此我们可以通过选取加密密钥e来得到解密密钥d，值得注意的是这里e值的选取必须保证gcd(e,φ(n)) = 1，否则d值将不存在，具体数学证明略。</p>
+<p>最终将e和n的值公布，作为加密公钥，将d的值保留作为解密私钥。由于他人未知p和q的值，且n是一个大数的情况下对n进行质因数分解十分困难，也就无法得到φ(n)的值，就无法根据e求得d。</p>
+<p>RSA允许你选择公钥大小。512位密钥被视为不安全；768位密钥不用担心受到除了国家安全管理（NSA）外其他事物的危害；1024位几乎是安全的。</p>
+<p><em>加密原理参考链接</em>：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV14y4y1272w">探秘公钥加密算法RSA</a></p>
+<h3 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h3><p>（1）选取两个大素数p和q，得到乘积n = pq，则φ(n) = (p-1)(q-1)。</p>
+<p>（2）选取一个大整数e，满足gcd(e,φ(n)) = 1。</p>
+<p>（3）根据方程 ed mod φ(n) = 1 确定d的值。</p>
+<p>（4）公开n和e，作为公钥，私密保存d，作为私钥。</p>
+<p>（5）加密方程为：c = m^e mod n.    解密方程为：m = c^d mod n</p>
+<h2 id="例题分析-5"><a href="#例题分析-5" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-5"><a href="#题目链接-5" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5114&page=1">easy_RSA</a></p>
+<h3 id="分析与解答-5"><a href="#分析与解答-5" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>题目直接给出了p，q，e的值，要求求解d，得到φ(n)后根据 ed mod φ(n) = 1求解即可，这里我直接将模运算写成了 ed = kφ(n) + 1，并遍历k的值，若e能被 kφ(n) + 1 整除则得到解密密钥d。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">p <span class="token operator">=</span> <span class="token number">473398607161</span>
+q <span class="token operator">=</span> <span class="token number">4511491</span>
+e <span class="token operator">=</span> <span class="token number">17</span>
+fai_N <span class="token operator">=</span> <span class="token punctuation">(</span>p <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token punctuation">(</span>q <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span>
+k <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>k <span class="token operator">*</span> fai_N <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">%</span> e <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        d <span class="token operator">=</span> <span class="token punctuation">(</span>k <span class="token operator">*</span> fai_N <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">//</span> e
+        <span class="token keyword">break</span>
+    k <span class="token operator">+=</span> <span class="token number">1</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"d值为："</span><span class="token punctuation">,</span> d<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行得到结果：125631357777427553，flag即为：cyberpeace{125631357777427553}。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>Buy me a coffee</div>
+  <button onclick="document.querySelector('.post-reward').classList.toggle('active');">
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay0.png" alt="Zheng Chaoqun 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay0.jpg" alt="Zheng Chaoqun 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Zheng Chaoqun
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://lordaeronesz.github.io/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/" title="Crypto基础">http://lordaeronesz.github.io/2021/08/09/Crypto基础/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/CTF/" rel="tag"><i class="fa fa-tag"></i> CTF</a>
+              <a href="/tags/Crypto/" rel="tag"><i class="fa fa-tag"></i> Crypto</a>
+              <a href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/" rel="tag"><i class="fa fa-tag"></i> 信息安全</a>
+              <a href="/tags/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/" rel="tag"><i class="fa fa-tag"></i> 攻防世界</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/" rel="next" title="CSharp事件和委托">
+                  CSharp事件和委托 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="SOHUCS"></div><script src="/js/comments.js"></script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">赣 ICP 备 2021004196 号 </a>
+  </div>
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Zheng Chaoqun</span>
+</div>
+<div class="busuanzi-count">
+</div>
+
+    </div>
+  </footer>
+
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/utils.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<script class="next-config" data-name="changyan" type="application/json">{&quot;enable&quot;:true,&quot;appid&quot;:&quot;cyvs20JC9&quot;,&quot;appkey&quot;:&quot;95cce52402da589ad09f298ebbf86e6c&quot;}</script>
+<script src="/js/third-party/comments/changyan.js"></script>
+
+  
+  
+   <canvas class="fireworks" style="position: fixed;left: 0;top: 0;z-index: 1; pointer-events: none;" ></canvas> 
+   <script type="text/javascript" src="//cdn.bootcss.com/animejs/2.2.0/anime.min.js"></script> 
+   <script type="text/javascript" src="/js/src/fireworks.js"></script>
+
+
+</body>
+</html>
