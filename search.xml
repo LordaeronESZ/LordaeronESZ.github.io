@@ -8,55 +8,55 @@
 
 <h1 id="委托"><a href="#委托" class="headerlink" title="委托"></a>委托</h1><p>C#中的<strong>委托（delegate）</strong>类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自<code>System.Delegate</code>类。</p>
 <h2 id="委托的声明"><a href="#委托的声明" class="headerlink" title="委托的声明"></a>委托的声明</h2><p>声明委托的语法如下：</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span></code></pre>
 
 <p>比方说，我要声明一个无返回值，无参数的委托。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
 <p>在声明了委托类型后，必须将其实例化才能生效，可以使用<strong>new</strong>关键字创建并传入参数（参数为一个特定的方法名）。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
 <p>以上实例中我们实例化了一个带有<strong>Func1</strong>方法引用的<strong>MyDelegate</strong>类型变量，并将其赋值给了<strong>myDlegate</strong>实例。</p>
 <h2 id="委托的调用"><a href="#委托的调用" class="headerlink" title="委托的调用"></a>委托的调用</h2><p>如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
 <h2 id="多播委托"><a href="#多播委托" class="headerlink" title="多播委托"></a>多播委托</h2><p>其实一个委托类型的变量可以同时包含多个方法的引用，如果要在委托实例化后对方法引用进行增删操作，可以使用+=或-=运算符。</p>
 <p>例如我们要给<strong>myDelegate</strong>添加<strong>Func2</strong>和<strong>Func3</strong>方法并删除对<strong>Func1</strong>方法的引用。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
 myDelegate <span class="token operator">+=</span> Func3<span class="token punctuation">;</span>
-myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span></code></pre>
 
 <h2 id="预定义委托"><a href="#预定义委托" class="headerlink" title="预定义委托"></a>预定义委托</h2><p>在.NET Framework 3.5以来，提供了很多的泛型委托，原先需要手动定义的现在可以直接使用了。</p>
 <h3 id="Action委托"><a href="#Action委托" class="headerlink" title="Action委托"></a>Action委托</h3><p><strong>Action</strong>委托代表返回为空的委托，以下示例实例化一个<strong>Action</strong>委托，并引用<strong>Plus</strong>方法。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
 	Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>a <span class="token operator">+</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span>
-<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span></code></pre>
 
 <p>泛型类型指定为方法的参数类型，最多可指定16个。</p>
 <h3 id="Func委托"><a href="#Func委托" class="headerlink" title="Func委托"></a>Func委托</h3><p><strong>Func</strong>委托代表返回值非空的委托，以下实例化一个<strong>Func</strong>委托，并引用<strong>ConnectString</strong>方法。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
     <span class="token keyword">return</span> s1 <span class="token operator">+</span> s2<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span>
-<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span></code></pre>
 
 <p>最后一位泛型类型指定方法的返回值类型，前面各类型指定方法参数类型，同样最多指定16个。</p>
 <h1 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h1><p><strong>事件（Event）</strong>可以理解为一种封装好的委托，用于程序对用户的某些操作进行响应。事件在类内声明，通过使用同一个类或其他类中的委托与事件处理程序相关联。</p>
 <h2 id="通过委托创建事件"><a href="#通过委托创建事件" class="headerlink" title="通过委托创建事件"></a>通过委托创建事件</h2><h3 id="事件的声明"><a href="#事件的声明" class="headerlink" title="事件的声明"></a>事件的声明</h3><p>事件声明方法与实例化委托很类似，不同之处在于需要在委托类型前加上<strong>event</strong>关键字。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span></code></pre>
 
 <h3 id="与委托变量的区别"><a href="#与委托变量的区别" class="headerlink" title="与委托变量的区别"></a>与委托变量的区别</h3><ol>
 <li><p>事件只能作为类的成员变量</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
     <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent1<span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
     <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
         <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent2<span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
     <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<span class="token punctuation">&#125;</span></code></pre></li>
 <li><p>事件只能在类内调用</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
     <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span>
     <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">EventFunc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
@@ -68,11 +68,11 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <span class="token class-name">DelegateClass</span> delegateClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">DelegateClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
         delegateClass<span class="token punctuation">.</span><span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
     <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<span class="token punctuation">&#125;</span></code></pre></li>
 </ol>
 <h2 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布-订阅模式"></a>发布-订阅模式</h2><p>事件使用<strong>发布-订阅（publisher-subscriber）模型</strong>，在这个模型中，<strong>发布器（publisher）</strong>为包含事件的类，<strong>订阅器（subscriber）</strong>为接收事件的类，<strong>调度中心（Topic）</strong>为事件。</p>
 <p>以下通过一个简单的案例来更好的理解这种模式。</p>
-<pre class="line-numbers language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
 <span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Collections<span class="token punctuation">.</span>Generic</span><span class="token punctuation">;</span>
 <span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Text</span><span class="token punctuation">;</span>
 
@@ -123,7 +123,7 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <span class="token punctuation">&#125;</span>
     <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span>
-<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</code></pre>
 
 <p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
 <p><img src="https://img.wenhairu.com/images/2021/08/23/GFwSv.png"></p>
@@ -157,11 +157,11 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
 <h2 id="Base32-Base16"><a href="#Base32-Base16" class="headerlink" title="Base32,Base16"></a>Base32,Base16</h2><p>Base32,Base16与Base64类似，区别是他们分别得到5bit字节和4bit字节。Base32是将每5个8bit字节转换成8个5bit字节，编码字符范围为：大写字母A~Z和数字2~7，密文末尾最多可能出现<strong>7个</strong>“=”。Base16是将每个8bit字节转换成2个4bit字节，编码范围为：数字0~9和大写字母A~F，密文末尾不会出现“=”。</p>
 <h2 id="例题分析"><a href="#例题分析" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5109&page=1">base64</a></p>
 <h3 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>文本很明显是一串base64密文，直接解密即可，可以使用在线解密工具也可以直接用python的base64包解密，以下是python解密代码：</p>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> base64
+<pre class="language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> base64
 
 cipher <span class="token operator">=</span> <span class="token string">"Y3liZXJwZWFjZXtXZWxjb21lX3RvX25ld19Xb3JsZCF9"</span>
 res <span class="token operator">=</span> base64<span class="token punctuation">.</span>b64decode<span class="token punctuation">(</span>cipher<span class="token punctuation">)</span>
-<span class="token keyword">print</span><span class="token punctuation">(</span>res<span class="token punctuation">.</span>decode<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token keyword">print</span><span class="token punctuation">(</span>res<span class="token punctuation">.</span>decode<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
 
 <p>运行，得到结果：cyberpeace{Welcome_to_new_World!}</p>
 <h1 id="凯撒密码-Caesar-Cipher"><a href="#凯撒密码-Caesar-Cipher" class="headerlink" title="凯撒密码(Caesar Cipher)"></a>凯撒密码(Caesar Cipher)</h1><blockquote>
@@ -170,7 +170,7 @@ res <span class="token operator">=</span> base64<span class="token punctuation">
 <h2 id="加密原理-1"><a href="#加密原理-1" class="headerlink" title="加密原理"></a>加密原理</h2><p>在加密时，明文中的每个字母按照字母表的顺序向前或向后移动某一特定的位数并替换得到密文。例如明文为：FLAGISHERE，偏移量为3，那么密文就得到了：IODJLVKHUH，解密时则反向移动3位或正向移动26-3=23位。</p>
 <h2 id="例题分析-1"><a href="#例题分析-1" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-1"><a href="#题目链接-1" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5110&page=1">Caesar</a></p>
 <h3 id="分析与解答-1"><a href="#分析与解答-1" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>根据字母的个数以及排列方式来看很明显对字母采用了凯撒加密，只需根据攻防世界常见的“cyberpeace”开头的flag格式得到正向偏移量为14，以此编写代码如下：</p>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">wordList <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'d'</span><span class="token punctuation">,</span> <span class="token string">'e'</span><span class="token punctuation">,</span> <span class="token string">'f'</span><span class="token punctuation">,</span> <span class="token string">'g'</span><span class="token punctuation">,</span> <span class="token string">'h'</span><span class="token punctuation">,</span> <span class="token string">'i'</span><span class="token punctuation">,</span> <span class="token string">'j'</span><span class="token punctuation">,</span> <span class="token string">'k'</span><span class="token punctuation">,</span> <span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token string">'m'</span><span class="token punctuation">,</span> <span class="token string">'n'</span><span class="token punctuation">,</span>
+<pre class="language-python" data-language="python"><code class="language-python">wordList <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'d'</span><span class="token punctuation">,</span> <span class="token string">'e'</span><span class="token punctuation">,</span> <span class="token string">'f'</span><span class="token punctuation">,</span> <span class="token string">'g'</span><span class="token punctuation">,</span> <span class="token string">'h'</span><span class="token punctuation">,</span> <span class="token string">'i'</span><span class="token punctuation">,</span> <span class="token string">'j'</span><span class="token punctuation">,</span> <span class="token string">'k'</span><span class="token punctuation">,</span> <span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token string">'m'</span><span class="token punctuation">,</span> <span class="token string">'n'</span><span class="token punctuation">,</span>
             <span class="token string">'o'</span><span class="token punctuation">,</span> <span class="token string">'p'</span><span class="token punctuation">,</span> <span class="token string">'q'</span><span class="token punctuation">,</span> <span class="token string">'r'</span><span class="token punctuation">,</span> <span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token string">'t'</span><span class="token punctuation">,</span> <span class="token string">'u'</span><span class="token punctuation">,</span> <span class="token string">'v'</span><span class="token punctuation">,</span> <span class="token string">'w'</span><span class="token punctuation">,</span> <span class="token string">'x'</span><span class="token punctuation">,</span> <span class="token string">'y'</span><span class="token punctuation">,</span> <span class="token string">'z'</span><span class="token punctuation">]</span>
 t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'1.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 1.txt为题目附件</span>
 string <span class="token operator">=</span> t<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
@@ -184,7 +184,7 @@ n <span class="token operator">=</span> <span class="token number">14</span>
     <span class="token keyword">else</span><span class="token punctuation">:</span>
         n_str <span class="token operator">+=</span> s
 <span class="token keyword">print</span><span class="token punctuation">(</span>n_str<span class="token punctuation">)</span>
-t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
 
 <p>运行，得到flag：cyberpeace{you_have_learned_caesar_encryption}</p>
 <h1 id="摩尔斯电码-Morse-Code"><a href="#摩尔斯电码-Morse-Code" class="headerlink" title="摩尔斯电码(Morse Code)"></a>摩尔斯电码(Morse Code)</h1><blockquote>
@@ -194,7 +194,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <p><img src="https://img.wenhairu.com/images/2021/08/23/GFDeg.png"></p>
 <h2 id="例题分析-2"><a href="#例题分析-2" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5111&page=1">Morse</a></p>
 <h3 id="分析与解答-2"><a href="#分析与解答-2" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>附件中仅由“0”和“1”构成，且每一部分以空格分开，则考虑采用了摩尔斯加密。将摩尔斯电码表中的对应关系定义为一个字典类型，遍历密文中的每一部分并得到明文字符，python代码如下：</p>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'2.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 2.txt为题目附件</span>
+<pre class="language-python" data-language="python"><code class="language-python">t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'2.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 2.txt为题目附件</span>
 codes <span class="token operator">=</span> t<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">' '</span><span class="token punctuation">)</span>
 dic <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token string">'01'</span><span class="token punctuation">:</span> <span class="token string">'A'</span><span class="token punctuation">,</span> <span class="token string">'1000'</span><span class="token punctuation">:</span> <span class="token string">'B'</span><span class="token punctuation">,</span> <span class="token string">'1010'</span><span class="token punctuation">:</span> <span class="token string">'C'</span><span class="token punctuation">,</span> <span class="token string">'100'</span><span class="token punctuation">:</span> <span class="token string">'D'</span><span class="token punctuation">,</span> <span class="token string">'0'</span><span class="token punctuation">:</span> <span class="token string">'E'</span><span class="token punctuation">,</span> <span class="token string">'0010'</span><span class="token punctuation">:</span> <span class="token string">'F'</span><span class="token punctuation">,</span> <span class="token string">'110'</span><span class="token punctuation">:</span> <span class="token string">'G'</span><span class="token punctuation">,</span>
        <span class="token string">'0000'</span><span class="token punctuation">:</span> <span class="token string">'H'</span><span class="token punctuation">,</span> <span class="token string">'00'</span><span class="token punctuation">:</span> <span class="token string">'I'</span><span class="token punctuation">,</span> <span class="token string">'0111'</span><span class="token punctuation">:</span> <span class="token string">'J'</span><span class="token punctuation">,</span> <span class="token string">'101'</span><span class="token punctuation">:</span> <span class="token string">'K'</span><span class="token punctuation">,</span> <span class="token string">'0100'</span><span class="token punctuation">:</span> <span class="token string">'L'</span><span class="token punctuation">,</span> <span class="token string">'11'</span><span class="token punctuation">:</span> <span class="token string">'M'</span><span class="token punctuation">,</span> <span class="token string">'10'</span><span class="token punctuation">:</span> <span class="token string">'N'</span><span class="token punctuation">,</span> <span class="token string">'111'</span><span class="token punctuation">:</span> <span class="token string">'O'</span><span class="token punctuation">,</span> <span class="token string">'0110'</span><span class="token punctuation">:</span> <span class="token string">'P'</span><span class="token punctuation">,</span>
@@ -209,7 +209,7 @@ flag <span class="token operator">=</span> <span class="token string">''</span>
     <span class="token keyword">else</span><span class="token punctuation">:</span>
         flag <span class="token operator">+=</span> <span class="token string">'*'</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>flag<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+t<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
 
 <p>运行，flag以小写字母输出并格式化：cyberpeace{morsecodeissointeresting}</p>
 <h1 id="二进制幂数加密-Binary-idempotent-encryption"><a href="#二进制幂数加密-Binary-idempotent-encryption" class="headerlink" title="二进制幂数加密(Binary idempotent encryption)"></a>二进制幂数加密(Binary idempotent encryption)</h1><blockquote>
@@ -448,7 +448,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <h3 id="分析与解答-4"><a href="#分析与解答-4" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>观察密文，很明显是莫尔斯电码的形式，摩尔斯解密之后，得到如下结果：</p>
 <p><img src="https://img.wenhairu.com/images/2021/08/23/GFWHj.png"></p>
 <p><strong>may be have another deconde</strong>  提示我们这并不是最终结果，后面还有另外一种加密方式，可以看到后面字母由a和b组成，考虑是培根加密，可以编写python程序解密：</p>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> re
+<pre class="language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> re
 
 
 <span class="token keyword">def</span> <span class="token function">Bacon</span><span class="token punctuation">(</span>in_string<span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -469,7 +469,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
         res1 <span class="token operator">+=</span> <span class="token builtin">chr</span><span class="token punctuation">(</span>n1 <span class="token operator">+</span> <span class="token number">65</span><span class="token punctuation">)</span>
         res2 <span class="token operator">+=</span> <span class="token builtin">chr</span><span class="token punctuation">(</span>n1 <span class="token operator">+</span> <span class="token number">65</span><span class="token punctuation">)</span>
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"first_cypher: "</span><span class="token punctuation">,</span> res1<span class="token punctuation">)</span>
-    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"second_cypher: "</span><span class="token punctuation">,</span> res2<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"second_cypher: "</span><span class="token punctuation">,</span> res2<span class="token punctuation">)</span></code></pre>
 
 <p>解密得到结果：ATTACKANDDEFENCEWORLDISINTERESTING</p>
 <p>格式化后得到flag值：cyberpeace{attackanddefenceworldisinteresting}</p>
@@ -491,7 +491,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <p>（5）加密方程为：c = m^e mod n.    解密方程为：m = c^d mod n</p>
 <h2 id="例题分析-5"><a href="#例题分析-5" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-5"><a href="#题目链接-5" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5114&page=1">easy_RSA</a></p>
 <h3 id="分析与解答-5"><a href="#分析与解答-5" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>题目直接给出了p，q，e的值，要求求解d，得到φ(n)后根据 ed mod φ(n) = 1求解即可，这里我直接将模运算写成了 ed = kφ(n) + 1，并遍历k的值，若e能被 kφ(n) + 1 整除则得到解密密钥d。</p>
-<pre class="line-numbers language-python" data-language="python"><code class="language-python">p <span class="token operator">=</span> <span class="token number">473398607161</span>
+<pre class="language-python" data-language="python"><code class="language-python">p <span class="token operator">=</span> <span class="token number">473398607161</span>
 q <span class="token operator">=</span> <span class="token number">4511491</span>
 e <span class="token operator">=</span> <span class="token number">17</span>
 fai_N <span class="token operator">=</span> <span class="token punctuation">(</span>p <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token punctuation">(</span>q <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span>
@@ -501,7 +501,7 @@ k <span class="token operator">=</span> <span class="token number">0</span>
         d <span class="token operator">=</span> <span class="token punctuation">(</span>k <span class="token operator">*</span> fai_N <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">//</span> e
         <span class="token keyword">break</span>
     k <span class="token operator">+=</span> <span class="token number">1</span>
-<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"d值为："</span><span class="token punctuation">,</span> d<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"d值为："</span><span class="token punctuation">,</span> d<span class="token punctuation">)</span></code></pre>
 
 <p>运行得到结果：125631357777427553，flag即为：cyberpeace{125631357777427553}。</p>
 ]]></content>
@@ -516,6 +516,56 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </tags>
   </entry>
   <entry>
+    <title>hexo博客的备份与恢复</title>
+    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
+    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+<span id="more"></span>
+
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
+<p>首先我们先来观察整个博客目录的结构：</p>
+<p>(1) .deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+<p>(2) node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+<p>(3) public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+<p>(4) scaffolds    保存了用户文章的模板，需要备份。</p>
+<p>(5) source    保存了用户文章的源文件，需要备份。</p>
+<p>(6) themes    保存了用户下载的主题文件与配置，需要备份。</p>
+<p>(7) .gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+<p>(8) _config.yml    保存了用户配置信息，需要备份。</p>
+<p>(9) db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+<p>(10) package.json    保存了依赖的模块列表，需要备份。</p>
+<p>(11) package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
+<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> 备份完成！
+pause</code></pre>
+
+<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
+<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/25/GYTLA.png"></p>
+<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
+<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
+<p><img src="https://img.wenhairu.com/images/2021/08/25/GYXWT.png"></p>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
+<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
+<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>备份</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>开始写个人博客了</title>
     <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
     <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
@@ -526,8 +576,8 @@ k <span class="token operator">=</span> <span class="token number">0</span>
         <category>经验</category>
       </categories>
       <tags>
-        <tag>经验</tag>
         <tag>博客</tag>
+        <tag>经验</tag>
       </tags>
   </entry>
   <entry>
@@ -583,9 +633,9 @@ k <span class="token operator">=</span> <span class="token number">0</span>
 <h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
 <p><img src="https://img.wenhairu.com/images/2021/08/23/GFF4A.png"></p>
 <h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
-<pre class="line-numbers language-none"><code class="language-none">Windows Registry Editor Version 5.00
+<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
 [HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
-&quot;CodePage&quot;&#x3D;dword:0000fde9<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
 
 <p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
 ]]></content>
@@ -594,60 +644,10 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </categories>
       <tags>
         <tag>经验</tag>
-        <tag>Windows10</tag>
         <tag>批处理</tag>
+        <tag>Windows10</tag>
         <tag>注册表</tag>
         <tag>编码格式</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hexo博客的备份与恢复</title>
-    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
-    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
-<span id="more"></span>
-
-<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
-<p>首先我们先来观察整个博客目录的结构：</p>
-<p>(1) .deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-<p>(2) node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-<p>(3) public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-<p>(4) scaffolds    保存了用户文章的模板，需要备份。</p>
-<p>(5) source    保存了用户文章的源文件，需要备份。</p>
-<p>(6) themes    保存了用户下载的主题文件与配置，需要备份。</p>
-<p>(7) .gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-<p>(8) _config.yml    保存了用户配置信息，需要备份。</p>
-<p>(9) db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-<p>(10) package.json    保存了依赖的模块列表，需要备份。</p>
-<p>(11) package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
-<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
-<pre class="line-numbers language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> 备份完成！
-pause<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
-<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/25/GYTLA.png"></p>
-<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
-<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/25/GYXWT.png"></p>
-<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
-<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
-<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>经验</tag>
-        <tag>博客</tag>
-        <tag>批处理</tag>
-        <tag>备份</tag>
       </tags>
   </entry>
 </search>
