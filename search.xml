@@ -126,9 +126,9 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
 </code></pre>
 
 <p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFwSv.png"></p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/same.png"></p>
 <p>当输入值为5（与初始化value值不同），输出结果如下：</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFC20.png"></p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/different.png"></p>
 ]]></content>
       <categories>
         <category>CSharp</category>
@@ -151,7 +151,7 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
 </blockquote>
 <h2 id="加密原理"><a href="#加密原理" class="headerlink" title="加密原理"></a>加密原理</h2><p>Base64中的<strong>64</strong>表示64个可打印的字符（具体范围如下表所示），而要完全表示64个不同的字符至少需要6位二进制数(2^6=64)，我们知道一个字符类型数据在计算机中占用1Byte的存储空间，而1Byte为8bit，即一个字符实际在计算机中存储的是一个8位二进制数。</p>
 <p>Base64加密的实质是将每三个8bit字节转换为四个6bit字节（8*3=4*6），再在6bit字节的高位添0以补全为8位，最终转换为四个8bit字节，完成加密。例如：字符串<strong>s13</strong>，对应的ascii码为115 49 51，转换为二进制：01110011  00110001  00110011，将其分为4组：011100  110011  000100  110011，向高位补零：00011100  00110011  00000100  00110011，十进制为28 51 4 51，对照Base64编码表得到加密后的结果为：czEz，加密完成。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFKfU.png"></p>
+<p><img src="/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Base64%E7%BC%96%E7%A0%81%E8%A1%A8.png"></p>
 <p>我们发现这样貌似只能加密3的整数个字符，当末尾的字符无法凑成3的整数个的时候我们在用一个不在编码表中的字符加以代替，这个字符通常使用“=”，举个简单的例子：字符“A”，ascii码为65，转换成二进制数：01000001，由于此时末尾字符个数不为3的整数倍（1个），我们仍然将其分成四组，并且空位用“=”代替：010000  010===  ======  ======，对于不全为空的字节，在其末尾空位添零，全为空的字节在转换时用“=”代替：010000  010000  ======  ======，对应字符为：QQ==，加密完成。</p>
 <p>通过以上示例不难发现Base64加密的密文中，“=”最多只能出现<strong>两个</strong>且只会在<strong>末尾</strong>出现。</p>
 <h2 id="Base32-Base16"><a href="#Base32-Base16" class="headerlink" title="Base32,Base16"></a>Base32,Base16</h2><p>Base32,Base16与Base64类似，区别是他们分别得到5bit字节和4bit字节。Base32是将每5个8bit字节转换成8个5bit字节，编码字符范围为：大写字母A~Z和数字2~7，密文末尾最多可能出现<strong>7个</strong>“=”。Base16是将每个8bit字节转换成2个4bit字节，编码范围为：数字0~9和大写字母A~F，密文末尾不会出现“=”。</p>
@@ -191,7 +191,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <p>摩尔斯电码也被称作摩斯密码，是一种时通时断的信号代码，通过不同的排列顺序来表达不同的英文字母、数字和标点符号。它发明于1837年，是一种早期的数字化通信形式。不同于现代化的数字通讯，摩尔斯电码只使用零和一两种状态的二进制代码，它的代码包括五种：短促的点信号“・”，保持一定时间的长信号“—”，表示点和划之间的停顿、每个词之间中等的停顿，以及句子之间长的停顿。</p>
 </blockquote>
 <h2 id="加密原理-2"><a href="#加密原理-2" class="headerlink" title="加密原理"></a>加密原理</h2><p>摩尔斯电码的加密原理比较简单，就是长信号（一般为“—”）与短信号（一般为“·”）的组合来替换常见的字符，比如明文为：SOS，对应摩尔斯电码表加密后得到：··· — — — ···</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFDeg.png"></p>
+<p><img src="/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Morse.png"></p>
 <h2 id="例题分析-2"><a href="#例题分析-2" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5111&page=1">Morse</a></p>
 <h3 id="分析与解答-2"><a href="#分析与解答-2" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>附件中仅由“0”和“1”构成，且每一部分以空格分开，则考虑采用了摩尔斯加密。将摩尔斯电码表中的对应关系定义为一个字典类型，遍历密文中的每一部分并得到明文字符，python代码如下：</p>
 <pre class="language-python" data-language="python"><code class="language-python">t <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'2.txt'</span><span class="token punctuation">,</span> mode<span class="token operator">=</span><span class="token string">'r'</span><span class="token punctuation">)</span>  <span class="token comment"># 2.txt为题目附件</span>
@@ -446,7 +446,7 @@ t<span class="token punctuation">.</span>close<span class="token punctuation">(<
 <p>在解密培根密码时两种加密关系都要考虑。</p>
 <h2 id="例题分析-4"><a href="#例题分析-4" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-4"><a href="#题目链接-4" class="headerlink" title="题目链接"></a>题目链接</h3><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=0&id=5117&page=1">不仅仅是Morse</a></p>
 <h3 id="分析与解答-4"><a href="#分析与解答-4" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>观察密文，很明显是莫尔斯电码的形式，摩尔斯解密之后，得到如下结果：</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFWHj.png"></p>
+<p><img src="/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Bacon.png"></p>
 <p><strong>may be have another deconde</strong>  提示我们这并不是最终结果，后面还有另外一种加密方式，可以看到后面字母由a和b组成，考虑是培根加密，可以编写python程序解密：</p>
 <pre class="language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> re
 
@@ -547,10 +547,10 @@ pause</code></pre>
 
 <p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
 <p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/25/GYTLA.png"></p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
 <h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
 <h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/25/GYXWT.png"></p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
 <h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
 <h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
 <h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
@@ -595,9 +595,9 @@ pause</code></pre>
 <li>绝对路径不同目录间既可以用“\”也可以用“/”来分隔，而相对路径只能用“/”，这里推荐表示绝对路径时使用“\”，可以为两种表示方法做一个很好的区分。</li>
 </ol>
 <h1 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h1><h2 id="控制台命令”cd”"><a href="#控制台命令”cd”" class="headerlink" title="控制台命令”cd”"></a>控制台命令”cd”</h2><p>“cd”命令可以更改执行控制台命令的目录，这个目录既可以用绝对路径表示也可以用相对路径表示，但是无论哪种路径表示都只能更改为初始盘符中的目录，也就是系统盘目录。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFfDG.png"></p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-no.png"></p>
 <p>如果要更改执行目录为其他盘符下的目录，可以先输入“&lt;硬盘符&gt;”，比方说要切换到上图试图切换的目录，可以先输入<code>D:</code>，然后再选择绝对路径。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFNLT.png"></p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-yes.png"></p>
 <h2 id="程序中资源的引用"><a href="#程序中资源的引用" class="headerlink" title="程序中资源的引用"></a>程序中资源的引用</h2><p>如果想要在编写的程序中引用外部资源文件（图片、音频等等），则<strong>必须要用相对路径</strong>，除非你编写的程序只需要在你当前设备上运行。因为你的程序往往放在一个大的文件夹当中，当这个大的文件夹被放置在计算机不同目录下时，资源文件的绝对路径也不相同，而源代码与资源文件之间的相对位置则是保持不变的，这保证了只要用户不刻意的去改变资源文件的存放位置，那么不管整个文件夹被放置在何处，资源文件都能被正常的引用。</p>
 ]]></content>
       <categories>
@@ -614,7 +614,7 @@ pause</code></pre>
     <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
 <span id="more"></span>
 
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GF8eN.png"></p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
 <h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
 <blockquote>
 <p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
@@ -625,13 +625,13 @@ pause</code></pre>
 </blockquote>
 <p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
 <h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GF6HR.png"></p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
 <h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFm8B.png"></p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
 <p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
 <h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
 <h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
-<p><img src="https://img.wenhairu.com/images/2021/08/23/GFF4A.png"></p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
 <h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
 <pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
 [HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
