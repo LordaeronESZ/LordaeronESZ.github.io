@@ -516,6 +516,21 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </tags>
   </entry>
   <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>博客</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>hexo博客的备份与恢复</title>
     <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
     <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
@@ -559,25 +574,10 @@ pause</code></pre>
         <category>经验</category>
       </categories>
       <tags>
+        <tag>经验</tag>
         <tag>博客</tag>
         <tag>备份</tag>
-        <tag>经验</tag>
         <tag>批处理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>经验</tag>
       </tags>
   </entry>
   <entry>
