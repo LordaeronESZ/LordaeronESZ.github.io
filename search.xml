@@ -516,6 +516,183 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </tags>
   </entry>
   <entry>
+    <title>ZIP格式分析</title>
+    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
+<span id="more"></span>
+
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
+<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
+</blockquote>
+<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
+<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
+<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
+<pre class="language-none"><code class="language-none">[local file header 1]
+[file data 1]
+[data descriptor 1]
+. 
+.
+.
+[local file header n]
+[file data n]
+[data descriptor n]
+[archive decryption header] (EFS)
+[archive extra data record] (EFS)
+[central directory]
+[zip64 end of central directory record]
+[zip64 end of central directory locator] 
+[end of central directory record]</code></pre>
+
+<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
+<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
+version needed to extract       2 bytes
+general purpose bit flag        2 bytes
+compression method              2 bytes
+last mod file time              2 bytes
+last mod file date              2 bytes
+crc-32                          4 bytes
+compressed size                 4 bytes
+uncompressed size               4 bytes
+file name length                2 bytes
+extra field length              2 bytes
+
+file name (variable size)
+extra field (variable size)</code></pre>
+
+<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
+<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
+<ol>
+<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
+<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
+<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
+<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：无</li>
+</ol>
+<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
+<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes</code></pre>
+
+<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
+<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
+.
+.
+. 
+[file header n]
+[digital signature] </code></pre>
+
+<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
+      version made by                 2 bytes
+      version needed to extract       2 bytes
+      general purpose bit flag        2 bytes
+      compression method              2 bytes
+      last mod file time              2 bytes
+      last mod file date              2 bytes
+      crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes
+      file name length                2 bytes
+      extra field length              2 bytes
+      file comment length             2 bytes
+      disk number start               2 bytes
+      internal file attributes        2 bytes
+      external file attributes        4 bytes
+      relative offset of local header 4 bytes
+
+      file name (variable size)
+      extra field (variable size)
+      file comment (variable size)</code></pre>
+
+<ol>
+<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
+<li>压缩所用pkware版本(version mad by)：0x003f.</li>
+<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
+<li>压缩方式(compression method)：0x0000.</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
+<li>文件最后修改日期(last mod file date)：0x531d.</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a.</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0024.</li>
+<li>文件注释长度(file comment length)：0x0000.</li>
+<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
+<li>内部文件属性(internal file attributes)：0x0000.</li>
+<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
+<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
+<li>文件注释(file comment)：无</li>
+</ol>
+<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
+      size of data                    2 bytes
+      signature data (variable size)</code></pre>
+
+<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
+<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
+      number of this disk             2 bytes
+      number of the disk with the
+      start of the central directory  2 bytes
+      total number of entries in the
+      central directory on this disk  2 bytes
+      total number of entries in
+      the central directory           2 bytes
+      size of the central directory   4 bytes
+      offset of start of central
+      directory with respect to
+      the starting disk number        4 bytes
+      .ZIP file comment length        2 bytes
+      .ZIP file comment       (variable size)</code></pre>
+
+<ol>
+<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
+<li>该磁盘编号(number of this disk)：0x0000.</li>
+<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
+<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录大小(size of the central directory)：0x0000005a.</li>
+<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
+<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
+<li>ZIP文件注释(.ZIP file comment)：无</li>
+</ol>
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
+<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>CTF</tag>
+        <tag>信息安全</tag>
+        <tag>文件</tag>
+        <tag>编码格式</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>博客</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>hexo博客的备份与恢复</title>
     <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
     <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
@@ -523,17 +700,30 @@ k <span class="token operator">=</span> <span class="token number">0</span>
 
 <h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
 <p>首先我们先来观察整个博客目录的结构：</p>
-<p>(1) .deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-<p>(2) node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-<p>(3) public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-<p>(4) scaffolds    保存了用户文章的模板，需要备份。</p>
-<p>(5) source    保存了用户文章的源文件，需要备份。</p>
-<p>(6) themes    保存了用户下载的主题文件与配置，需要备份。</p>
-<p>(7) .gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-<p>(8) _config.yml    保存了用户配置信息，需要备份。</p>
-<p>(9) db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-<p>(10) package.json    保存了依赖的模块列表，需要备份。</p>
-<p>(11) package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+<ul>
+<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+</li>
+<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+</li>
+<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+</li>
+<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
+</li>
+<li><p>source    保存了用户文章的源文件，需要备份。</p>
+</li>
+<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
+</li>
+<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+</li>
+<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
+</li>
+<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+</li>
+<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
+</li>
+<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+</li>
+</ul>
 <h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
 <pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
 <span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
@@ -559,25 +749,10 @@ pause</code></pre>
         <category>经验</category>
       </categories>
       <tags>
+        <tag>经验</tag>
         <tag>博客</tag>
         <tag>备份</tag>
-        <tag>经验</tag>
         <tag>批处理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>经验</tag>
       </tags>
   </entry>
   <entry>
@@ -604,8 +779,8 @@ pause</code></pre>
         <category>计算机基础</category>
       </categories>
       <tags>
-        <tag>Windows10</tag>
         <tag>文件</tag>
+        <tag>Windows10</tag>
       </tags>
   </entry>
   <entry>
@@ -643,11 +818,11 @@ pause</code></pre>
         <category>批处理</category>
       </categories>
       <tags>
+        <tag>编码格式</tag>
         <tag>经验</tag>
         <tag>批处理</tag>
         <tag>Windows10</tag>
         <tag>注册表</tag>
-        <tag>编码格式</tag>
       </tags>
   </entry>
 </search>
