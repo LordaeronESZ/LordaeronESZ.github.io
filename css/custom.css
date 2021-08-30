@@ -17,6 +17,8 @@
     backdrop-filter: saturate(100%) blur(5px)
 }
 
+
+
 #footer::before {
     background: rgba(255,255,255,.15)
 }
@@ -27,4 +29,18 @@
 
 #footer #footer-wrap a {
     color: var(--font-color)
+}
+
+
+@font-face {
+    font-family: 'tzy';
+    /* 字体名自定义即可 */
+    src: url('/img/ZhuZiAWan.woff2');
+    /* 字体文件路径 */
+    font-display: swap;
+}
+
+body,
+.gitcalendar {
+    font-family: tzy !important;
 }
