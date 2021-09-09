@@ -1,252 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>CSharp事件和委托</title>
-    <url>/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/</url>
-    <content><![CDATA[<p>委托与事件在开发中的应用非常广泛，本文将简单介绍C#中委托和事件的定义、使用方法，以及它们之间的区别和联系。</p>
-<span id="more"></span>
-
-<h1 id="委托"><a href="#委托" class="headerlink" title="委托"></a>委托</h1><p>C#中的<strong>委托（delegate）</strong>类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自<code>System.Delegate</code>类。</p>
-<h2 id="委托的声明"><a href="#委托的声明" class="headerlink" title="委托的声明"></a>委托的声明</h2><p>声明委托的语法如下：</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span></code></pre>
-
-<p>比方说，我要声明一个无返回值，无参数的委托。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<p>在声明了委托类型后，必须将其实例化才能生效，可以使用<strong>new</strong>关键字创建并传入参数（参数为一个特定的方法名）。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<p>以上实例中我们实例化了一个带有<strong>Func1</strong>方法引用的<strong>MyDelegate</strong>类型变量，并将其赋值给了<strong>myDlegate</strong>实例。</p>
-<h2 id="委托的调用"><a href="#委托的调用" class="headerlink" title="委托的调用"></a>委托的调用</h2><p>如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<h2 id="多播委托"><a href="#多播委托" class="headerlink" title="多播委托"></a>多播委托</h2><p>其实一个委托类型的变量可以同时包含多个方法的引用，如果要在委托实例化后对方法引用进行增删操作，可以使用+=或-=运算符。</p>
-<p>例如我们要给<strong>myDelegate</strong>添加<strong>Func2</strong>和<strong>Func3</strong>方法并删除对<strong>Func1</strong>方法的引用。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
-myDelegate <span class="token operator">+=</span> Func3<span class="token punctuation">;</span>
-myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span></code></pre>
-
-<h2 id="预定义委托"><a href="#预定义委托" class="headerlink" title="预定义委托"></a>预定义委托</h2><p>在.NET Framework 3.5以来，提供了很多的泛型委托，原先需要手动定义的现在可以直接使用了。</p>
-<h3 id="Action委托"><a href="#Action委托" class="headerlink" title="Action委托"></a>Action委托</h3><p><strong>Action</strong>委托代表返回为空的委托，以下示例实例化一个<strong>Action</strong>委托，并引用<strong>Plus</strong>方法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-	Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>a <span class="token operator">+</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span></code></pre>
-
-<p>泛型类型指定为方法的参数类型，最多可指定16个。</p>
-<h3 id="Func委托"><a href="#Func委托" class="headerlink" title="Func委托"></a>Func委托</h3><p><strong>Func</strong>委托代表返回值非空的委托，以下实例化一个<strong>Func</strong>委托，并引用<strong>ConnectString</strong>方法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">return</span> s1 <span class="token operator">+</span> s2<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span></code></pre>
-
-<p>最后一位泛型类型指定方法的返回值类型，前面各类型指定方法参数类型，同样最多指定16个。</p>
-<h1 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h1><p><strong>事件（Event）</strong>可以理解为一种封装好的委托，用于程序对用户的某些操作进行响应。事件在类内声明，通过使用同一个类或其他类中的委托与事件处理程序相关联。</p>
-<h2 id="通过委托创建事件"><a href="#通过委托创建事件" class="headerlink" title="通过委托创建事件"></a>通过委托创建事件</h2><h3 id="事件的声明"><a href="#事件的声明" class="headerlink" title="事件的声明"></a>事件的声明</h3><p>事件声明方法与实例化委托很类似，不同之处在于需要在委托类型前加上<strong>event</strong>关键字。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span></code></pre>
-
-<h3 id="与委托变量的区别"><a href="#与委托变量的区别" class="headerlink" title="与委托变量的区别"></a>与委托变量的区别</h3><ol>
-<li><p>事件只能作为类的成员变量</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent1<span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
-    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent2<span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span></code></pre></li>
-<li><p>事件只能在类内调用</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span>
-    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">EventFunc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token keyword">class</span> <span class="token class-name">Test</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token class-name">DelegateClass</span> delegateClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">DelegateClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        delegateClass<span class="token punctuation">.</span><span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span></code></pre></li>
-</ol>
-<h2 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布-订阅模式"></a>发布-订阅模式</h2><p>事件使用<strong>发布-订阅（publisher-subscriber）模型</strong>，在这个模型中，<strong>发布器（publisher）</strong>为包含事件的类，<strong>订阅器（subscriber）</strong>为接收事件的类，<strong>调度中心（Topic）</strong>为事件。</p>
-<p>以下通过一个简单的案例来更好的理解这种模式。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
-<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Collections<span class="token punctuation">.</span>Generic</span><span class="token punctuation">;</span>
-<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Text</span><span class="token punctuation">;</span>
-
-<span class="token keyword">namespace</span> CSharp事件
-<span class="token punctuation">&#123;</span>
-    <span class="token comment">//发布器</span>
-    <span class="token keyword">class</span> <span class="token class-name">Publisher</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">private</span> <span class="token class-name"><span class="token keyword">int</span></span> <span class="token keyword">value</span><span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token function">Publisher</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token comment">//声明委托以及事件</span>
-        <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> changeValue<span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">SetValue</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token class-name"><span class="token keyword">int</span></span> formerValue <span class="token operator">=</span> <span class="token keyword">value</span><span class="token punctuation">;</span>
-            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
-            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Set is complete!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//当value值改变时，调用事件</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>changeValue <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> formerValue <span class="token operator">!=</span> <span class="token keyword">value</span><span class="token punctuation">)</span>
-                <span class="token function">changeValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-    <span class="token comment">//订阅器</span>
-    <span class="token keyword">class</span> <span class="token class-name">Subscriber</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"The value has been changed!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-    <span class="token keyword">class</span> <span class="token class-name">MainClass</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token comment">//实例化订阅器并赋value为3</span>
-            <span class="token class-name">Publisher</span> publisher <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Publisher</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token class-name">Subscriber</span> subscriber <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Subscriber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//将订阅器中的方法Print注册到发布器的事件中</span>
-            publisher<span class="token punctuation">.</span>changeValue <span class="token operator">+=</span> subscriber<span class="token punctuation">.</span>Print<span class="token punctuation">;</span>
-            <span class="token comment">//从控制台接受一个整数</span>
-            <span class="token class-name"><span class="token keyword">int</span></span> v <span class="token operator">=</span> Convert<span class="token punctuation">.</span><span class="token function">ToInt32</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span><span class="token function">ReadLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//设置订阅器对象的value值</span>
-            publisher<span class="token punctuation">.</span><span class="token function">SetValue</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-</code></pre>
-
-<p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
-<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/same.png"></p>
-<p>当输入值为5（与初始化value值不同），输出结果如下：</p>
-<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/different.png"></p>
-]]></content>
-      <categories>
-        <category>CSharp</category>
-      </categories>
-      <tags>
-        <tag>.NET</tag>
-        <tag>CSharp</tag>
-        <tag>事件</tag>
-        <tag>委托</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hexo博客的备份与恢复</title>
-    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
-    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
-<span id="more"></span>
-
-<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
-<p>首先我们先来观察整个博客目录的结构：</p>
-<ul>
-<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-</li>
-<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-</li>
-<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-</li>
-<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
-</li>
-<li><p>source    保存了用户文章的源文件，需要备份。</p>
-</li>
-<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
-</li>
-<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-</li>
-<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
-</li>
-<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-</li>
-<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
-</li>
-<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
-</li>
-</ul>
-<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
-<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> 备份完成！
-pause</code></pre>
-
-<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
-<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
-<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
-<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
-<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
-<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
-<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>备份</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>经验</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>文件路径的表示方法</title>
-    <url>/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/</url>
-    <content><![CDATA[<p>文件路径作为计算机基础内容，在很多时候都扮演着十分重要的角色，例如控制台命令、资源文件的存放等等，以下将介绍计算机文件路径的表示方法以及一些常见的使用场景。</p>
-<span id="more"></span>
-
-<p>文件路径的表示分为两种方式：绝对路径表示法和相对路径表示法。</p>
-<h1 id="绝对路径与相对路径的区别"><a href="#绝对路径与相对路径的区别" class="headerlink" title="绝对路径与相对路径的区别"></a>绝对路径与相对路径的区别</h1><h2 id="绝对路径的表示"><a href="#绝对路径的表示" class="headerlink" title="绝对路径的表示"></a>绝对路径的表示</h2><p>绝对路径顾名思义就是文件在硬盘上存储的真正路径，它不会被更改，除非文件在硬盘中的位置发生改变。绝对路径表示格式为：“&lt;硬盘符&gt;\&lt;目录1&gt;\&lt;目录2&gt;…\&lt;文件名&gt;”，例如test.txt文件存储在C盘cat1下的cat2的cat3中，它用绝对路径表示为<code>C:\cat1\cat2\test.txt</code>。</p>
-<h2 id="相对路径的表示"><a href="#相对路径的表示" class="headerlink" title="相对路径的表示"></a>相对路径的表示</h2><p>相对路径表示从当前文件位置出发，指向目标文件的路径，它是目标文件与当前文件的相对位置，会随着当前文件位置的不同而使与同一文件的相对位置发生改变。相对路径的表示格式为：“./&lt;目录1&gt;/&lt;目录2&gt;…/&lt;文件名&gt;”（这里的“./”可以省略），例如当前HTML文件root.html位于C盘根目录下，text.txt文件存储在C盘cat1文件夹下的cat2文件夹中，要想在root.html中引用text.txt则用相对路径表示为<code>cat1/cat2/test.txt</code>（“./”已省略）。</p>
-<p>如果想要表示当前文件上级目录的文件，可以使用“../”来表示，还是上面的例子，假如我们要在test.txt文件下用相对路径表示root.html，则可以表示为<code>../../root.html</code>。</p>
-<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
-<li>不同盘符间的文件不能用相对路径来表示，例如位于C盘下的文件无法使用相对路径来表示D盘中的文件，其实可以这么来理解：<strong>所谓相对路径，就是相对非根目录的某个目录的绝对路径</strong>。</li>
-<li>绝对路径不同目录间既可以用“\”也可以用“/”来分隔，而相对路径只能用“/”，这里推荐表示绝对路径时使用“\”，可以为两种表示方法做一个很好的区分。</li>
-</ol>
-<h1 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h1><h2 id="控制台命令”cd”"><a href="#控制台命令”cd”" class="headerlink" title="控制台命令”cd”"></a>控制台命令”cd”</h2><p>“cd”命令可以更改执行控制台命令的目录，这个目录既可以用绝对路径表示也可以用相对路径表示，但是无论哪种路径表示都只能更改为初始盘符中的目录，也就是系统盘目录。</p>
-<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-no.png"></p>
-<p>如果要更改执行目录为其他盘符下的目录，可以先输入“&lt;硬盘符&gt;”，比方说要切换到上图试图切换的目录，可以先输入<code>D:</code>，然后再选择绝对路径。</p>
-<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-yes.png"></p>
-<h2 id="程序中资源的引用"><a href="#程序中资源的引用" class="headerlink" title="程序中资源的引用"></a>程序中资源的引用</h2><p>如果想要在编写的程序中引用外部资源文件（图片、音频等等），则<strong>必须要用相对路径</strong>，除非你编写的程序只需要在你当前设备上运行。因为你的程序往往放在一个大的文件夹当中，当这个大的文件夹被放置在计算机不同目录下时，资源文件的绝对路径也不相同，而源代码与资源文件之间的相对位置则是保持不变的，这保证了只要用户不刻意的去改变资源文件的存放位置，那么不管整个文件夹被放置在何处，资源文件都能被正常的引用。</p>
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>Windows10</tag>
-        <tag>文件</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ZIP格式分析</title>
     <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
     <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
@@ -402,161 +156,10 @@ extra field (variable size)</code></pre>
         <category>计算机基础</category>
       </categories>
       <tags>
-        <tag>文件</tag>
         <tag>CTF</tag>
         <tag>信息安全</tag>
+        <tag>文件</tag>
         <tag>编码格式</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>让批处理文件中的中文正常显示</title>
-    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
-    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
-<span id="more"></span>
-
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
-<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
-<blockquote>
-<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
-</blockquote>
-<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
-<blockquote>
-<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
-</blockquote>
-<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
-<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
-<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
-<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
-<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
-<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
-<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
-<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
-[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
-&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
-
-<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-        <tag>Windows10</tag>
-        <tag>编码格式</tag>
-        <tag>注册表</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>链表连接出错</title>
-    <url>/2021/08/31/%E9%93%BE%E8%A1%A8%E8%BF%9E%E6%8E%A5%E5%87%BA%E9%94%99/</url>
-    <content><![CDATA[<p>太久没接触数据结构了，导致链表这一块的内容有点生疏了，这两天在做一道链表相关的题时出现了一点问题，在此记录一下以免之后再犯。</p>
-<span id="more"></span>
-
-<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/add-two-numbers/">两数相加</a></p>
-<h2 id="链表定义"><a href="#链表定义" class="headerlink" title="链表定义"></a>链表定义</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">ListNode</span> <span class="token punctuation">&#123;</span>
-     <span class="token keyword">int</span> val<span class="token punctuation">;</span>
-     ListNode <span class="token operator">*</span>next<span class="token punctuation">;</span>
-     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
-     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
-     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">,</span> ListNode <span class="token operator">*</span>next<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<h2 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h2><p>本题很常规，两链表相应位相加得到新链表对应位的值。首先要创建两个个空指针，一个作为新链表的头节点，指向两数相加结果的第一位；一个用以指向链表的子节点，并为其赋值两链表对应位的值相加的结果，最后返回头节点。</p>
-<h2 id="错误代码"><a href="#错误代码" class="headerlink" title="错误代码"></a>错误代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    ListNode<span class="token operator">*</span> <span class="token function">addTwoNumbers</span><span class="token punctuation">(</span>ListNode<span class="token operator">*</span> l1<span class="token punctuation">,</span> ListNode<span class="token operator">*</span> l2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        ListNode<span class="token operator">*</span> headNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
-        ListNode<span class="token operator">*</span> pathNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> c <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1 <span class="token operator">&amp;&amp;</span> l2<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>headNode<span class="token punctuation">)</span>
-                headNode <span class="token operator">=</span> pathNode<span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l2<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token punctuation">)</span>
-        	pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> headNode<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<p>代码乍一看好像没有问题，headNode在指向最初的pathNode后就没有再变更，pathNode也是在每次生成新节点后指向它的子节点，但最后测试得到的结果表明headNode为一个孤立的节点（它的子节点为空指针）。</p>
-<h1 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h1><h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>原来在生成子节点的过程中，我先让pathNode指向它的子节点（此时pathNode子节点为nullptr），然后再让其指向新的节点，这样问题就出现了。</p>
-<p>因为在pathNode子节点为nullptr的时候指向它是没有任何意义的，在随后的 <code>pathNode = new ListNode(sum % 10);</code>中pathNode又指向了一个动态创建的地址，这个地址与原先的pathNode根本没有任何联系，最后得到的结果只能是前一个pathNode结点的子节点仍然为nullptr。正确的做法应该是先对pathNode的子节点赋值，再执行<code>pathNode = pathNode-&gt;next;</code></p>
-<h2 id="正确代码"><a href="#正确代码" class="headerlink" title="正确代码"></a>正确代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    ListNode<span class="token operator">*</span> <span class="token function">addTwoNumbers</span><span class="token punctuation">(</span>ListNode<span class="token operator">*</span> l1<span class="token punctuation">,</span> ListNode<span class="token operator">*</span> l2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        ListNode<span class="token operator">*</span> headNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
-        ListNode<span class="token operator">*</span> pathNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> c <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1 <span class="token operator">&amp;&amp;</span> l2<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>headNode<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                headNode <span class="token operator">=</span> pathNode<span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-            <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
-                pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span>l2<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> sum <span class="token operator">=</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
-            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
-            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
-            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">if</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span>
-            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> headNode<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>经验</tag>
-        <tag>数据结构</tag>
-        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -932,6 +535,515 @@ k <span class="token operator">=</span> <span class="token number">0</span>
         <tag>信息安全</tag>
         <tag>Crypto</tag>
         <tag>攻防世界</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hexo博客的备份与恢复</title>
+    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
+    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+<span id="more"></span>
+
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
+<p>首先我们先来观察整个博客目录的结构：</p>
+<ul>
+<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+</li>
+<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+</li>
+<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+</li>
+<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
+</li>
+<li><p>source    保存了用户文章的源文件，需要备份。</p>
+</li>
+<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
+</li>
+<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+</li>
+<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
+</li>
+<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+</li>
+<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
+</li>
+<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+</li>
+</ul>
+<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
+<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> 备份完成！
+pause</code></pre>
+
+<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
+<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
+<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
+<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
+<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
+<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>备份</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CSharp事件和委托</title>
+    <url>/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/</url>
+    <content><![CDATA[<p>委托与事件在开发中的应用非常广泛，本文将简单介绍C#中委托和事件的定义、使用方法，以及它们之间的区别和联系。</p>
+<span id="more"></span>
+
+<h1 id="委托"><a href="#委托" class="headerlink" title="委托"></a>委托</h1><p>C#中的<strong>委托（delegate）</strong>类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自<code>System.Delegate</code>类。</p>
+<h2 id="委托的声明"><a href="#委托的声明" class="headerlink" title="委托的声明"></a>委托的声明</h2><p>声明委托的语法如下：</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span></code></pre>
+
+<p>比方说，我要声明一个无返回值，无参数的委托。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>在声明了委托类型后，必须将其实例化才能生效，可以使用<strong>new</strong>关键字创建并传入参数（参数为一个特定的方法名）。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>以上实例中我们实例化了一个带有<strong>Func1</strong>方法引用的<strong>MyDelegate</strong>类型变量，并将其赋值给了<strong>myDlegate</strong>实例。</p>
+<h2 id="委托的调用"><a href="#委托的调用" class="headerlink" title="委托的调用"></a>委托的调用</h2><p>如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2 id="多播委托"><a href="#多播委托" class="headerlink" title="多播委托"></a>多播委托</h2><p>其实一个委托类型的变量可以同时包含多个方法的引用，如果要在委托实例化后对方法引用进行增删操作，可以使用+=或-=运算符。</p>
+<p>例如我们要给<strong>myDelegate</strong>添加<strong>Func2</strong>和<strong>Func3</strong>方法并删除对<strong>Func1</strong>方法的引用。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
+myDelegate <span class="token operator">+=</span> Func3<span class="token punctuation">;</span>
+myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span></code></pre>
+
+<h2 id="预定义委托"><a href="#预定义委托" class="headerlink" title="预定义委托"></a>预定义委托</h2><p>在.NET Framework 3.5以来，提供了很多的泛型委托，原先需要手动定义的现在可以直接使用了。</p>
+<h3 id="Action委托"><a href="#Action委托" class="headerlink" title="Action委托"></a>Action委托</h3><p><strong>Action</strong>委托代表返回为空的委托，以下示例实例化一个<strong>Action</strong>委托，并引用<strong>Plus</strong>方法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>a <span class="token operator">+</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span></code></pre>
+
+<p>泛型类型指定为方法的参数类型，最多可指定16个。</p>
+<h3 id="Func委托"><a href="#Func委托" class="headerlink" title="Func委托"></a>Func委托</h3><p><strong>Func</strong>委托代表返回值非空的委托，以下实例化一个<strong>Func</strong>委托，并引用<strong>ConnectString</strong>方法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> s1 <span class="token operator">+</span> s2<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span></code></pre>
+
+<p>最后一位泛型类型指定方法的返回值类型，前面各类型指定方法参数类型，同样最多指定16个。</p>
+<h1 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h1><p><strong>事件（Event）</strong>可以理解为一种封装好的委托，用于程序对用户的某些操作进行响应。事件在类内声明，通过使用同一个类或其他类中的委托与事件处理程序相关联。</p>
+<h2 id="通过委托创建事件"><a href="#通过委托创建事件" class="headerlink" title="通过委托创建事件"></a>通过委托创建事件</h2><h3 id="事件的声明"><a href="#事件的声明" class="headerlink" title="事件的声明"></a>事件的声明</h3><p>事件声明方法与实例化委托很类似，不同之处在于需要在委托类型前加上<strong>event</strong>关键字。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span></code></pre>
+
+<h3 id="与委托变量的区别"><a href="#与委托变量的区别" class="headerlink" title="与委托变量的区别"></a>与委托变量的区别</h3><ol>
+<li><p>事件只能作为类的成员变量</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent1<span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
+    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent2<span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre></li>
+<li><p>事件只能在类内调用</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">EventFunc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">class</span> <span class="token class-name">Test</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token class-name">DelegateClass</span> delegateClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">DelegateClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        delegateClass<span class="token punctuation">.</span><span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre></li>
+</ol>
+<h2 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布-订阅模式"></a>发布-订阅模式</h2><p>事件使用<strong>发布-订阅（publisher-subscriber）模型</strong>，在这个模型中，<strong>发布器（publisher）</strong>为包含事件的类，<strong>订阅器（subscriber）</strong>为接收事件的类，<strong>调度中心（Topic）</strong>为事件。</p>
+<p>以下通过一个简单的案例来更好的理解这种模式。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
+<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Collections<span class="token punctuation">.</span>Generic</span><span class="token punctuation">;</span>
+<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Text</span><span class="token punctuation">;</span>
+
+<span class="token keyword">namespace</span> CSharp事件
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">//发布器</span>
+    <span class="token keyword">class</span> <span class="token class-name">Publisher</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">private</span> <span class="token class-name"><span class="token keyword">int</span></span> <span class="token keyword">value</span><span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token function">Publisher</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//声明委托以及事件</span>
+        <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> changeValue<span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">SetValue</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token class-name"><span class="token keyword">int</span></span> formerValue <span class="token operator">=</span> <span class="token keyword">value</span><span class="token punctuation">;</span>
+            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Set is complete!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//当value值改变时，调用事件</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>changeValue <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> formerValue <span class="token operator">!=</span> <span class="token keyword">value</span><span class="token punctuation">)</span>
+                <span class="token function">changeValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//订阅器</span>
+    <span class="token keyword">class</span> <span class="token class-name">Subscriber</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"The value has been changed!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">class</span> <span class="token class-name">MainClass</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token comment">//实例化订阅器并赋value为3</span>
+            <span class="token class-name">Publisher</span> publisher <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Publisher</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Subscriber</span> subscriber <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Subscriber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//将订阅器中的方法Print注册到发布器的事件中</span>
+            publisher<span class="token punctuation">.</span>changeValue <span class="token operator">+=</span> subscriber<span class="token punctuation">.</span>Print<span class="token punctuation">;</span>
+            <span class="token comment">//从控制台接受一个整数</span>
+            <span class="token class-name"><span class="token keyword">int</span></span> v <span class="token operator">=</span> Convert<span class="token punctuation">.</span><span class="token function">ToInt32</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span><span class="token function">ReadLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//设置订阅器对象的value值</span>
+            publisher<span class="token punctuation">.</span><span class="token function">SetValue</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+</code></pre>
+
+<p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/same.png"></p>
+<p>当输入值为5（与初始化value值不同），输出结果如下：</p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/different.png"></p>
+]]></content>
+      <categories>
+        <category>CSharp</category>
+      </categories>
+      <tags>
+        <tag>.NET</tag>
+        <tag>CSharp</tag>
+        <tag>事件</tag>
+        <tag>委托</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>文件路径的表示方法</title>
+    <url>/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/</url>
+    <content><![CDATA[<p>文件路径作为计算机基础内容，在很多时候都扮演着十分重要的角色，例如控制台命令、资源文件的存放等等，以下将介绍计算机文件路径的表示方法以及一些常见的使用场景。</p>
+<span id="more"></span>
+
+<p>文件路径的表示分为两种方式：绝对路径表示法和相对路径表示法。</p>
+<h1 id="绝对路径与相对路径的区别"><a href="#绝对路径与相对路径的区别" class="headerlink" title="绝对路径与相对路径的区别"></a>绝对路径与相对路径的区别</h1><h2 id="绝对路径的表示"><a href="#绝对路径的表示" class="headerlink" title="绝对路径的表示"></a>绝对路径的表示</h2><p>绝对路径顾名思义就是文件在硬盘上存储的真正路径，它不会被更改，除非文件在硬盘中的位置发生改变。绝对路径表示格式为：“&lt;硬盘符&gt;\&lt;目录1&gt;\&lt;目录2&gt;…\&lt;文件名&gt;”，例如test.txt文件存储在C盘cat1下的cat2的cat3中，它用绝对路径表示为<code>C:\cat1\cat2\test.txt</code>。</p>
+<h2 id="相对路径的表示"><a href="#相对路径的表示" class="headerlink" title="相对路径的表示"></a>相对路径的表示</h2><p>相对路径表示从当前文件位置出发，指向目标文件的路径，它是目标文件与当前文件的相对位置，会随着当前文件位置的不同而使与同一文件的相对位置发生改变。相对路径的表示格式为：“./&lt;目录1&gt;/&lt;目录2&gt;…/&lt;文件名&gt;”（这里的“./”可以省略），例如当前HTML文件root.html位于C盘根目录下，text.txt文件存储在C盘cat1文件夹下的cat2文件夹中，要想在root.html中引用text.txt则用相对路径表示为<code>cat1/cat2/test.txt</code>（“./”已省略）。</p>
+<p>如果想要表示当前文件上级目录的文件，可以使用“../”来表示，还是上面的例子，假如我们要在test.txt文件下用相对路径表示root.html，则可以表示为<code>../../root.html</code>。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>不同盘符间的文件不能用相对路径来表示，例如位于C盘下的文件无法使用相对路径来表示D盘中的文件，其实可以这么来理解：<strong>所谓相对路径，就是相对非根目录的某个目录的绝对路径</strong>。</li>
+<li>绝对路径不同目录间既可以用“\”也可以用“/”来分隔，而相对路径只能用“/”，这里推荐表示绝对路径时使用“\”，可以为两种表示方法做一个很好的区分。</li>
+</ol>
+<h1 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h1><h2 id="控制台命令”cd”"><a href="#控制台命令”cd”" class="headerlink" title="控制台命令”cd”"></a>控制台命令”cd”</h2><p>“cd”命令可以更改执行控制台命令的目录，这个目录既可以用绝对路径表示也可以用相对路径表示，但是无论哪种路径表示都只能更改为初始盘符中的目录，也就是系统盘目录。</p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-no.png"></p>
+<p>如果要更改执行目录为其他盘符下的目录，可以先输入“&lt;硬盘符&gt;”，比方说要切换到上图试图切换的目录，可以先输入<code>D:</code>，然后再选择绝对路径。</p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-yes.png"></p>
+<h2 id="程序中资源的引用"><a href="#程序中资源的引用" class="headerlink" title="程序中资源的引用"></a>程序中资源的引用</h2><p>如果想要在编写的程序中引用外部资源文件（图片、音频等等），则<strong>必须要用相对路径</strong>，除非你编写的程序只需要在你当前设备上运行。因为你的程序往往放在一个大的文件夹当中，当这个大的文件夹被放置在计算机不同目录下时，资源文件的绝对路径也不相同，而源代码与资源文件之间的相对位置则是保持不变的，这保证了只要用户不刻意的去改变资源文件的存放位置，那么不管整个文件夹被放置在何处，资源文件都能被正常的引用。</p>
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>文件</tag>
+        <tag>Windows10</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>计算机组成与系统结构学习总结（week1）</title>
+    <url>/2021/09/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1%EF%BC%89/</url>
+    <content><![CDATA[<p>从本周开始，我将每周进行一次计算机组成与系统结构课程的学习总结，内容主要来自于教材、老师所讲的内容以及我个人的理解。</p>
+<span id="more"></span>
+
+<h1 id="第一章-计算机系统概论"><a href="#第一章-计算机系统概论" class="headerlink" title="第一章 计算机系统概论"></a>第一章 计算机系统概论</h1><h2 id="计算机的分类"><a href="#计算机的分类" class="headerlink" title="计算机的分类"></a>计算机的分类</h2><h3 id="模拟计算机"><a href="#模拟计算机" class="headerlink" title="模拟计算机"></a>模拟计算机</h3><p>“模拟”就是相似的意思。模拟计算机的特点是数值由连续量来表示，运算过程也是连续的。</p>
+<h3 id="数字计算机"><a href="#数字计算机" class="headerlink" title="数字计算机"></a>数字计算机</h3><p>它是在算盘的基础上发展起来的，是用数目字来表示数量的大小。数字计算机的主要特点是按位运算，并且不连续地跳动计算。</p>
+<h3 id="主要区别"><a href="#主要区别" class="headerlink" title="主要区别"></a>主要区别</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>数字计算机</th>
+<th>模拟计算机</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据表示方式</td>
+<td>数字0/1</td>
+<td>电压</td>
+</tr>
+<tr>
+<td>计算方式</td>
+<td>数字计数</td>
+<td>电压组合和测量值</td>
+</tr>
+<tr>
+<td>控制方式</td>
+<td>程序控制</td>
+<td>盘上连线</td>
+</tr>
+<tr>
+<td>精度</td>
+<td>高</td>
+<td>低</td>
+</tr>
+<tr>
+<td>数据存储量</td>
+<td>大</td>
+<td>小</td>
+</tr>
+<tr>
+<td>逻辑判断能力</td>
+<td>强</td>
+<td>无</td>
+</tr>
+</tbody></table>
+<p>电子模拟计算机由于精度与解题能力都有限，因此应用范围较小。电子计算机则不同，它是以近似于人类的“思维过程”来进行工作的，因此被称为<strong>电脑</strong>。</p>
+<h2 id="计算机的发展简史"><a href="#计算机的发展简史" class="headerlink" title="计算机的发展简史"></a>计算机的发展简史</h2><h3 id="计算机的五代变化"><a href="#计算机的五代变化" class="headerlink" title="计算机的五代变化"></a>计算机的五代变化</h3><ol>
+<li>1946-1957年，电子管计算机：数据处理</li>
+<li>1958-1964年，晶体管计算机：工业控制</li>
+<li>1965-1971年，中小规模集成电路计算机：小型计算机</li>
+<li>1972-1990年，大规模和超大规模集成电路计算机：微型计算机</li>
+<li>1991年~，巨大规模集成电路计算机：单片机</li>
+</ol>
+<h4 id="摩尔定律-Moore’s-Law"><a href="#摩尔定律-Moore’s-Law" class="headerlink" title="摩尔定律(Moore’s Law)"></a>摩尔定律(Moore’s Law)</h4><p>1965年英特尔创始人之一的戈登·摩尔观察到芯片上的晶体管数量每年翻一番，1970年这种态势减慢成每18个月翻一番，这就是人们所称的<strong>摩尔定律</strong>。值得一提的是，摩尔定律并不是物理定律，而更像是对芯片行业发展的预测或者说是对行业的一种要求。</p>
+<h3 id="半导体存储器的发展"><a href="#半导体存储器的发展" class="headerlink" title="半导体存储器的发展"></a>半导体存储器的发展</h3><ol>
+<li>20世纪50-60年代，所有计算机的存储器都是由微小的铁磁体环组成。</li>
+<li>1970年，仙童半导体公司生产出了第一个较大容量半导体存储器。一个相当于单个磁芯大小的芯片，包含了256位的存储器。</li>
+<li>从1970年起，半导体存储器经历了11代：单个芯片1KB、4KB、16KB、64KB、256KB、1MB、4MB、16MB、64MB、256MB、1GB，每一代相比前一代存储密度提高4倍，而每位价格和存取时间都在下降。</li>
+</ol>
+<h3 id="微处理器的发展"><a href="#微处理器的发展" class="headerlink" title="微处理器的发展"></a>微处理器的发展</h3><ol>
+<li><p>1971年，Intel公司开发出Intel 4004。这是第一个将CPU的所有元件都放入同一块芯片内的产品</p>
+</li>
+<li><p>1972年，Intel 8008，这是第一个8位微处理器，它比4004复杂一倍</p>
+</li>
+<li><p>1974年，Intel 8080。这是第一个通用微处理器</p>
+</li>
+<li><p>20世纪70年代末，通用16位微处理器，Intel 8086是其中之一</p>
+</li>
+<li><p>1981年，贝尔实验室和HP公司开发出了32位单片微处理器</p>
+</li>
+<li><p>1985年，推出了32位微处理器Intel 80386</p>
+</li>
+<li><p>现在的64位处理器和多核处理器</p>
+</li>
+</ol>
+<h3 id="计算机的性能指标"><a href="#计算机的性能指标" class="headerlink" title="计算机的性能指标"></a>计算机的性能指标</h3><ul>
+<li><p><strong>吞吐量</strong>：表征一台计算机在某一时间间隔内能够处理的信息量，单位是字节/秒（B/S）</p>
+</li>
+<li><p><strong>响应时间</strong>：表征从输入有效到系统产生响应之间的时间度量，用时间单位来度量</p>
+</li>
+<li><p><strong>利用率</strong>：表示在给定的时间间隔内，系统被实际使用的时间所占的比率，一般用百分比表示</p>
+</li>
+<li><p><strong>处理机字长</strong>：指处理机运算器中一次能够完成二进制数运算的位数。当前处理机的字长有8位、16位、32位、64位字长越长，表示计算的精度越高</p>
+</li>
+<li><p><strong>总线宽度</strong>：一般指CPU中运算器与存储器之间进行互连的内部总线二进制位数</p>
+</li>
+<li><p><strong>存储器容量</strong>：存储器中所有存储单元的总数目，通常用KB、MB、GB、TB来表示</p>
+</li>
+<li><p><strong>存储器带宽</strong>：存储器的速度指标，单位时间内从存储器读出的二进制数信息量，一般用字节数/秒表示</p>
+</li>
+<li><p><strong>主频/时钟周期</strong>：CPU的工作节拍受主时钟控制，主时钟不断产生固定频率的时钟，主时钟的频率（f）叫<strong>CPU的主频</strong>。度量单位是MHz、GHz。主频的倒数称为<strong>CPU时钟周期</strong>，T = 1 / f.</p>
+</li>
+<li><p><strong>CPU执行时间</strong>：表示CPU执行一般程序所占用的CPU时间，计算公式如下：<br>CPU执行时间 = CPU时钟周期数 * CPU时钟周期</p>
+</li>
+<li><p><strong>CPI</strong>：表示每条指令周期数，即执行一条指令所需的平均时钟周期数，计算公式如下：<br>CPI = 执行某段程序所需的CPU时钟周期数 / 该程序包含的指令条数</p>
+</li>
+<li><p><strong>MIPS</strong>：表示每秒执行多少百万条定点指令数，计算公式如下：<br>MIPS = 指令数 / (程序执行时间 * 10^6)</p>
+</li>
+<li><p><strong>FLOPS</strong>：表示每秒执行浮点操作的次数，用来衡量机器浮点操作的性能，计算公式如下：<br>FLOPS = 程序中的浮点操作次数 / 程序执行时间</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>计算机组成与系统结构</category>
+      </categories>
+      <tags>
+        <tag>计算机组成与系统结构</tag>
+        <tag>学习总结</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>经验</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>链表连接出错</title>
+    <url>/2021/08/31/%E9%93%BE%E8%A1%A8%E8%BF%9E%E6%8E%A5%E5%87%BA%E9%94%99/</url>
+    <content><![CDATA[<p>太久没接触数据结构了，导致链表这一块的内容有点生疏了，这两天在做一道链表相关的题时出现了一点问题，在此记录一下以免之后再犯。</p>
+<span id="more"></span>
+
+<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/add-two-numbers/">两数相加</a></p>
+<h2 id="链表定义"><a href="#链表定义" class="headerlink" title="链表定义"></a>链表定义</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">ListNode</span> <span class="token punctuation">&#123;</span>
+     <span class="token keyword">int</span> val<span class="token punctuation">;</span>
+     ListNode <span class="token operator">*</span>next<span class="token punctuation">;</span>
+     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+     <span class="token function">ListNode</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">,</span> ListNode <span class="token operator">*</span>next<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">next</span><span class="token punctuation">(</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<h2 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h2><p>本题很常规，两链表相应位相加得到新链表对应位的值。首先要创建两个个空指针，一个作为新链表的头节点，指向两数相加结果的第一位；一个用以指向链表的子节点，并为其赋值两链表对应位的值相加的结果，最后返回头节点。</p>
+<h2 id="错误代码"><a href="#错误代码" class="headerlink" title="错误代码"></a>错误代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    ListNode<span class="token operator">*</span> <span class="token function">addTwoNumbers</span><span class="token punctuation">(</span>ListNode<span class="token operator">*</span> l1<span class="token punctuation">,</span> ListNode<span class="token operator">*</span> l2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        ListNode<span class="token operator">*</span> headNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+        ListNode<span class="token operator">*</span> pathNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> c <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1 <span class="token operator">&amp;&amp;</span> l2<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>headNode<span class="token punctuation">)</span>
+                headNode <span class="token operator">=</span> pathNode<span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l2<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>c<span class="token punctuation">)</span>
+        	pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> headNode<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<p>代码乍一看好像没有问题，headNode在指向最初的pathNode后就没有再变更，pathNode也是在每次生成新节点后指向它的子节点，但最后测试得到的结果表明headNode为一个孤立的节点（它的子节点为空指针）。</p>
+<h1 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h1><h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>原来在生成子节点的过程中，我先让pathNode指向它的子节点（此时pathNode子节点为nullptr），然后再让其指向新的节点，这样问题就出现了。</p>
+<p>因为在pathNode子节点为nullptr的时候指向它是没有任何意义的，在随后的 <code>pathNode = new ListNode(sum % 10);</code>中pathNode又指向了一个动态创建的地址，这个地址与原先的pathNode根本没有任何联系，最后得到的结果只能是前一个pathNode结点的子节点仍然为nullptr。正确的做法应该是先对pathNode的子节点赋值，再执行<code>pathNode = pathNode-&gt;next;</code></p>
+<h2 id="正确代码"><a href="#正确代码" class="headerlink" title="正确代码"></a>正确代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    ListNode<span class="token operator">*</span> <span class="token function">addTwoNumbers</span><span class="token punctuation">(</span>ListNode<span class="token operator">*</span> l1<span class="token punctuation">,</span> ListNode<span class="token operator">*</span> l2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        ListNode<span class="token operator">*</span> headNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+        ListNode<span class="token operator">*</span> pathNode <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> c <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1 <span class="token operator">&amp;&amp;</span> l2<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>headNode<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                pathNode <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                headNode <span class="token operator">=</span> pathNode<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l1<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l1<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            l1 <span class="token operator">=</span> l1<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>l2<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> sum <span class="token operator">=</span> l2<span class="token operator">-></span>val <span class="token operator">+</span> c<span class="token punctuation">;</span>
+            c <span class="token operator">=</span> sum <span class="token operator">/</span> <span class="token number">10</span><span class="token punctuation">;</span>
+            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>sum <span class="token operator">%</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pathNode <span class="token operator">=</span> pathNode<span class="token operator">-></span>next<span class="token punctuation">;</span>
+            l2 <span class="token operator">=</span> l2<span class="token operator">-></span>next<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span>
+            pathNode<span class="token operator">-></span>next <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ListNode</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> headNode<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>数据结构</tag>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>让批处理文件中的中文正常显示</title>
+    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
+    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
+<span id="more"></span>
+
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
+<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
+<blockquote>
+<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
+</blockquote>
+<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
+<blockquote>
+<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
+</blockquote>
+<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
+<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
+<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
+<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
+<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
+<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
+<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
+[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
+&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
+
+<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>编码格式</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+        <tag>Windows10</tag>
+        <tag>注册表</tag>
       </tags>
   </entry>
 </search>
