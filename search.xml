@@ -1,168 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>ZIP格式分析</title>
-    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
-<span id="more"></span>
-
-<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
-<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
-</blockquote>
-<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
-<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
-<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
-<pre class="language-none"><code class="language-none">[local file header 1]
-[file data 1]
-[data descriptor 1]
-. 
-.
-.
-[local file header n]
-[file data n]
-[data descriptor n]
-[archive decryption header] (EFS)
-[archive extra data record] (EFS)
-[central directory]
-[zip64 end of central directory record]
-[zip64 end of central directory locator] 
-[end of central directory record]</code></pre>
-
-<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
-<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
-version needed to extract       2 bytes
-general purpose bit flag        2 bytes
-compression method              2 bytes
-last mod file time              2 bytes
-last mod file date              2 bytes
-crc-32                          4 bytes
-compressed size                 4 bytes
-uncompressed size               4 bytes
-file name length                2 bytes
-extra field length              2 bytes
-
-file name (variable size)
-extra field (variable size)</code></pre>
-
-<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
-<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
-<ol>
-<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
-<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
-<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
-<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：无</li>
-</ol>
-<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
-<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes</code></pre>
-
-<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
-<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
-.
-.
-. 
-[file header n]
-[digital signature] </code></pre>
-
-<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
-      version made by                 2 bytes
-      version needed to extract       2 bytes
-      general purpose bit flag        2 bytes
-      compression method              2 bytes
-      last mod file time              2 bytes
-      last mod file date              2 bytes
-      crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes
-      file name length                2 bytes
-      extra field length              2 bytes
-      file comment length             2 bytes
-      disk number start               2 bytes
-      internal file attributes        2 bytes
-      external file attributes        4 bytes
-      relative offset of local header 4 bytes
-
-      file name (variable size)
-      extra field (variable size)
-      file comment (variable size)</code></pre>
-
-<ol>
-<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
-<li>压缩所用pkware版本(version mad by)：0x003f.</li>
-<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
-<li>压缩方式(compression method)：0x0000.</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
-<li>文件最后修改日期(last mod file date)：0x531d.</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a.</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0024.</li>
-<li>文件注释长度(file comment length)：0x0000.</li>
-<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
-<li>内部文件属性(internal file attributes)：0x0000.</li>
-<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
-<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
-<li>文件注释(file comment)：无</li>
-</ol>
-<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
-      size of data                    2 bytes
-      signature data (variable size)</code></pre>
-
-<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
-<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
-      number of this disk             2 bytes
-      number of the disk with the
-      start of the central directory  2 bytes
-      total number of entries in the
-      central directory on this disk  2 bytes
-      total number of entries in
-      the central directory           2 bytes
-      size of the central directory   4 bytes
-      offset of start of central
-      directory with respect to
-      the starting disk number        4 bytes
-      .ZIP file comment length        2 bytes
-      .ZIP file comment       (variable size)</code></pre>
-
-<ol>
-<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
-<li>该磁盘编号(number of this disk)：0x0000.</li>
-<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
-<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录大小(size of the central directory)：0x0000005a.</li>
-<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
-<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
-<li>ZIP文件注释(.ZIP file comment)：无</li>
-</ol>
-<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
-<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>CTF</tag>
-        <tag>信息安全</tag>
-        <tag>文件</tag>
-        <tag>编码格式</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Crypto基础</title>
     <url>/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/</url>
     <content><![CDATA[<p>密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以<strong>攻防世界</strong>新手练习区例题为例进行分析。</p>
@@ -532,72 +370,9 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </categories>
       <tags>
         <tag>CTF</tag>
-        <tag>信息安全</tag>
         <tag>Crypto</tag>
+        <tag>信息安全</tag>
         <tag>攻防世界</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hexo博客的备份与恢复</title>
-    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
-    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
-<span id="more"></span>
-
-<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
-<p>首先我们先来观察整个博客目录的结构：</p>
-<ul>
-<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-</li>
-<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-</li>
-<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-</li>
-<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
-</li>
-<li><p>source    保存了用户文章的源文件，需要备份。</p>
-</li>
-<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
-</li>
-<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-</li>
-<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
-</li>
-<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-</li>
-<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
-</li>
-<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
-</li>
-</ul>
-<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
-<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> 备份完成！
-pause</code></pre>
-
-<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
-<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
-<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
-<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
-<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
-<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
-<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>备份</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
       </tags>
   </entry>
   <entry>
@@ -741,6 +516,246 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
       </tags>
   </entry>
   <entry>
+    <title>hexo博客的备份与恢复</title>
+    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
+    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+<span id="more"></span>
+
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
+<p>首先我们先来观察整个博客目录的结构：</p>
+<ul>
+<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+</li>
+<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+</li>
+<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+</li>
+<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
+</li>
+<li><p>source    保存了用户文章的源文件，需要备份。</p>
+</li>
+<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
+</li>
+<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+</li>
+<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
+</li>
+<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+</li>
+<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
+</li>
+<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+</li>
+</ul>
+<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
+<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> 备份完成！
+pause</code></pre>
+
+<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
+<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
+<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
+<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
+<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
+<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>备份</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ZIP格式分析</title>
+    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
+<span id="more"></span>
+
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
+<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
+</blockquote>
+<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
+<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
+<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
+<pre class="language-none"><code class="language-none">[local file header 1]
+[file data 1]
+[data descriptor 1]
+. 
+.
+.
+[local file header n]
+[file data n]
+[data descriptor n]
+[archive decryption header] (EFS)
+[archive extra data record] (EFS)
+[central directory]
+[zip64 end of central directory record]
+[zip64 end of central directory locator] 
+[end of central directory record]</code></pre>
+
+<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
+<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
+version needed to extract       2 bytes
+general purpose bit flag        2 bytes
+compression method              2 bytes
+last mod file time              2 bytes
+last mod file date              2 bytes
+crc-32                          4 bytes
+compressed size                 4 bytes
+uncompressed size               4 bytes
+file name length                2 bytes
+extra field length              2 bytes
+
+file name (variable size)
+extra field (variable size)</code></pre>
+
+<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
+<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
+<ol>
+<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
+<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
+<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
+<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：无</li>
+</ol>
+<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
+<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes</code></pre>
+
+<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
+<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
+.
+.
+. 
+[file header n]
+[digital signature] </code></pre>
+
+<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
+      version made by                 2 bytes
+      version needed to extract       2 bytes
+      general purpose bit flag        2 bytes
+      compression method              2 bytes
+      last mod file time              2 bytes
+      last mod file date              2 bytes
+      crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes
+      file name length                2 bytes
+      extra field length              2 bytes
+      file comment length             2 bytes
+      disk number start               2 bytes
+      internal file attributes        2 bytes
+      external file attributes        4 bytes
+      relative offset of local header 4 bytes
+
+      file name (variable size)
+      extra field (variable size)
+      file comment (variable size)</code></pre>
+
+<ol>
+<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
+<li>压缩所用pkware版本(version mad by)：0x003f.</li>
+<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
+<li>压缩方式(compression method)：0x0000.</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
+<li>文件最后修改日期(last mod file date)：0x531d.</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a.</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0024.</li>
+<li>文件注释长度(file comment length)：0x0000.</li>
+<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
+<li>内部文件属性(internal file attributes)：0x0000.</li>
+<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
+<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
+<li>文件注释(file comment)：无</li>
+</ol>
+<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
+      size of data                    2 bytes
+      signature data (variable size)</code></pre>
+
+<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
+<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
+      number of this disk             2 bytes
+      number of the disk with the
+      start of the central directory  2 bytes
+      total number of entries in the
+      central directory on this disk  2 bytes
+      total number of entries in
+      the central directory           2 bytes
+      size of the central directory   4 bytes
+      offset of start of central
+      directory with respect to
+      the starting disk number        4 bytes
+      .ZIP file comment length        2 bytes
+      .ZIP file comment       (variable size)</code></pre>
+
+<ol>
+<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
+<li>该磁盘编号(number of this disk)：0x0000.</li>
+<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
+<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录大小(size of the central directory)：0x0000005a.</li>
+<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
+<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
+<li>ZIP文件注释(.ZIP file comment)：无</li>
+</ol>
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
+<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>CTF</tag>
+        <tag>信息安全</tag>
+        <tag>文件</tag>
+        <tag>编码格式</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>经验</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>文件路径的表示方法</title>
     <url>/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/</url>
     <content><![CDATA[<p>文件路径作为计算机基础内容，在很多时候都扮演着十分重要的角色，例如控制台命令、资源文件的存放等等，以下将介绍计算机文件路径的表示方法以及一些常见的使用场景。</p>
@@ -766,6 +781,131 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
       <tags>
         <tag>文件</tag>
         <tag>Windows10</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>编译原理学习总结（week1&amp;2）</title>
+    <url>/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1&amp;2%EF%BC%89/</url>
+    <content><![CDATA[<p>从本周开始，我将每周进行一次编译原理课程的学习总结，内容主要来自于教材、老师所讲的内容以及我个人的理解。</p>
+<span id="more"></span>
+
+<h1 id="第一章：绪论"><a href="#第一章：绪论" class="headerlink" title="第一章：绪论"></a>第一章：绪论</h1><h2 id="编译与解释"><a href="#编译与解释" class="headerlink" title="编译与解释"></a>编译与解释</h2><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><p>编译器就是一个程序，它读入用某种语言编写的源程序，并翻译成一个<strong>与之等价</strong>的另一种语言编写的源程序。常见的编译型语言比如C语言，它在经编译器编译后会生成一个与之等价的exe文件，计算机可以直接执行该文件，此过程类似于英文翻译中的笔译。</p>
+<h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><p>把源语言写的源程序作为输入，但不产生目标程序，而是边解释便执行源程序本身。常见的解释型语言比如Python，一个Python程序经Python解释器解释后并不会直接生成一个计算机可执行的程序，而是便执行边对源代码进行解释，此过程类似于英文翻译中的同声传译。</p>
+<h2 id="编译过程概述"><a href="#编译过程概述" class="headerlink" title="编译过程概述"></a>编译过程概述</h2><h3 id="过程"><a href="#过程" class="headerlink" title="过程"></a>过程</h3><p>编译过程主要分为以下几个步骤：</p>
+<ol>
+<li>词法分析</li>
+<li>语法分析</li>
+<li>语义分析</li>
+<li>中间代码生成</li>
+<li>代码优化</li>
+<li>目标代码生成</li>
+</ol>
+<p>以 a = b + c * d为例，具体过程如下：</p>
+<h3 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h3><ol>
+<li>读入源程序</li>
+<li>识别出程序中的各单词：a、=、b、+、c、*、d</li>
+<li>用记号方式表示识别出的单词</li>
+<li>词法检查：检查词法错误，主要是检查单词中使用了非法字符错误</li>
+<li>删除空白符、注释等</li>
+</ol>
+<h3 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h3><ol>
+<li>在词法分析的基础上，根据语言的语法规则，将单词符号串组成各类语法单位。</li>
+</ol>
+<p>具体来说，语法分析是在单词流的基础上建立一个层次结构——建立语法树。</p>
+<p><img src="/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1&2%EF%BC%89/%E8%AF%AD%E6%B3%95%E6%A0%91.png"></p>
+<ol start="2">
+<li>检查形式语法错误：</li>
+</ol>
+<p>例如：Y := A + B;  //C语言赋值语句应为 =</p>
+<p>​            (x + y)) * z  //括号不匹配</p>
+<h3 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h3><p>检查（静态）语义错误，提取语义信息，即利用语法分析阶段确定的层次结构来识别表达式及语句中的操作信息及类型信息。</p>
+<p>语义错误分为<strong>静态</strong>和<strong>动态</strong>两种：</p>
+<ol>
+<li>静态语义错误</li>
+</ol>
+<p>在编译期间可以检查到的语义错误，例如两指针相加或使用未声明的变量这种行为，这类错误如今功能强大的IDE一般能在编写代码的过程中指出。</p>
+<ol start="2">
+<li>动态语义错误</li>
+</ol>
+<p>在目标程序运行时才可以检查到的语义错误，例如除数为0等错误。</p>
+<h3 id="中间代码生成"><a href="#中间代码生成" class="headerlink" title="中间代码生成"></a>中间代码生成</h3><p>在源程序的语法分析和词法分析后，很多编译器会生成一个明确的低级的或类机器语言的中间表示。我们可以把这个表示看作是某个抽象机器的程序。这种中间表示应该具有两个重要性质：</p>
+<ol>
+<li>易于生成</li>
+<li>能够轻松的翻译成目标机器上的语言</li>
+</ol>
+<p>常见的中间表示形式比如三地址码（四元式）：</p>
+<p>temp1 = c * d            (*, c, d, temp1)</p>
+<h3 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h3><p>试图改进中间代码，以便生成更好的目标代码。例如将 a = b + c; d = a; 优化成 d = b + c;</p>
+<p>优化的种类包括表达式的优化、公共子表达式的优化、循环优化等等。</p>
+<h3 id="目标代码生成"><a href="#目标代码生成" class="headerlink" title="目标代码生成"></a>目标代码生成</h3><p>代码生成器以源程序的中间表示形式作为输入，并把它映射到目标语言。如果目标语言是机器代码，那么就必须为程序使用的每个变量选择寄存器或内存位置。然后，中间代码被翻译成为能够完成相同任务的机器指令序列。</p>
+<p>目标代码的三种形式：</p>
+<ol>
+<li>绝对指令代码：具有绝对地址的机器指令代码，无需连接即可运行。</li>
+<li>可重定位的指令代码：具有浮动地址的机器指令代码，需连接装配后方能运行。</li>
+<li>汇编指令代码：汇编语言形式的目标程序，需经汇编程序汇编产生相应的机器代码。</li>
+</ol>
+<h2 id="编译各阶段的分组"><a href="#编译各阶段的分组" class="headerlink" title="编译各阶段的分组"></a>编译各阶段的分组</h2><p>有时可以将编译过程分为前端和后端</p>
+<h3 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h3><ol>
+<li><p>前端包括词法分析、语法分析、语义分析，以及相关的错误处理和符号表的建立。</p>
+</li>
+<li><p>前端依赖于源程序且很大程度上独立于目标机器。</p>
+</li>
+<li><p>前端生成与平台无关的字节码。</p>
+</li>
+</ol>
+<h3 id="后端"><a href="#后端" class="headerlink" title="后端"></a>后端</h3><ol>
+<li>后端依赖于目标机器。</li>
+<li>后端处理对象是由前端产生的结果，即中间代码。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>编译原理</category>
+      </categories>
+      <tags>
+        <tag>编译原理</tag>
+        <tag>学习总结</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>让批处理文件中的中文正常显示</title>
+    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
+    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
+<span id="more"></span>
+
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
+<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
+<blockquote>
+<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
+</blockquote>
+<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
+<blockquote>
+<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
+</blockquote>
+<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
+<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
+<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
+<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
+<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
+<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
+<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
+[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
+&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
+
+<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+        <tag>编码格式</tag>
+        <tag>Windows10</tag>
+        <tag>注册表</tag>
       </tags>
   </entry>
   <entry>
@@ -876,23 +1016,8 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <category>计算机组成与系统结构</category>
       </categories>
       <tags>
-        <tag>计算机组成与系统结构</tag>
         <tag>学习总结</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>经验</tag>
+        <tag>计算机组成与系统结构</tag>
       </tags>
   </entry>
   <entry>
@@ -1002,48 +1127,6 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <tag>经验</tag>
         <tag>数据结构</tag>
         <tag>C++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>让批处理文件中的中文正常显示</title>
-    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
-    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
-<span id="more"></span>
-
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
-<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
-<blockquote>
-<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
-</blockquote>
-<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
-<blockquote>
-<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
-</blockquote>
-<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
-<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
-<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
-<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
-<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
-<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
-<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
-<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
-[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
-&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
-
-<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>编码格式</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-        <tag>Windows10</tag>
-        <tag>注册表</tag>
       </tags>
   </entry>
 </search>

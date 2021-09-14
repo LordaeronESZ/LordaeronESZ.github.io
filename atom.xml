@@ -6,7 +6,7 @@
   <link href="http://lordaeronesz.github.io/atom.xml" rel="self"/>
   
   <link href="http://lordaeronesz.github.io/"/>
-  <updated>2021-09-09T13:09:40.455Z</updated>
+  <updated>2021-09-14T12:34:07.800Z</updated>
   <id>http://lordaeronesz.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>编译原理学习总结（week1&amp;2）</title>
+    <link href="http://lordaeronesz.github.io/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1&amp;2%EF%BC%89/"/>
+    <id>http://lordaeronesz.github.io/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1&amp;2%EF%BC%89/</id>
+    <published>2021-09-14T11:06:32.000Z</published>
+    <updated>2021-09-14T12:34:07.800Z</updated>
+    
+    <content type="html"><![CDATA[<p>从本周开始，我将每周进行一次编译原理课程的学习总结，内容主要来自于教材、老师所讲的内容以及我个人的理解。</p><span id="more"></span><h1 id="第一章：绪论"><a href="#第一章：绪论" class="headerlink" title="第一章：绪论"></a>第一章：绪论</h1><h2 id="编译与解释"><a href="#编译与解释" class="headerlink" title="编译与解释"></a>编译与解释</h2><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><p>编译器就是一个程序，它读入用某种语言编写的源程序，并翻译成一个<strong>与之等价</strong>的另一种语言编写的源程序。常见的编译型语言比如C语言，它在经编译器编译后会生成一个与之等价的exe文件，计算机可以直接执行该文件，此过程类似于英文翻译中的笔译。</p><h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><p>把源语言写的源程序作为输入，但不产生目标程序，而是边解释便执行源程序本身。常见的解释型语言比如Python，一个Python程序经Python解释器解释后并不会直接生成一个计算机可执行的程序，而是便执行边对源代码进行解释，此过程类似于英文翻译中的同声传译。</p><h2 id="编译过程概述"><a href="#编译过程概述" class="headerlink" title="编译过程概述"></a>编译过程概述</h2><h3 id="过程"><a href="#过程" class="headerlink" title="过程"></a>过程</h3><p>编译过程主要分为以下几个步骤：</p><ol><li>词法分析</li><li>语法分析</li><li>语义分析</li><li>中间代码生成</li><li>代码优化</li><li>目标代码生成</li></ol><p>以 a = b + c * d为例，具体过程如下：</p><h3 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h3><ol><li>读入源程序</li><li>识别出程序中的各单词：a、=、b、+、c、*、d</li><li>用记号方式表示识别出的单词</li><li>词法检查：检查词法错误，主要是检查单词中使用了非法字符错误</li><li>删除空白符、注释等</li></ol><h3 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h3><ol><li>在词法分析的基础上，根据语言的语法规则，将单词符号串组成各类语法单位。</li></ol><p>具体来说，语法分析是在单词流的基础上建立一个层次结构——建立语法树。</p><p><img src="/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88week1&2%EF%BC%89/%E8%AF%AD%E6%B3%95%E6%A0%91.png"></p><ol start="2"><li>检查形式语法错误：</li></ol><p>例如：Y := A + B;  //C语言赋值语句应为 =</p><p>​            (x + y)) * z  //括号不匹配</p><h3 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h3><p>检查（静态）语义错误，提取语义信息，即利用语法分析阶段确定的层次结构来识别表达式及语句中的操作信息及类型信息。</p><p>语义错误分为<strong>静态</strong>和<strong>动态</strong>两种：</p><ol><li>静态语义错误</li></ol><p>在编译期间可以检查到的语义错误，例如两指针相加或使用未声明的变量这种行为，这类错误如今功能强大的IDE一般能在编写代码的过程中指出。</p><ol start="2"><li>动态语义错误</li></ol><p>在目标程序运行时才可以检查到的语义错误，例如除数为0等错误。</p><h3 id="中间代码生成"><a href="#中间代码生成" class="headerlink" title="中间代码生成"></a>中间代码生成</h3><p>在源程序的语法分析和词法分析后，很多编译器会生成一个明确的低级的或类机器语言的中间表示。我们可以把这个表示看作是某个抽象机器的程序。这种中间表示应该具有两个重要性质：</p><ol><li>易于生成</li><li>能够轻松的翻译成目标机器上的语言</li></ol><p>常见的中间表示形式比如三地址码（四元式）：</p><p>temp1 = c * d            (*, c, d, temp1)</p><h3 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h3><p>试图改进中间代码，以便生成更好的目标代码。例如将 a = b + c; d = a; 优化成 d = b + c;</p><p>优化的种类包括表达式的优化、公共子表达式的优化、循环优化等等。</p><h3 id="目标代码生成"><a href="#目标代码生成" class="headerlink" title="目标代码生成"></a>目标代码生成</h3><p>代码生成器以源程序的中间表示形式作为输入，并把它映射到目标语言。如果目标语言是机器代码，那么就必须为程序使用的每个变量选择寄存器或内存位置。然后，中间代码被翻译成为能够完成相同任务的机器指令序列。</p><p>目标代码的三种形式：</p><ol><li>绝对指令代码：具有绝对地址的机器指令代码，无需连接即可运行。</li><li>可重定位的指令代码：具有浮动地址的机器指令代码，需连接装配后方能运行。</li><li>汇编指令代码：汇编语言形式的目标程序，需经汇编程序汇编产生相应的机器代码。</li></ol><h2 id="编译各阶段的分组"><a href="#编译各阶段的分组" class="headerlink" title="编译各阶段的分组"></a>编译各阶段的分组</h2><p>有时可以将编译过程分为前端和后端</p><h3 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h3><ol><li><p>前端包括词法分析、语法分析、语义分析，以及相关的错误处理和符号表的建立。</p></li><li><p>前端依赖于源程序且很大程度上独立于目标机器。</p></li><li><p>前端生成与平台无关的字节码。</p></li></ol><h3 id="后端"><a href="#后端" class="headerlink" title="后端"></a>后端</h3><ol><li>后端依赖于目标机器。</li><li>后端处理对象是由前端产生的结果，即中间代码。</li></ol>]]></content>
+    
+    
+    <summary type="html">&lt;p&gt;从本周开始，我将每周进行一次编译原理课程的学习总结，内容主要来自于教材、老师所讲的内容以及我个人的理解。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="编译原理" scheme="http://lordaeronesz.github.io/categories/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86/"/>
+    
+    
+    <category term="编译原理" scheme="http://lordaeronesz.github.io/tags/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86/"/>
+    
+    <category term="学习总结" scheme="http://lordaeronesz.github.io/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/"/>
+    
+  </entry>
   
   <entry>
     <title>计算机组成与系统结构学习总结（week1）</title>
@@ -33,9 +56,9 @@
     <category term="计算机组成与系统结构" scheme="http://lordaeronesz.github.io/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84/"/>
     
     
-    <category term="计算机组成与系统结构" scheme="http://lordaeronesz.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84/"/>
-    
     <category term="学习总结" scheme="http://lordaeronesz.github.io/tags/%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/"/>
+    
+    <category term="计算机组成与系统结构" scheme="http://lordaeronesz.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84/"/>
     
   </entry>
   
@@ -137,9 +160,9 @@
     
     <category term="CTF" scheme="http://lordaeronesz.github.io/tags/CTF/"/>
     
-    <category term="信息安全" scheme="http://lordaeronesz.github.io/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/"/>
-    
     <category term="Crypto" scheme="http://lordaeronesz.github.io/tags/Crypto/"/>
+    
+    <category term="信息安全" scheme="http://lordaeronesz.github.io/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/"/>
     
     <category term="攻防世界" scheme="http://lordaeronesz.github.io/tags/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/"/>
     
@@ -212,11 +235,11 @@
     <category term="经验" scheme="http://lordaeronesz.github.io/categories/%E7%BB%8F%E9%AA%8C/"/>
     
     
-    <category term="编码格式" scheme="http://lordaeronesz.github.io/tags/%E7%BC%96%E7%A0%81%E6%A0%BC%E5%BC%8F/"/>
-    
     <category term="经验" scheme="http://lordaeronesz.github.io/tags/%E7%BB%8F%E9%AA%8C/"/>
     
     <category term="批处理" scheme="http://lordaeronesz.github.io/tags/%E6%89%B9%E5%A4%84%E7%90%86/"/>
+    
+    <category term="编码格式" scheme="http://lordaeronesz.github.io/tags/%E7%BC%96%E7%A0%81%E6%A0%BC%E5%BC%8F/"/>
     
     <category term="Windows10" scheme="http://lordaeronesz.github.io/tags/Windows10/"/>
     
