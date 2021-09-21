@@ -1132,15 +1132,15 @@ extra field (variable size)</code></pre>
   <entry>
     <title>C++STL容器总结</title>
     <url>/2021/09/11/C++STL%E5%AE%B9%E5%99%A8%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>本文将对常用的C++标准库中的容器类做一个总结，便于学习记忆以及今后的查阅。</p>
+    <content><![CDATA[<p>本文将对常用的 C++ 标准库中的容器类做一个总结，便于学习记忆以及今后的查阅。</p>
 <span id="more"></span>
 
 <h1 id="string"><a href="#string" class="headerlink" title="string"></a>string</h1><h2 id="at"><a href="#at" class="headerlink" title="at"></a>at</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">char</span> <span class="token operator">&amp;</span><span class="token function">at</span><span class="token punctuation">(</span>size_t _Off<span class="token punctuation">)</span></code></pre>
 
-<p>与下标访问类似，返回指定位字符的引用。不同之处为对于下标访问，字符串的末尾元素有效且返回’\0’，且如果越界访问则会未定义行为，而使用at进行访问不包含末尾元素，且越界访问会抛出out_of_range异常。</p>
+<p>与下标访问类似，返回指定位字符的引用。不同之处为对于下标访问，字符串的末尾元素有效且返回’\0’，且如果越界访问则会未定义行为，而使用 at 进行访问不包含末尾元素，且越界访问会抛出 out_of_range 异常。</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp">string <span class="token function">s</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//输出'\0'</span>
-cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">at</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//抛出out_of_range异常</span></code></pre>
+cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">at</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//抛出 out_of_range 异常</span></code></pre>
 
 <h2 id="front、back"><a href="#front、back" class="headerlink" title="front、back"></a>front、back</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">char</span> <span class="token operator">&amp;</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 <span class="token keyword">char</span> <span class="token operator">&amp;</span><span class="token function">back</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
@@ -1161,7 +1161,7 @@ string<span class="token double-colon punctuation">::</span>iterator <span class
 <h2 id="length、size"><a href="#length、size" class="headerlink" title="length、size"></a>length、size</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp">size_t <span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span>
 size_t <span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span></code></pre>
 
-<p><strong>length</strong>和<strong>size</strong>都是返回字符串的长度，二者没有区别，length是沿用了C语言的习惯而被保留下来的。</p>
+<p><strong>length</strong> 和 <strong>size</strong> 都是返回字符串的长度，二者没有区别，length 是沿用了 C 语言的习惯而被保留下来的。</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp">string <span class="token function">s</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">","</span> <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//输出3,3</span></code></pre>
 
@@ -1170,7 +1170,7 @@ cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuatio
 <p>清空字符串，无需赘述。</p>
 <h2 id="empty"><a href="#empty" class="headerlink" title="empty"></a>empty</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span></code></pre>
 
-<p>判断字符串是否为空，为空返回true，非空返回false。</p>
+<p>判断字符串是否为空，为空返回 true，非空返回 false。</p>
 <h2 id="erase"><a href="#erase" class="headerlink" title="erase"></a>erase</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">//删除指定迭代器位置_Where的字符，返回下个元素的迭代器</span>
 string<span class="token double-colon punctuation">::</span>iterator <span class="token function">erase</span><span class="token punctuation">(</span>string<span class="token double-colon punctuation">::</span>const_interator _Where<span class="token punctuation">)</span>
 
@@ -1199,7 +1199,7 @@ size_t <span class="token function">find</span><span class="token punctuation">(
 <span class="token comment">//查找字符串从下标_Off开始，第一个子串_Right的下标开始位置，并将其返回    </span>
 size_t <span class="token function">find</span><span class="token punctuation">(</span>string <span class="token operator">&amp;</span>_Right<span class="token punctuation">,</span> size_t _Off <span class="token operator">=</span> <span class="token number">0U</span><span class="token punctuation">)</span> <span class="token keyword">const</span></code></pre>
 
-<p>find函数若是没有找到相匹配的字符或字符串，则会返回一个常数string::npos，可用<code>if (str.find(_Ch, _Off) != string::npos)</code>来判断是否查找到目标值。示例如下：</p>
+<p>find 函数若是没有找到相匹配的字符或字符串，则会返回一个常数 string::npos，可用<code>if (str.find(_Ch, _Off) != string::npos)</code>来判断是否查找到目标值。示例如下：</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp">string <span class="token function">s</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//输出2</span>
 cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token string">"bc"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//输出1</span>
@@ -1251,17 +1251,45 @@ cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuatio
 <span class="token comment">//向字符串尾添加字符_Ch</span>
 <span class="token keyword">void</span> <span class="token function">push_back</span><span class="token punctuation">(</span><span class="token keyword">char</span> _Ch<span class="token punctuation">)</span></code></pre>
 
-<h2 id="substr"><a href="#substr" class="headerlink" title="substr"></a>substr</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp">string <span class="token function">sub_str</span><span class="token punctuation">(</span>size_t _Off <span class="token operator">=</span> <span class="token number">0U</span><span class="token punctuation">,</span> size_t _Count <span class="token operator">=</span> <span class="token number">4294967295U</span><span class="token punctuation">)</span></code></pre>
+<h2 id="substr"><a href="#substr" class="headerlink" title="substr"></a>substr</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">//从下标 \_Off 开始，截取长度为 _Count 的字符串，并返回修改后的字符串</span>
+string <span class="token function">sub_str</span><span class="token punctuation">(</span>size_t _Off <span class="token operator">=</span> <span class="token number">0U</span><span class="token punctuation">,</span> size_t _Count <span class="token operator">=</span> <span class="token number">4294967295U</span><span class="token punctuation">)</span></code></pre>
 
-<p>从下标_Off开始，截取长度为_Count的字符串，并返回。示例如下：</p>
+<p>示例如下：</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp">string <span class="token function">s</span><span class="token punctuation">(</span><span class="token string">"abc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 string sub_s <span class="token operator">=</span> s<span class="token punctuation">.</span><span class="token function">substr</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 cout <span class="token operator">&lt;&lt;</span> sub_s <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span> <span class="token comment">//输出字符串ab</span></code></pre>
 
+<h1 id="vector"><a href="#vector" class="headerlink" title="vector"></a>vector</h1><h2 id="at-1"><a href="#at-1" class="headerlink" title="at"></a>at</h2><p>参考 string 中的用法</p>
+<h2 id="front、back-1"><a href="#front、back-1" class="headerlink" title="front、back"></a>front、back</h2><p>参考 string 中的用法</p>
+<h2 id="begin、end-1"><a href="#begin、end-1" class="headerlink" title="begin、end"></a>begin、end</h2><p>参考 string 中的用法</p>
+<h2 id="size"><a href="#size" class="headerlink" title="size"></a>size</h2><p>参考 string 中的用法</p>
+<h2 id="clear-1"><a href="#clear-1" class="headerlink" title="clear"></a>clear</h2><p>参考 string 中的用法</p>
+<h2 id="emplace"><a href="#emplace" class="headerlink" title="emplace"></a>emplace</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">template</span><span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token class-name">T</span><span class="token operator">></span>
+<span class="token comment">//在迭代器_Where的位置插入一个元素_Val，并返回该位置的迭代器</span>
+vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator <span class="token generic-function"><span class="token function">emplace</span><span class="token generic class-name"><span class="token operator">&lt;</span>T <span class="token operator">&amp;</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _Where<span class="token punctuation">,</span> T <span class="token operator">&amp;</span>_Val<span class="token punctuation">)</span>  </code></pre>
 
+<p>同样是插入元素，相较于 insert 的不同之处在于，emplace 在插入元素时，是在容器的指定位置直接构造元素，而不是先单独生成，再将其复制（或移动）到容器中。因此执行效率会更高。</p>
+<h2 id="emplace-back"><a href="#emplace-back" class="headerlink" title="emplace_back"></a>emplace_back</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">template</span><span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token class-name">T</span><span class="token operator">></span>
+<span class="token comment">//在末尾位置添加一个元素_Val</span>
+<span class="token keyword">void</span> <span class="token generic-function"><span class="token function">emplace_back</span><span class="token generic class-name"><span class="token operator">&lt;</span>T<span class="token operator">></span></span></span><span class="token punctuation">(</span>T <span class="token operator">&amp;</span>_Val<span class="token punctuation">)</span></code></pre>
 
+<p>与 emplace 原理相同，效率高于 push_back。</p>
+<h2 id="empty-1"><a href="#empty-1" class="headerlink" title="empty"></a>empty</h2><p>参考 string 中的用法</p>
+<h2 id="erase-1"><a href="#erase-1" class="headerlink" title="erase"></a>erase</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">template</span><span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token class-name">T</span><span class="token operator">></span>
+<span class="token comment">//删除迭代器_Where位置的元素，并返回_Where后一位的迭代器</span>
+vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator <span class="token function">erase</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _Where<span class="token punctuation">)</span>
 
+<span class="token comment">//删除迭代器_First和_Last之间（不包含_Last）的所有元素，并返回_Last位置的迭代器</span>
+vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator <span class="token function">erase</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _First<span class="token punctuation">,</span> vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _Last<span class="token punctuation">)</span></code></pre>
 
+<h2 id="insert-1"><a href="#insert-1" class="headerlink" title="insert"></a>insert</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">template</span><span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token class-name">T</span><span class="token operator">></span>
+<span class="token comment">//在迭代器_Where位置插入_Count个元素_Val，并返回修改后_Where位置的迭代器</span>
+vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator <span class="token function">insert</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _Where<span class="token punctuation">,</span> size_t _Count<span class="token punctuation">,</span> <span class="token keyword">int</span> <span class="token operator">&amp;</span>_Val<span class="token punctuation">)</span>
+
+<span class="token comment">//在迭代器_Where位置插入一个元素_Val，并返回修改后_Where位置的迭代器</span>
+vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator <span class="token function">insert</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token double-colon punctuation">::</span>const_iterator _Where<span class="token punctuation">,</span> <span class="token keyword">int</span> <span class="token operator">&amp;</span>_Val<span class="token punctuation">)</span></code></pre>
+
+<h2 id="pop-back、push-back-1"><a href="#pop-back、push-back-1" class="headerlink" title="pop_back、push_back"></a>pop_back、push_back</h2><p>参考 string 中的用法</p>
 ]]></content>
       <categories>
         <category>C++</category>
