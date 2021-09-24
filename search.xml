@@ -1242,9 +1242,9 @@ extra field (variable size)</code></pre>
 <h4 id="奇偶校验码"><a href="#奇偶校验码" class="headerlink" title="奇偶校验码"></a>奇偶校验码</h4><p>校验码 = 若干有效信息位 + 一位校验位</p>
 <p>其中，一位校验位取“0”或“1”取决于整个校验码中“1”的个数是奇数还是偶数。若为奇数则是奇校验；偶数则是偶校验。</p>
 <p>即奇校验位满足：</p>
-<p>![](C:/Users/16675/Desktop/TO WRITE/奇校验.png)</p>
+<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%A5%87%E6%A0%A1%E9%AA%8C.png"></p>
 <p>偶校验为满足：</p>
-<p>![](C:/Users/16675/Desktop/TO WRITE/偶校验.png)</p>
+<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%81%B6%E6%A0%A1%E9%AA%8C.png"></p>
 <p>如果一个字串从部件 A 运送到部件 B，则在 A 处先计算得到检验位 C，再合并起来一同送入 B 中，并计算加上Ｃ后的整个字串的异或值。若为１，则代表收到的信息发生了变更，即出现了错误；若为０则代表正确。</p>
 <p>但是奇偶校验的方法不能检查偶数位错，也无法纠错。</p>
 ]]></content>
