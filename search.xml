@@ -1256,4 +1256,51 @@ extra field (variable size)</code></pre>
         <tag>计算机组成与系统结构</tag>
       </tags>
   </entry>
+  <entry>
+    <title>位运算基础及应用</title>
+    <url>/2021/09/26/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<p>计算机中的数据以二进制的形式存储，即0、1两种状态。<strong>位运算</strong>就是直接对整数在内存中的二进制位进行操作。本文将介绍位运算的各操作符以及其在实际开发中的常见应用。</p>
+<span id="more"></span>
+
+<h1 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h1><h2 id="amp-（与）"><a href="#amp-（与）" class="headerlink" title="&amp;（与）"></a>&amp;（与）</h2><p>参加运算的两个数据，按二进制位进行与运算。（两位都为1时才为1，否则为0）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行与运算得：0100 = 4. 即 12 &amp; 5 = 4.</p>
+<h2 id="（或）"><a href="#（或）" class="headerlink" title="|（或）"></a>|（或）</h2><p>参加运算的两个数据，按二进制位进行或运算。（两位都为0时才为0，否则为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行或运算得：1101 = 13. 即 12 | 5 = 13.</p>
+<h2 id="（异或）"><a href="#（异或）" class="headerlink" title="^（异或）"></a>^（异或）</h2><p>参加运算的两个数据，按二进制位进行异或运算。（相同为0，不同为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行异或运算得：1001 = 9. 即 12 ^ 5 = 9.</p>
+<h2 id="（取反）"><a href="#（取反）" class="headerlink" title="~（取反）"></a>~（取反）</h2><p>参加运算的数据，其各二进制位进行取反运算。（0变成1，1变成0）</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 取反后得：1 111 1111 1111 1010（符号位为 1，为负数）将此补码转换为原码得：1 000 0000 0000 0110，十进制为 -6. 即 ~5 = -6.</p>
+<h2 id="lt-lt-（左移）"><a href="#lt-lt-（左移）" class="headerlink" title="&lt;&lt;（左移）"></a>&lt;&lt;（左移）</h2><p>参加运算的数据，其各二进制位向左进行移位操作，高位丢弃，低位补0.</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 3 位后得：0 000 0000 0010 1000 = 40.</p>
+<p>即 5 &lt;&lt; 3 = 40.</p>
+<h2 id="gt-gt-（右移）"><a href="#gt-gt-（右移）" class="headerlink" title="&gt;&gt;（右移）"></a>&gt;&gt;（右移）</h2><p>参加运算的数据，其各二进制位向右进行移位操作，低位丢弃，对于无符号数，高位补 0，对于有符号数，高位补原来的符号位。</p>
+<ul>
+<li>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 2 位后得：0 000 0000 0000 0001 = 1. 即 5 &gt;&gt; 2 = 1.</li>
+<li>例如 -5，对于一个 int16 型数据，它的二进制形式为 1 111 1111 1111 1011. 右移 2 位后得：1 111 1111 1111 1110 = -2. 即 -5 &gt;&gt; 2 = -2.</li>
+</ul>
+<h1 id="常见应用"><a href="#常见应用" class="headerlink" title="常见应用"></a>常见应用</h1><h2 id="左移、右移实现乘除法"><a href="#左移、右移实现乘除法" class="headerlink" title="左移、右移实现乘除法"></a>左移、右移实现乘除法</h2><p>由左移、右移的定义可知，一个二进制数 0000 1010 左移两位后为 0010 1000 = 2<sup>5</sup> * 2<sup>3</sup> = 2<sup>2</sup> * (2<sup>3</sup> * 2<sup>1</sup>). 由此可见，在数据未溢出的情况下，左移 n 位，相当于原数的值乘以 2<sup>n</sup>. </p>
+<p>同理，右移相当于除以 2<sup>n</sup>.</p>
+<h2 id="异或判断两数符号的异同"><a href="#异或判断两数符号的异同" class="headerlink" title="异或判断两数符号的异同"></a>异或判断两数符号的异同</h2><p>判断两个有符号数是同号还是异号，我们可以用条件控制语句进行判断；也可以将两数相乘判断积的正负；同样也可以使用异或运算符。</p>
+<p>由于有符号数最高位为符号位，因此在进行异或运算时，两数的符号位也将参与运算。若两数的符号位相同，则异或结果 res 的符号位为 0，即 res &gt;= 0; 若两数的符号位不同，则异或结果 res 的符号位为 1，即 res &lt; 0.</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isSameSign</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">^</span> b<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h2 id="与运算判断数的奇偶性"><a href="#与运算判断数的奇偶性" class="headerlink" title="与运算判断数的奇偶性"></a>与运算判断数的奇偶性</h2><p>和异或判断两数符号异同类似原理类似，根据二进制数的最低位是 1 还是 0 来判断该数是奇数还是偶数。</p>
+<p>要判断一个数 a 的奇偶性，可以先计算 res = a &amp; 1 的值。若 res = 0，则为偶数；若 res = 1，则为奇数。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isOdd</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>位运算</tag>
+      </tags>
+  </entry>
 </search>
