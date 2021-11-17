@@ -1,275 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>hexo博客的备份与恢复</title>
-    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
-    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+    <title>CSharp事件和委托</title>
+    <url>/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/</url>
+    <content><![CDATA[<p>委托与事件在开发中的应用非常广泛，本文将简单介绍C#中委托和事件的定义、使用方法，以及它们之间的区别和联系。</p>
 <span id="more"></span>
 
-<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
-<p>首先我们先来观察整个博客目录的结构：</p>
-<ul>
-<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-</li>
-<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-</li>
-<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-</li>
-<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
-</li>
-<li><p>source    保存了用户文章的源文件，需要备份。</p>
-</li>
-<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
-</li>
-<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-</li>
-<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
-</li>
-<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-</li>
-<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
-</li>
-<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
-</li>
-</ul>
-<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
-<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> 备份完成！
-pause</code></pre>
+<h1 id="委托"><a href="#委托" class="headerlink" title="委托"></a>委托</h1><p>C#中的<strong>委托（delegate）</strong>类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自<code>System.Delegate</code>类。</p>
+<h2 id="委托的声明"><a href="#委托的声明" class="headerlink" title="委托的声明"></a>委托的声明</h2><p>声明委托的语法如下：</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span></code></pre>
 
-<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
-<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
-<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
-<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
-<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
-<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
-<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
+<p>比方说，我要声明一个无返回值，无参数的委托。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>在声明了委托类型后，必须将其实例化才能生效，可以使用<strong>new</strong>关键字创建并传入参数（参数为一个特定的方法名）。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>以上实例中我们实例化了一个带有<strong>Func1</strong>方法引用的<strong>MyDelegate</strong>类型变量，并将其赋值给了<strong>myDlegate</strong>实例。</p>
+<h2 id="委托的调用"><a href="#委托的调用" class="headerlink" title="委托的调用"></a>委托的调用</h2><p>如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2 id="多播委托"><a href="#多播委托" class="headerlink" title="多播委托"></a>多播委托</h2><p>其实一个委托类型的变量可以同时包含多个方法的引用，如果要在委托实例化后对方法引用进行增删操作，可以使用+=或-=运算符。</p>
+<p>例如我们要给<strong>myDelegate</strong>添加<strong>Func2</strong>和<strong>Func3</strong>方法并删除对<strong>Func1</strong>方法的引用。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
+myDelegate <span class="token operator">+=</span> Func3<span class="token punctuation">;</span>
+myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span></code></pre>
+
+<h2 id="预定义委托"><a href="#预定义委托" class="headerlink" title="预定义委托"></a>预定义委托</h2><p>在.NET Framework 3.5以来，提供了很多的泛型委托，原先需要手动定义的现在可以直接使用了。</p>
+<h3 id="Action委托"><a href="#Action委托" class="headerlink" title="Action委托"></a>Action委托</h3><p><strong>Action</strong>委托代表返回为空的委托，以下示例实例化一个<strong>Action</strong>委托，并引用<strong>Plus</strong>方法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>a <span class="token operator">+</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span></code></pre>
+
+<p>泛型类型指定为方法的参数类型，最多可指定16个。</p>
+<h3 id="Func委托"><a href="#Func委托" class="headerlink" title="Func委托"></a>Func委托</h3><p><strong>Func</strong>委托代表返回值非空的委托，以下实例化一个<strong>Func</strong>委托，并引用<strong>ConnectString</strong>方法。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> s1 <span class="token operator">+</span> s2<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span></code></pre>
+
+<p>最后一位泛型类型指定方法的返回值类型，前面各类型指定方法参数类型，同样最多指定16个。</p>
+<h1 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h1><p><strong>事件（Event）</strong>可以理解为一种封装好的委托，用于程序对用户的某些操作进行响应。事件在类内声明，通过使用同一个类或其他类中的委托与事件处理程序相关联。</p>
+<h2 id="通过委托创建事件"><a href="#通过委托创建事件" class="headerlink" title="通过委托创建事件"></a>通过委托创建事件</h2><h3 id="事件的声明"><a href="#事件的声明" class="headerlink" title="事件的声明"></a>事件的声明</h3><p>事件声明方法与实例化委托很类似，不同之处在于需要在委托类型前加上<strong>event</strong>关键字。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span></code></pre>
+
+<h3 id="与委托变量的区别"><a href="#与委托变量的区别" class="headerlink" title="与委托变量的区别"></a>与委托变量的区别</h3><ol>
+<li><p>事件只能作为类的成员变量</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent1<span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
+    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent2<span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre></li>
+<li><p>事件只能在类内调用</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">EventFunc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">class</span> <span class="token class-name">Test</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token class-name">DelegateClass</span> delegateClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">DelegateClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        delegateClass<span class="token punctuation">.</span><span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre></li>
+</ol>
+<h2 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布-订阅模式"></a>发布-订阅模式</h2><p>事件使用<strong>发布-订阅（publisher-subscriber）模型</strong>，在这个模型中，<strong>发布器（publisher）</strong>为包含事件的类，<strong>订阅器（subscriber）</strong>为接收事件的类，<strong>调度中心（Topic）</strong>为事件。</p>
+<p>以下通过一个简单的案例来更好的理解这种模式。</p>
+<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
+<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Collections<span class="token punctuation">.</span>Generic</span><span class="token punctuation">;</span>
+<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Text</span><span class="token punctuation">;</span>
+
+<span class="token keyword">namespace</span> CSharp事件
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">//发布器</span>
+    <span class="token keyword">class</span> <span class="token class-name">Publisher</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">private</span> <span class="token class-name"><span class="token keyword">int</span></span> <span class="token keyword">value</span><span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token function">Publisher</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">//声明委托以及事件</span>
+        <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> changeValue<span class="token punctuation">;</span>
+        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">SetValue</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token class-name"><span class="token keyword">int</span></span> formerValue <span class="token operator">=</span> <span class="token keyword">value</span><span class="token punctuation">;</span>
+            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Set is complete!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//当value值改变时，调用事件</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>changeValue <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> formerValue <span class="token operator">!=</span> <span class="token keyword">value</span><span class="token punctuation">)</span>
+                <span class="token function">changeValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">//订阅器</span>
+    <span class="token keyword">class</span> <span class="token class-name">Subscriber</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"The value has been changed!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">class</span> <span class="token class-name">MainClass</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span>
+        <span class="token punctuation">&#123;</span>
+            <span class="token comment">//实例化订阅器并赋value为3</span>
+            <span class="token class-name">Publisher</span> publisher <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Publisher</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Subscriber</span> subscriber <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Subscriber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//将订阅器中的方法Print注册到发布器的事件中</span>
+            publisher<span class="token punctuation">.</span>changeValue <span class="token operator">+=</span> subscriber<span class="token punctuation">.</span>Print<span class="token punctuation">;</span>
+            <span class="token comment">//从控制台接受一个整数</span>
+            <span class="token class-name"><span class="token keyword">int</span></span> v <span class="token operator">=</span> Convert<span class="token punctuation">.</span><span class="token function">ToInt32</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span><span class="token function">ReadLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">//设置订阅器对象的value值</span>
+            publisher<span class="token punctuation">.</span><span class="token function">SetValue</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+</code></pre>
+
+<p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/same.png"></p>
+<p>当输入值为5（与初始化value值不同），输出结果如下：</p>
+<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/different.png"></p>
 ]]></content>
       <categories>
-        <category>经验</category>
+        <category>CSharp</category>
       </categories>
       <tags>
-        <tag>博客</tag>
-        <tag>备份</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ZIP格式分析</title>
-    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
-<span id="more"></span>
-
-<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
-<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
-</blockquote>
-<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
-<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
-<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
-<pre class="language-none"><code class="language-none">[local file header 1]
-[file data 1]
-[data descriptor 1]
-. 
-.
-.
-[local file header n]
-[file data n]
-[data descriptor n]
-[archive decryption header] (EFS)
-[archive extra data record] (EFS)
-[central directory]
-[zip64 end of central directory record]
-[zip64 end of central directory locator] 
-[end of central directory record]</code></pre>
-
-<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
-<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
-version needed to extract       2 bytes
-general purpose bit flag        2 bytes
-compression method              2 bytes
-last mod file time              2 bytes
-last mod file date              2 bytes
-crc-32                          4 bytes
-compressed size                 4 bytes
-uncompressed size               4 bytes
-file name length                2 bytes
-extra field length              2 bytes
-
-file name (variable size)
-extra field (variable size)</code></pre>
-
-<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
-<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
-<ol>
-<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
-<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
-<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
-<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：无</li>
-</ol>
-<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
-<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes</code></pre>
-
-<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
-<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
-.
-.
-. 
-[file header n]
-[digital signature] </code></pre>
-
-<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
-      version made by                 2 bytes
-      version needed to extract       2 bytes
-      general purpose bit flag        2 bytes
-      compression method              2 bytes
-      last mod file time              2 bytes
-      last mod file date              2 bytes
-      crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes
-      file name length                2 bytes
-      extra field length              2 bytes
-      file comment length             2 bytes
-      disk number start               2 bytes
-      internal file attributes        2 bytes
-      external file attributes        4 bytes
-      relative offset of local header 4 bytes
-
-      file name (variable size)
-      extra field (variable size)
-      file comment (variable size)</code></pre>
-
-<ol>
-<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
-<li>压缩所用pkware版本(version mad by)：0x003f.</li>
-<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
-<li>压缩方式(compression method)：0x0000.</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
-<li>文件最后修改日期(last mod file date)：0x531d.</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a.</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0024.</li>
-<li>文件注释长度(file comment length)：0x0000.</li>
-<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
-<li>内部文件属性(internal file attributes)：0x0000.</li>
-<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
-<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
-<li>文件注释(file comment)：无</li>
-</ol>
-<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
-      size of data                    2 bytes
-      signature data (variable size)</code></pre>
-
-<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
-<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
-      number of this disk             2 bytes
-      number of the disk with the
-      start of the central directory  2 bytes
-      total number of entries in the
-      central directory on this disk  2 bytes
-      total number of entries in
-      the central directory           2 bytes
-      size of the central directory   4 bytes
-      offset of start of central
-      directory with respect to
-      the starting disk number        4 bytes
-      .ZIP file comment length        2 bytes
-      .ZIP file comment       (variable size)</code></pre>
-
-<ol>
-<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
-<li>该磁盘编号(number of this disk)：0x0000.</li>
-<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
-<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录大小(size of the central directory)：0x0000005a.</li>
-<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
-<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
-<li>ZIP文件注释(.ZIP file comment)：无</li>
-</ol>
-<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
-<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>CTF</tag>
-        <tag>信息安全</tag>
-        <tag>文件</tag>
-        <tag>编码格式</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>位运算基础及应用</title>
-    <url>/2021/09/26/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%BA%94%E7%94%A8/</url>
-    <content><![CDATA[<p>计算机中的数据以二进制的形式存储，即0、1两种状态。<strong>位运算</strong>就是直接对整数在内存中的二进制位进行操作。本文将介绍位运算的各操作符以及常见应用。</p>
-<span id="more"></span>
-
-<h1 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h1><h2 id="amp-（与）"><a href="#amp-（与）" class="headerlink" title="&amp;（与）"></a>&amp;（与）</h2><p>参加运算的两个数据，按二进制位进行与运算。（两位都为1时才为1，否则为0）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行与运算得：0100 = 4. 即 12 &amp; 5 = 4.</p>
-<h2 id="（或）"><a href="#（或）" class="headerlink" title="|（或）"></a>|（或）</h2><p>参加运算的两个数据，按二进制位进行或运算。（两位都为0时才为0，否则为1）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行或运算得：1101 = 13. 即 12 | 5 = 13.</p>
-<h2 id="（异或）"><a href="#（异或）" class="headerlink" title="^（异或）"></a>^（异或）</h2><p>参加运算的两个数据，按二进制位进行异或运算。（相同为0，不同为1）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行异或运算得：1001 = 9. 即 12 ^ 5 = 9.</p>
-<h2 id="（取反）"><a href="#（取反）" class="headerlink" title="~（取反）"></a>~（取反）</h2><p>参加运算的数据，其各二进制位进行取反运算。（0变成1，1变成0）</p>
-<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 取反后得：1 111 1111 1111 1010（符号位为 1，为负数）将此补码转换为原码得：1 000 0000 0000 0110，十进制为 -6. 即 ~5 = -6.</p>
-<h2 id="lt-lt-（左移）"><a href="#lt-lt-（左移）" class="headerlink" title="&lt;&lt;（左移）"></a>&lt;&lt;（左移）</h2><p>参加运算的数据，其各二进制位向左进行移位操作，高位丢弃，低位补0.</p>
-<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 3 位后得：0 000 0000 0010 1000 = 40.</p>
-<p>即 5 &lt;&lt; 3 = 40.</p>
-<h2 id="gt-gt-（右移）"><a href="#gt-gt-（右移）" class="headerlink" title="&gt;&gt;（右移）"></a>&gt;&gt;（右移）</h2><p>参加运算的数据，其各二进制位向右进行移位操作，低位丢弃，对于无符号数，高位补 0，对于有符号数，高位补原来的符号位。</p>
-<ul>
-<li>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 2 位后得：0 000 0000 0000 0001 = 1. 即 5 &gt;&gt; 2 = 1.</li>
-<li>例如 -5，对于一个 int16 型数据，它的二进制形式为 1 111 1111 1111 1011. 右移 2 位后得：1 111 1111 1111 1110 = -2. 即 -5 &gt;&gt; 2 = -2.</li>
-</ul>
-<h1 id="常见应用"><a href="#常见应用" class="headerlink" title="常见应用"></a>常见应用</h1><h2 id="左移、右移实现乘除法"><a href="#左移、右移实现乘除法" class="headerlink" title="左移、右移实现乘除法"></a>左移、右移实现乘除法</h2><p>由左移、右移的定义可知，一个二进制数 0000 1010 左移两位后为 0010 1000 = 2<sup>5</sup> * 2<sup>3</sup> = 2<sup>2</sup> * (2<sup>3</sup> * 2<sup>1</sup>). 由此可见，在数据未溢出的情况下，左移 n 位，相当于原数的值乘以 2<sup>n</sup>. </p>
-<p>同理，右移相当于除以 2<sup>n</sup>.</p>
-<h2 id="异或判断两数符号的异同"><a href="#异或判断两数符号的异同" class="headerlink" title="异或判断两数符号的异同"></a>异或判断两数符号的异同</h2><p>判断两个有符号数是同号还是异号，我们可以用条件控制语句进行判断；也可以将两数相乘判断积的正负；同样也可以使用异或运算符。</p>
-<p>由于有符号数最高位为符号位，因此在进行异或运算时，两数的符号位也将参与运算。若两数的符号位相同，则异或结果 res 的符号位为 0，即 res &gt;= 0; 若两数的符号位不同，则异或结果 res 的符号位为 1，即 res &lt; 0.</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isSameSign</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">^</span> b<span class="token punctuation">;</span>
-    <span class="token keyword">return</span> res <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-<h2 id="与运算判断数的奇偶性"><a href="#与运算判断数的奇偶性" class="headerlink" title="与运算判断数的奇偶性"></a>与运算判断数的奇偶性</h2><p>和异或判断两数符号异同类似原理类似，根据二进制数的最低位是 1 还是 0 来判断该数是奇数还是偶数。</p>
-<p>要判断一个数 a 的奇偶性，可以先计算 res = a &amp; 1 的值。若 res = 0，则为偶数；若 res = 1，则为奇数。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isOdd</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> res <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>位运算</tag>
-        <tag>C++</tag>
+        <tag>.NET</tag>
+        <tag>CSharp</tag>
+        <tag>事件</tag>
+        <tag>委托</tag>
       </tags>
   </entry>
   <entry>
@@ -642,149 +510,171 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </categories>
       <tags>
         <tag>CTF</tag>
-        <tag>信息安全</tag>
         <tag>Crypto</tag>
+        <tag>信息安全</tag>
         <tag>攻防世界</tag>
       </tags>
   </entry>
   <entry>
-    <title>CSharp事件和委托</title>
-    <url>/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/</url>
-    <content><![CDATA[<p>委托与事件在开发中的应用非常广泛，本文将简单介绍C#中委托和事件的定义、使用方法，以及它们之间的区别和联系。</p>
+    <title>ZIP格式分析</title>
+    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
 <span id="more"></span>
 
-<h1 id="委托"><a href="#委托" class="headerlink" title="委托"></a>委托</h1><p>C#中的<strong>委托（delegate）</strong>类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自<code>System.Delegate</code>类。</p>
-<h2 id="委托的声明"><a href="#委托的声明" class="headerlink" title="委托的声明"></a>委托的声明</h2><p>声明委托的语法如下：</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">delegate</span> <span class="token operator">&lt;</span><span class="token keyword">return</span> type<span class="token operator">></span> <span class="token operator">&lt;</span><span class="token keyword">delegate</span> name<span class="token operator">></span> <span class="token operator">&lt;</span>parameter list<span class="token operator">></span></code></pre>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
+<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
+</blockquote>
+<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
+<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
+<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
+<pre class="language-none"><code class="language-none">[local file header 1]
+[file data 1]
+[data descriptor 1]
+. 
+.
+.
+[local file header n]
+[file data n]
+[data descriptor n]
+[archive decryption header] (EFS)
+[archive extra data record] (EFS)
+[central directory]
+[zip64 end of central directory record]
+[zip64 end of central directory locator] 
+[end of central directory record]</code></pre>
 
-<p>比方说，我要声明一个无返回值，无参数的委托。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
+<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
+version needed to extract       2 bytes
+general purpose bit flag        2 bytes
+compression method              2 bytes
+last mod file time              2 bytes
+last mod file date              2 bytes
+crc-32                          4 bytes
+compressed size                 4 bytes
+uncompressed size               4 bytes
+file name length                2 bytes
+extra field length              2 bytes
 
-<p>在声明了委托类型后，必须将其实例化才能生效，可以使用<strong>new</strong>关键字创建并传入参数（参数为一个特定的方法名）。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token class-name">MyDelegate</span> myDelegate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyDelegate</span><span class="token punctuation">(</span>Func1<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+file name (variable size)
+extra field (variable size)</code></pre>
 
-<p>以上实例中我们实例化了一个带有<strong>Func1</strong>方法引用的<strong>MyDelegate</strong>类型变量，并将其赋值给了<strong>myDlegate</strong>实例。</p>
-<h2 id="委托的调用"><a href="#委托的调用" class="headerlink" title="委托的调用"></a>委托的调用</h2><p>如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token function">myDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<h2 id="多播委托"><a href="#多播委托" class="headerlink" title="多播委托"></a>多播委托</h2><p>其实一个委托类型的变量可以同时包含多个方法的引用，如果要在委托实例化后对方法引用进行增删操作，可以使用+=或-=运算符。</p>
-<p>例如我们要给<strong>myDelegate</strong>添加<strong>Func2</strong>和<strong>Func3</strong>方法并删除对<strong>Func1</strong>方法的引用。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp">myDelegate <span class="token operator">+=</span> Func2<span class="token punctuation">;</span>
-myDelegate <span class="token operator">+=</span> Func3<span class="token punctuation">;</span>
-myDelegate <span class="token operator">-=</span> Func1<span class="token punctuation">;</span></code></pre>
-
-<h2 id="预定义委托"><a href="#预定义委托" class="headerlink" title="预定义委托"></a>预定义委托</h2><p>在.NET Framework 3.5以来，提供了很多的泛型委托，原先需要手动定义的现在可以直接使用了。</p>
-<h3 id="Action委托"><a href="#Action委托" class="headerlink" title="Action委托"></a>Action委托</h3><p><strong>Action</strong>委托代表返回为空的委托，以下示例实例化一个<strong>Action</strong>委托，并引用<strong>Plus</strong>方法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Plus</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> a<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">int</span></span> b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-	Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>a <span class="token operator">+</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token class-name">Action<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span><span class="token keyword">int</span><span class="token punctuation">></span></span> a <span class="token operator">=</span> Plus<span class="token punctuation">;</span></code></pre>
-
-<p>泛型类型指定为方法的参数类型，最多可指定16个。</p>
-<h3 id="Func委托"><a href="#Func委托" class="headerlink" title="Func委托"></a>Func委托</h3><p><strong>Func</strong>委托代表返回值非空的委托，以下实例化一个<strong>Func</strong>委托，并引用<strong>ConnectString</strong>方法。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> <span class="token function">ConnectString</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> s1<span class="token punctuation">,</span><span class="token class-name"><span class="token keyword">string</span></span> s2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">return</span> s1 <span class="token operator">+</span> s2<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token class-name">Func<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">,</span><span class="token keyword">string</span><span class="token punctuation">></span></span> f <span class="token operator">=</span> ConnectString<span class="token punctuation">;</span></code></pre>
-
-<p>最后一位泛型类型指定方法的返回值类型，前面各类型指定方法参数类型，同样最多指定16个。</p>
-<h1 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h1><p><strong>事件（Event）</strong>可以理解为一种封装好的委托，用于程序对用户的某些操作进行响应。事件在类内声明，通过使用同一个类或其他类中的委托与事件处理程序相关联。</p>
-<h2 id="通过委托创建事件"><a href="#通过委托创建事件" class="headerlink" title="通过委托创建事件"></a>通过委托创建事件</h2><h3 id="事件的声明"><a href="#事件的声明" class="headerlink" title="事件的声明"></a>事件的声明</h3><p>事件声明方法与实例化委托很类似，不同之处在于需要在委托类型前加上<strong>event</strong>关键字。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span></code></pre>
-
-<h3 id="与委托变量的区别"><a href="#与委托变量的区别" class="headerlink" title="与委托变量的区别"></a>与委托变量的区别</h3><ol>
-<li><p>事件只能作为类的成员变量</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent1<span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
-    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent2<span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span></code></pre></li>
-<li><p>事件只能在类内调用</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">class</span> <span class="token class-name">DelegateClass</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> myEvent<span class="token punctuation">;</span>
-    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">EventFunc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译通过</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token keyword">class</span> <span class="token class-name">Test</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-        <span class="token class-name">DelegateClass</span> delegateClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">DelegateClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        delegateClass<span class="token punctuation">.</span><span class="token function">myEvent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//编译出错</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span></code></pre></li>
+<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
+<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
+<ol>
+<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
+<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
+<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
+<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：无</li>
 </ol>
-<h2 id="发布-订阅模式"><a href="#发布-订阅模式" class="headerlink" title="发布-订阅模式"></a>发布-订阅模式</h2><p>事件使用<strong>发布-订阅（publisher-subscriber）模型</strong>，在这个模型中，<strong>发布器（publisher）</strong>为包含事件的类，<strong>订阅器（subscriber）</strong>为接收事件的类，<strong>调度中心（Topic）</strong>为事件。</p>
-<p>以下通过一个简单的案例来更好的理解这种模式。</p>
-<pre class="language-csharp" data-language="csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span>
-<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Collections<span class="token punctuation">.</span>Generic</span><span class="token punctuation">;</span>
-<span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Text</span><span class="token punctuation">;</span>
+<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
+<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes</code></pre>
 
-<span class="token keyword">namespace</span> CSharp事件
-<span class="token punctuation">&#123;</span>
-    <span class="token comment">//发布器</span>
-    <span class="token keyword">class</span> <span class="token class-name">Publisher</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">private</span> <span class="token class-name"><span class="token keyword">int</span></span> <span class="token keyword">value</span><span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token function">Publisher</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token comment">//声明委托以及事件</span>
-        <span class="token keyword">public</span> <span class="token keyword">delegate</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">MyDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token keyword">event</span> <span class="token class-name">MyDelegate</span> changeValue<span class="token punctuation">;</span>
-        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">SetValue</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> v<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token class-name"><span class="token keyword">int</span></span> formerValue <span class="token operator">=</span> <span class="token keyword">value</span><span class="token punctuation">;</span>
-            <span class="token keyword">value</span> <span class="token operator">=</span> v<span class="token punctuation">;</span>
-            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Set is complete!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//当value值改变时，调用事件</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>changeValue <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> formerValue <span class="token operator">!=</span> <span class="token keyword">value</span><span class="token punctuation">)</span>
-                <span class="token function">changeValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-    <span class="token comment">//订阅器</span>
-    <span class="token keyword">class</span> <span class="token class-name">Subscriber</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"The value has been changed!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-    <span class="token keyword">class</span> <span class="token class-name">MainClass</span>
-    <span class="token punctuation">&#123;</span>
-        <span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> args<span class="token punctuation">)</span>
-        <span class="token punctuation">&#123;</span>
-            <span class="token comment">//实例化订阅器并赋value为3</span>
-            <span class="token class-name">Publisher</span> publisher <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Publisher</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token class-name">Subscriber</span> subscriber <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Subscriber</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//将订阅器中的方法Print注册到发布器的事件中</span>
-            publisher<span class="token punctuation">.</span>changeValue <span class="token operator">+=</span> subscriber<span class="token punctuation">.</span>Print<span class="token punctuation">;</span>
-            <span class="token comment">//从控制台接受一个整数</span>
-            <span class="token class-name"><span class="token keyword">int</span></span> v <span class="token operator">=</span> Convert<span class="token punctuation">.</span><span class="token function">ToInt32</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span><span class="token function">ReadLine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token comment">//设置订阅器对象的value值</span>
-            publisher<span class="token punctuation">.</span><span class="token function">SetValue</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-</code></pre>
+<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
+<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
+.
+.
+. 
+[file header n]
+[digital signature] </code></pre>
 
-<p>当输入的值为3（与初始化value值相同），输出结果如下：</p>
-<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/same.png"></p>
-<p>当输入值为5（与初始化value值不同），输出结果如下：</p>
-<p><img src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/different.png"></p>
+<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
+      version made by                 2 bytes
+      version needed to extract       2 bytes
+      general purpose bit flag        2 bytes
+      compression method              2 bytes
+      last mod file time              2 bytes
+      last mod file date              2 bytes
+      crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes
+      file name length                2 bytes
+      extra field length              2 bytes
+      file comment length             2 bytes
+      disk number start               2 bytes
+      internal file attributes        2 bytes
+      external file attributes        4 bytes
+      relative offset of local header 4 bytes
+
+      file name (variable size)
+      extra field (variable size)
+      file comment (variable size)</code></pre>
+
+<ol>
+<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
+<li>压缩所用pkware版本(version mad by)：0x003f.</li>
+<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
+<li>压缩方式(compression method)：0x0000.</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
+<li>文件最后修改日期(last mod file date)：0x531d.</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a.</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0024.</li>
+<li>文件注释长度(file comment length)：0x0000.</li>
+<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
+<li>内部文件属性(internal file attributes)：0x0000.</li>
+<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
+<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
+<li>文件注释(file comment)：无</li>
+</ol>
+<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
+      size of data                    2 bytes
+      signature data (variable size)</code></pre>
+
+<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
+<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
+      number of this disk             2 bytes
+      number of the disk with the
+      start of the central directory  2 bytes
+      total number of entries in the
+      central directory on this disk  2 bytes
+      total number of entries in
+      the central directory           2 bytes
+      size of the central directory   4 bytes
+      offset of start of central
+      directory with respect to
+      the starting disk number        4 bytes
+      .ZIP file comment length        2 bytes
+      .ZIP file comment       (variable size)</code></pre>
+
+<ol>
+<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
+<li>该磁盘编号(number of this disk)：0x0000.</li>
+<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
+<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录大小(size of the central directory)：0x0000005a.</li>
+<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
+<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
+<li>ZIP文件注释(.ZIP file comment)：无</li>
+</ol>
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
+<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
 ]]></content>
       <categories>
-        <category>CSharp</category>
+        <category>计算机基础</category>
       </categories>
       <tags>
-        <tag>.NET</tag>
-        <tag>CSharp</tag>
-        <tag>事件</tag>
-        <tag>委托</tag>
+        <tag>CTF</tag>
+        <tag>信息安全</tag>
+        <tag>文件</tag>
+        <tag>编码格式</tag>
       </tags>
   </entry>
   <entry>
@@ -826,8 +716,8 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <category>经验</category>
       </categories>
       <tags>
-        <tag>博客</tag>
         <tag>经验</tag>
+        <tag>博客</tag>
       </tags>
   </entry>
   <entry>
@@ -865,333 +755,121 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
         <category>经验</category>
       </categories>
       <tags>
-        <tag>经验</tag>
-        <tag>批处理</tag>
         <tag>编码格式</tag>
         <tag>Windows10</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
         <tag>注册表</tag>
       </tags>
   </entry>
   <entry>
-    <title>计算机组成与系统结构学习总结（Chapter2）</title>
-    <url>/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="第二章-运算方法和运算器"><a href="#第二章-运算方法和运算器" class="headerlink" title="第二章 运算方法和运算器"></a>第二章 运算方法和运算器</h1><h2 id="数据与文字的表示方法"><a href="#数据与文字的表示方法" class="headerlink" title="数据与文字的表示方法"></a>数据与文字的表示方法</h2><h3 id="数据格式"><a href="#数据格式" class="headerlink" title="数据格式"></a>数据格式</h3><p>计算机中常用的数据表示格式有两种，一种是<strong>定点格式</strong>，一种是<strong>浮点格式</strong>。一般来说，定点格式容许的数值范围有限，要求的处理硬件比较简单。而浮点格式容许的数值范围很大，要求的处理硬件比较复杂。</p>
-<h4 id="定点数的表示方法"><a href="#定点数的表示方法" class="headerlink" title="定点数的表示方法"></a>定点数的表示方法</h4><p>所谓定点数，即小数点位置固定不变。原理上讲，小数点固定在哪一位都可以，但通常将数据表示为<strong>纯小数</strong>或<strong>纯整数</strong>。</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%AE%9A%E7%82%B9%E6%95%B0.png"></p>
-<p>假设用 n + 1 位字来表示一个定点数 x ， x<sub>n</sub> 用来表示数的符号，放在最左位置，0 和 1 分别代表正号和负号。</p>
+    <title>hexo博客的备份与恢复</title>
+    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
+    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+<span id="more"></span>
+
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
+<p>首先我们先来观察整个博客目录的结构：</p>
 <ul>
-<li>如果表示的是<strong>纯小数</strong>，那么小数点位于 x<sub>n</sub>~x<sub>n-1</sub> 之间，数的表示范围为： 0 &lt;= |x| &lt;= 1 - 2<sup>-n</sup>.</li>
-<li>如果表示的是<strong>纯整数</strong>，那么小数点位于 x<sub>0</sub> 的右边，数的表示范围为：0 &lt;= |x| &lt;= 2<sup>n - 1</sup>.</li>
+<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+</li>
+<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+</li>
+<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+</li>
+<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
+</li>
+<li><p>source    保存了用户文章的源文件，需要备份。</p>
+</li>
+<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
+</li>
+<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+</li>
+<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
+</li>
+<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+</li>
+<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
+</li>
+<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+</li>
 </ul>
-<p>目前计算机中多采用定点纯整数表示，因此将定点数表示的运算简称为<strong>整数运算</strong>。</p>
-<h4 id="浮点数的表示方法"><a href="#浮点数的表示方法" class="headerlink" title="浮点数的表示方法"></a>浮点数的表示方法</h4><p>把一个数的有效数字和数的范围在计算机中的一个存储单元中分别表示，这样的表示方法相当于数的小数点位置随比例因子不同而在一定范围内自由浮动，称之为<strong>浮点表示法</strong>。</p>
-<p>在计算机中任意一个二进制数可以表示成：N = 2<sup>e</sup> * M.</p>
-<p>M称为浮点数的<strong>尾数</strong>，是一个纯小数。e是比例因子的指数，称之为浮点数的<strong>指数</strong>，是一个整数。</p>
-<p>在计算机表示一个浮点数时，一要给出尾数，用定点小数表示，决定了浮点数的表示精度。二要给出指数，用整数表示，或称<strong>阶码</strong>，决定了浮点数的表示范围。浮点数同样有符号位。</p>
-<p>IEEE754标准下，32 位和 64 位浮点数的标准格式为：</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/IEEE754.png"></p>
-<ul>
-<li>S 是浮点数的符号位，S = 0 表示正数，S = 1 表示负数。</li>
-<li>M是尾数，小数点位置放在尾数域最高有效位的右边。</li>
-<li>E是阶码，阶码采用隐含方式，即采用移码方法来表示正负指数。采用这种方式时，将浮点数的指数真值 e 变成阶码 E 时，应将指数 e加上一个固定的偏移值 127（01111111），即 E = e + 127。</li>
-</ul>
-<p>当尾数的值不为 0 时，尾数域的<strong>最高有效位</strong>应为 1，这称为浮点数的<strong>规格化表示</strong>。</p>
-<p>在 IEEE754 标准中，一个规格化的 32 浮点数 x 的真值表示为：</p>
-<p>x = (-1)<sup>s</sup> * (1.M) * 2<sup>E - 127</sup>            e = E - 127</p>
-<p>同理，由于 64 位浮点数中尾数域 52 位，指数偏移值为 1023 。因此规格化的 64 位浮点数 x 的真值为</p>
-<p>x = (-1)<sup>s</sup> * (1.M) * 2<sup>E - 1023</sup>            e = E - 1023</p>
-<p>IEEE754 中还有一个代表无效运算的符号，例如 0 / 0 或者无穷减无穷。这个符号是 <strong>NaN</strong>，表示不是一个数。采用这个标志的目的是让程序员能够推迟进行测试及判断的时间，以便在方便的时候进行。</p>
-<h3 id="数的机器码表示"><a href="#数的机器码表示" class="headerlink" title="数的机器码表示"></a>数的机器码表示</h3><p>机器码是将符号位和数值位一起编码来表示相应的数的表示方法，有原码、补码、反码、移码。为了区别一般书写表示的数和机器中这些编码表示的数，通常将前者称为<strong>真值</strong>，后者称为<strong>机器码</strong>或<strong>机器数</strong>。</p>
-<h4 id="原码表示法"><a href="#原码表示法" class="headerlink" title="原码表示法"></a>原码表示法</h4><p>若<strong>定点整数</strong>的原码形式为 x<sub>n</sub>x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>（x<sub>n </sub> 为符号位），则原码表示的定义是</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%8E%9F%E7%A0%81.png"></p>
-<p>式中，[x]<sub>原</sub> 是机器数，x 是真值。</p>
-<p>比如，x = +1001，则 [x]<sub>原</sub> = 01001；x = -1001，[x]<sub>原</sub> = 2<sup>4</sup> - x = 10000 + 1001 = 11001.</p>
-<p>由此可见，一般情况下，对于正数 x = +x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>，则有 [x]<sub>原</sub> = <strong>0</strong> x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>.</p>
-<p>对于负数 x = -x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>，则有 [x]<sub>原</sub> = <strong>1</strong> x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>.</p>
-<p>对于 0，原码机器中往往有“+0”和“-0”之分，因此有 <strong>0</strong>000···0 和 <strong>1</strong>000···0 两种形式。</p>
-<h4 id="补码表示法"><a href="#补码表示法" class="headerlink" title="补码表示法"></a>补码表示法</h4><p>对定点整数，补码形式为 x<sub>n</sub>x<sub>n-1</sub>···x<sub>1</sub>x<sub>0</sub>（x<sub>n</sub> 为符号位），则补码表示的定义是</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E8%A1%A5%E7%A0%81.png"></p>
-<p>采用补码表示法进行运算要比原码方便许多，因为不论数是正是负，机器总是做加法，减法运算可转化为加法运算。</p>
-<p>但根据补码的定义可知，计算补码仍然需要进行减法运算，为此可以通过反码来解决。</p>
-<p>一个正整数，当用原码、反码和补码表示时，符号位都固定为 0，用二进制表示的数位值都相同，即三种表示完全一致。</p>
-<p>一个负整数，当用原码、反码和补码表示时，符号位都固定为 1，用二进制表示的数位值都不相同，满足如下规则：</p>
-<ol>
-<li>原码符号位为 1 不变，整数的每一位二进制数位求反得到反码；</li>
-<li>反码符号位为 1 不变，反码数值位最低位加1， 得到补码。</li>
-</ol>
-<p>例如： x = +122，y = -122，求[x]<sub>原</sub>、[x]<sub>反</sub>、[x]<sub>补</sub>、[y]<sub>原</sub>、[y]<sub>反</sub>、[y]<sub>补</sub>。</p>
-<p>解：x = (+122)<sub>10</sub> = (+1111010)<sub>2</sub>，y = (-122)<sub>10</sub> = (-1111010)<sub>2</sub></p>
-<p>[x]<sub>原</sub> = 01111010，[x]<sub>反</sub> = 01111010，[x]<sub>补</sub> = 01111010</p>
-<p>[y]<sub>原</sub> = 11111010，[y]<sub>反</sub> = 10000101，[y]<sub>补</sub> = 10000110</p>
-<h4 id="移码表示法"><a href="#移码表示法" class="headerlink" title="移码表示法"></a>移码表示法</h4><p>移码通常用于表示浮点数的阶码。由于阶码是个 k 位整数，假设定点整数移码形式为 e<sub>k</sub>e<sub>k-1</sub>···e<sub>2</sub>e<sub>1</sub>e<sub>0</sub> 时（最高位为符号位），移码的传统定义为： [e]<sub>移</sub> = 2<sup>k</sup> + e，2<sup>k</sup> &gt; e &gt;= -2<sup>k</sup>.</p>
-<p>若阶码数值部分为 5 位，以 e 表示真值，则 [e]<sub>移</sub> = 2<sup>5</sup> + e，2<sup>5</sup> &gt; e &gt;= -2<sup>5</sup>.</p>
-<p>例如，当正数 e = +10101时，[e]<sub>移</sub> = <strong>1</strong>10101；当负数 e = -10101时，[e]<sub>移</sub> = 2<sup>5</sup> - 10101 = <strong>0</strong>01011。最高位为符号位。可见，当 e 为正数时，符号位为 1 ，当 e 为负数时，符号位为 0 。</p>
-<h3 id="字符与字符串的表示方法"><a href="#字符与字符串的表示方法" class="headerlink" title="字符与字符串的表示方法"></a>字符与字符串的表示方法</h3><p>字符信息用数据来表示，称为<strong>符号数据</strong>。</p>
-<p>国际普遍采用的字符系统是七单位的 IRA 码。其美国版本称为 ASCII 码。</p>
-<h3 id="汉字的存放"><a href="#汉字的存放" class="headerlink" title="汉字的存放"></a>汉字的存放</h3><h4 id="汉字的输入编码"><a href="#汉字的输入编码" class="headerlink" title="汉字的输入编码"></a>汉字的输入编码</h4><ol>
-<li><strong>数字编码</strong>：用数字串来代表一个汉字的输入。</li>
-<li><strong>拼音码</strong>：以汉语拼音为基础的输入方法。</li>
-<li><strong>字形编码</strong>：用汉字的形状来进行编码。</li>
-</ol>
-<h4 id="汉字内码"><a href="#汉字内码" class="headerlink" title="汉字内码"></a>汉字内码</h4><p>用于汉字信息的存储、交换、检索等操作的机内代码。</p>
-<h4 id="汉字字模码"><a href="#汉字字模码" class="headerlink" title="汉字字模码"></a>汉字字模码</h4><p>用点阵表示的汉字字形代码，它是汉字的输出形式。</p>
-<h3 id="校验码"><a href="#校验码" class="headerlink" title="校验码"></a>校验码</h3><p>元件故障、噪声干扰等各种因素常常导致计算机在处理信息过程中出现错误。为了避免这些错误，可将信号采用专门的逻辑电路进行编码以检测错误或校正错误。</p>
-<h4 id="奇偶校验码"><a href="#奇偶校验码" class="headerlink" title="奇偶校验码"></a>奇偶校验码</h4><p>校验码 = 若干有效信息位 + 一位校验位</p>
-<p>其中，一位校验位取“0”或“1”取决于整个校验码中“1”的个数是奇数还是偶数。若为奇数则是奇校验；偶数则是偶校验。</p>
-<p>即奇校验位满足：</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%A5%87%E6%A0%A1%E9%AA%8C.png"></p>
-<p>偶校验为满足：</p>
-<p><img src="/2021/09/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter2%EF%BC%89/%E5%81%B6%E6%A0%A1%E9%AA%8C.png"></p>
-<p>如果一个字串从部件 A 运送到部件 B，则在 A 处先计算得到检验位 C，再合并起来一同送入 B 中，并计算加上Ｃ后的整个字串的异或值。若为１，则代表收到的信息发生了变更，即出现了错误；若为０则代表正确。</p>
-<p>但是奇偶校验的方法不能检查偶数位错，也无法纠错。</p>
+<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
+<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> 备份完成！
+pause</code></pre>
+
+<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
+<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
+<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
+<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
+<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
+<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
 ]]></content>
       <categories>
-        <category>计算机组成与系统结构</category>
+        <category>经验</category>
       </categories>
       <tags>
-        <tag>计算机组成与系统结构</tag>
-        <tag>学习总结</tag>
+        <tag>经验</tag>
+        <tag>博客</tag>
+        <tag>批处理</tag>
+        <tag>备份</tag>
       </tags>
   </entry>
   <entry>
-    <title>计算机组成与系统结构学习总结（Chapter1）</title>
-    <url>/2021/09/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E4%B8%8E%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter1%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="第一章-计算机系统概论"><a href="#第一章-计算机系统概论" class="headerlink" title="第一章 计算机系统概论"></a>第一章 计算机系统概论</h1><h2 id="计算机的分类"><a href="#计算机的分类" class="headerlink" title="计算机的分类"></a>计算机的分类</h2><h3 id="模拟计算机"><a href="#模拟计算机" class="headerlink" title="模拟计算机"></a>模拟计算机</h3><p>“模拟”就是相似的意思。模拟计算机的特点是数值由连续量来表示，运算过程也是连续的。</p>
-<h3 id="数字计算机"><a href="#数字计算机" class="headerlink" title="数字计算机"></a>数字计算机</h3><p>它是在算盘的基础上发展起来的，是用数目字来表示数量的大小。数字计算机的主要特点是按位运算，并且不连续地跳动计算。</p>
-<h3 id="主要区别"><a href="#主要区别" class="headerlink" title="主要区别"></a>主要区别</h3><table>
-<thead>
-<tr>
-<th></th>
-<th>数字计算机</th>
-<th>模拟计算机</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>数据表示方式</td>
-<td>数字0/1</td>
-<td>电压</td>
-</tr>
-<tr>
-<td>计算方式</td>
-<td>数字计数</td>
-<td>电压组合和测量值</td>
-</tr>
-<tr>
-<td>控制方式</td>
-<td>程序控制</td>
-<td>盘上连线</td>
-</tr>
-<tr>
-<td>精度</td>
-<td>高</td>
-<td>低</td>
-</tr>
-<tr>
-<td>数据存储量</td>
-<td>大</td>
-<td>小</td>
-</tr>
-<tr>
-<td>逻辑判断能力</td>
-<td>强</td>
-<td>无</td>
-</tr>
-</tbody></table>
-<p>电子模拟计算机由于精度与解题能力都有限，因此应用范围较小。电子计算机则不同，它是以近似于人类的“思维过程”来进行工作的，因此被称为<strong>电脑</strong>。</p>
-<h2 id="计算机的发展简史"><a href="#计算机的发展简史" class="headerlink" title="计算机的发展简史"></a>计算机的发展简史</h2><h3 id="计算机的五代变化"><a href="#计算机的五代变化" class="headerlink" title="计算机的五代变化"></a>计算机的五代变化</h3><ol>
-<li>1946-1957年，电子管计算机：数据处理</li>
-<li>1958-1964年，晶体管计算机：工业控制</li>
-<li>1965-1971年，中小规模集成电路计算机：小型计算机</li>
-<li>1972-1990年，大规模和超大规模集成电路计算机：微型计算机</li>
-<li>1991年~，巨大规模集成电路计算机：单片机</li>
-</ol>
-<h4 id="摩尔定律"><a href="#摩尔定律" class="headerlink" title="摩尔定律"></a>摩尔定律</h4><p>1965年英特尔创始人之一的戈登·摩尔观察到芯片上的晶体管数量每年翻一番，1970年这种态势减慢成每18个月翻一番，这就是人们所称的<strong>摩尔定律</strong>。值得一提的是，摩尔定律并不是物理定律，而更像是对芯片行业发展的预测或者说是对行业的一种要求。</p>
-<h3 id="半导体存储器的发展"><a href="#半导体存储器的发展" class="headerlink" title="半导体存储器的发展"></a>半导体存储器的发展</h3><ol>
-<li>20世纪50-60年代，所有计算机的存储器都是由微小的铁磁体环组成。</li>
-<li>1970年，仙童半导体公司生产出了第一个较大容量半导体存储器。一个相当于单个磁芯大小的芯片，包含了256位的存储器。</li>
-<li>从1970年起，半导体存储器经历了11代：单个芯片1KB、4KB、16KB、64KB、256KB、1MB、4MB、16MB、64MB、256MB、1GB，每一代相比前一代存储密度提高4倍，而每位价格和存取时间都在下降。</li>
-</ol>
-<h3 id="微处理器的发展"><a href="#微处理器的发展" class="headerlink" title="微处理器的发展"></a>微处理器的发展</h3><ol>
-<li><p>1971年，Intel公司开发出Intel 4004。这是第一个将CPU的所有元件都放入同一块芯片内的产品</p>
-</li>
-<li><p>1972年，Intel 8008，这是第一个8位微处理器，它比4004复杂一倍</p>
-</li>
-<li><p>1974年，Intel 8080。这是第一个通用微处理器</p>
-</li>
-<li><p>20世纪70年代末，通用16位微处理器，Intel 8086是其中之一</p>
-</li>
-<li><p>1981年，贝尔实验室和HP公司开发出了32位单片微处理器</p>
-</li>
-<li><p>1985年，推出了32位微处理器Intel 80386</p>
-</li>
-<li><p>现在的64位处理器和多核处理器</p>
-</li>
-</ol>
-<h3 id="计算机的性能指标"><a href="#计算机的性能指标" class="headerlink" title="计算机的性能指标"></a>计算机的性能指标</h3><ul>
-<li><p><strong>吞吐量</strong>：表征一台计算机在某一时间间隔内能够处理的信息量，单位是字节/秒（B/S）</p>
-</li>
-<li><p><strong>响应时间</strong>：表征从输入有效到系统产生响应之间的时间度量，用时间单位来度量</p>
-</li>
-<li><p><strong>利用率</strong>：表示在给定的时间间隔内，系统被实际使用的时间所占的比率，一般用百分比表示</p>
-</li>
-<li><p><strong>处理机字长</strong>：指处理机运算器中一次能够完成二进制数运算的位数。当前处理机的字长有8位、16位、32位、64位字长越长，表示计算的精度越高</p>
-</li>
-<li><p><strong>总线宽度</strong>：一般指CPU中运算器与存储器之间进行互连的内部总线二进制位数</p>
-</li>
-<li><p><strong>存储器容量</strong>：存储器中所有存储单元的总数目，通常用KB、MB、GB、TB来表示</p>
-</li>
-<li><p><strong>存储器带宽</strong>：存储器的速度指标，单位时间内从存储器读出的二进制数信息量，一般用字节数/秒表示</p>
-</li>
-<li><p><strong>主频/时钟周期</strong>：CPU的工作节拍受主时钟控制，主时钟不断产生固定频率的时钟，主时钟的频率（f）叫<strong>CPU的主频</strong>。度量单位是MHz、GHz。主频的倒数称为<strong>CPU时钟周期</strong>，T = 1 / f.</p>
-</li>
-<li><p><strong>CPU执行时间</strong>：表示CPU执行一般程序所占用的CPU时间，计算公式如下：<br>CPU执行时间 = CPU时钟周期数 * CPU时钟周期</p>
-</li>
-<li><p><strong>CPI</strong>：表示每条指令周期数，即执行一条指令所需的平均时钟周期数，计算公式如下：<br>CPI = 执行某段程序所需的CPU时钟周期数 / 该程序包含的指令条数</p>
-</li>
-<li><p><strong>MIPS</strong>：表示每秒执行多少百万条定点指令数，计算公式如下：<br>MIPS = 指令数 / (程序执行时间 * 10^6)</p>
-</li>
-<li><p><strong>FLOPS</strong>：表示每秒执行浮点操作的次数，用来衡量机器浮点操作的性能，计算公式如下：<br>FLOPS = 程序中的浮点操作次数 / 程序执行时间</p>
-</li>
-</ul>
-<h2 id="计算机的硬件"><a href="#计算机的硬件" class="headerlink" title="计算机的硬件"></a>计算机的硬件</h2><h3 id="硬件组成要素"><a href="#硬件组成要素" class="headerlink" title="硬件组成要素"></a>硬件组成要素</h3><p>计算机硬件系统的五大功能部件有：</p>
+    <title>位运算基础及应用</title>
+    <url>/2021/09/26/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<p>计算机中的数据以二进制的形式存储，即0、1两种状态。<strong>位运算</strong>就是直接对整数在内存中的二进制位进行操作。本文将介绍位运算的各操作符以及常见应用。</p>
+<span id="more"></span>
+
+<h1 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h1><h2 id="amp-（与）"><a href="#amp-（与）" class="headerlink" title="&amp;（与）"></a>&amp;（与）</h2><p>参加运算的两个数据，按二进制位进行与运算。（两位都为1时才为1，否则为0）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行与运算得：0100 = 4. 即 12 &amp; 5 = 4.</p>
+<h2 id="（或）"><a href="#（或）" class="headerlink" title="|（或）"></a>|（或）</h2><p>参加运算的两个数据，按二进制位进行或运算。（两位都为0时才为0，否则为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行或运算得：1101 = 13. 即 12 | 5 = 13.</p>
+<h2 id="（异或）"><a href="#（异或）" class="headerlink" title="^（异或）"></a>^（异或）</h2><p>参加运算的两个数据，按二进制位进行异或运算。（相同为0，不同为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行异或运算得：1001 = 9. 即 12 ^ 5 = 9.</p>
+<h2 id="（取反）"><a href="#（取反）" class="headerlink" title="~（取反）"></a>~（取反）</h2><p>参加运算的数据，其各二进制位进行取反运算。（0变成1，1变成0）</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 取反后得：1 111 1111 1111 1010（符号位为 1，为负数）将此补码转换为原码得：1 000 0000 0000 0110，十进制为 -6. 即 ~5 = -6.</p>
+<h2 id="lt-lt-（左移）"><a href="#lt-lt-（左移）" class="headerlink" title="&lt;&lt;（左移）"></a>&lt;&lt;（左移）</h2><p>参加运算的数据，其各二进制位向左进行移位操作，高位丢弃，低位补0.</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 3 位后得：0 000 0000 0010 1000 = 40.</p>
+<p>即 5 &lt;&lt; 3 = 40.</p>
+<h2 id="gt-gt-（右移）"><a href="#gt-gt-（右移）" class="headerlink" title="&gt;&gt;（右移）"></a>&gt;&gt;（右移）</h2><p>参加运算的数据，其各二进制位向右进行移位操作，低位丢弃，对于无符号数，高位补 0，对于有符号数，高位补原来的符号位。</p>
 <ul>
-<li>控制器：人的大脑的操作控制功能</li>
-<li>运算器：人的大脑的计算功能</li>
-<li>存储器：人的大脑的记忆功能</li>
-<li>输入设备：交互接口，笔</li>
-<li>输出设备：交互接口，纸</li>
+<li>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 2 位后得：0 000 0000 0000 0001 = 1. 即 5 &gt;&gt; 2 = 1.</li>
+<li>例如 -5，对于一个 int16 型数据，它的二进制形式为 1 111 1111 1111 1011. 右移 2 位后得：1 111 1111 1111 1110 = -2. 即 -5 &gt;&gt; 2 = -2.</li>
 </ul>
-<h3 id="运算器"><a href="#运算器" class="headerlink" title="运算器"></a>运算器</h3><p>运算器就像是一个由电子线路构成的算盘，它的主要功能是进行加、减、乘、除等算术运算。除此之外，还可以进行逻辑运算，因此通常被称为ALU（算数逻辑运算部件）。</p>
-<p>人类习惯于十进制运算，但考虑到电子器件的特性，计算机通常采用二进制数。0 和 1 可以用电压的高低、脉冲的有无来表示，因此实现较为简单。</p>
-<p>运算器由：加法器、移位门、寄存器组、输入选择门和数据总线组成。</p>
-<h3 id="存储器"><a href="#存储器" class="headerlink" title="存储器"></a>存储器</h3><p>存储器的功能是保存或“记忆”解题的原始数据和解题步骤。为此，需要将参加运算的数据和解题步骤通过输入设备送到存储器中保存起来。</p>
-<p>由于计算机中保存的数据都是二进制形式，目前采用半导体存储器来进行存储，如果一个数用 16 位二进制代码来表示，就需要有16个触发器来保存这些代码。通常在存储器中把保存这个数的16个触发器称为一个<strong>存储单元</strong>。存储器有许多的存储单元组成，每个存储单元都有编号，称之为<strong>地址</strong>。在需要获取某个数据时，就需要根据该数据的地址查找相应的存储单元。</p>
-<p>半导体存储器的存储容量有限，因此计算机中配备了存储容量更大的磁盘存储器和光盘存储器，称之为<strong>外存储器</strong>，相对的，半导体存储器称之为<strong>内存储器</strong>，简称内存。</p>
-<h3 id="控制器"><a href="#控制器" class="headerlink" title="控制器"></a>控制器</h3><p>控制器是计算机中发号施令的部件，它控制计算机的各部件有条不紊地进行工作。更具体地讲，控制器的任务是从内存中取出解题步骤加以分析，然后执行某种操作。</p>
-<h4 id="计算程序"><a href="#计算程序" class="headerlink" title="计算程序"></a>计算程序</h4><p>运算器只能完成简单的加减乘除等其他一些简单操作。对于一个复杂的问题，计算机需要在交由运算器运算前将其拆分为若干个加减乘除的基本操作来做。每一个基本操作称为一条<strong>指令</strong>，而求解某一某一问题的一串指令序列，称之为该问题的<strong>计算程序</strong>，简称程序。</p>
-<h4 id="指令的形式"><a href="#指令的形式" class="headerlink" title="指令的形式"></a>指令的形式</h4><p>每条指令应当明确告诉控制器，从存储器的哪个单元取数，并进行何种操作。由此可知指令由两部分组成，即操作的性质和操作数的地址。前者称为<strong>操作码</strong>，后者称为<strong>地址码</strong>。</p>
-<p>指令数码化后，就可以和数据一样放入存储器。像这样，如果指令和数据放在同一个存储器中，称为<strong>冯·诺依曼结构</strong>，如果指令和数据分别存放在两个存储器，称为<strong>哈佛结构</strong>。显然后者结构的计算机运算速度更快。</p>
-<h3 id="输入输出设备"><a href="#输入输出设备" class="headerlink" title="输入输出设备"></a><strong>输入输出设备</strong></h3><ul>
-<li>输入设备把程序和数据转化为计算机能识别和处理的数据形式的设备，输入的程序和数据存入计算机存储器中。</li>
-<li>输出设备是将计算机中的二进制信算转化为用户所需要的数据格式的设备。它将计算机中的信息（计算结果等）以十进制或字符、图形、表格等形式显示或打印出来。</li>
-</ul>
-<p>除了上述各部件外，计算机系统还必须有总线。<strong>系统总线</strong>是构成计算机系统的骨架，是多个系统部件之间进行数据传送的公共通路。借助系统总线，计算机在各系统部件之间实现地址、数据和控制信息的操作。</p>
-<h2 id="计算机的软件"><a href="#计算机的软件" class="headerlink" title="计算机的软件"></a>计算机的软件</h2><h3 id="软件的组成和分类"><a href="#软件的组成和分类" class="headerlink" title="软件的组成和分类"></a>软件的组成和分类</h3><p>计算机软件一般分为两大类，一类叫系统程序，一类叫应用程序。</p>
-<ul>
-<li><p>系统程序用来简化程序设计，简化使用方法，提高计算机的使用效率，发挥和扩大计算机的功能和用途。主要包括以下四类：</p>
-<p>（1）各种服务性程序，如诊断程序、排错程序等；</p>
-<p>（2）语言程序，如汇编程序、编译程序、解释程序等；</p>
-<p>（3）操作系统；</p>
-<p>（4）数据库管理系统。</p>
-</li>
-<li><p>应用程序是用户利用计算机来解决某些问题而编制的程序，如工程设计、数据处理程序等。</p>
-</li>
-</ul>
-<h3 id="软件的发展演变"><a href="#软件的发展演变" class="headerlink" title="软件的发展演变"></a>软件的发展演变</h3><ul>
-<li>编程语言的发展</li>
-</ul>
-<p>（1）机器程序</p>
-<p>（2）汇编语言</p>
-<p>（3）算法语言 </p>
-<ul>
-<li>系统软件的发展</li>
-</ul>
-<p>（1）操作系统</p>
-<p>（2）分布式系统软件</p>
-<h2 id="计算机系统的层次结构"><a href="#计算机系统的层次结构" class="headerlink" title="计算机系统的层次结构"></a>计算机系统的层次结构</h2><ol>
-<li>1级 微程序设计级：直接由硬件执行</li>
-<li>2级 一般机器级：微程序</li>
-<li>3级 操作系统级：操作系统</li>
-<li>4级 汇编语言级：汇编程序</li>
-<li>5级 高级语言级：编译程序</li>
-</ol>
+<h1 id="常见应用"><a href="#常见应用" class="headerlink" title="常见应用"></a>常见应用</h1><h2 id="左移、右移实现乘除法"><a href="#左移、右移实现乘除法" class="headerlink" title="左移、右移实现乘除法"></a>左移、右移实现乘除法</h2><p>由左移、右移的定义可知，一个二进制数 0000 1010 左移两位后为 0010 1000 = 2<sup>5</sup> * 2<sup>3</sup> = 2<sup>2</sup> * (2<sup>3</sup> * 2<sup>1</sup>). 由此可见，在数据未溢出的情况下，左移 n 位，相当于原数的值乘以 2<sup>n</sup>. </p>
+<p>同理，右移相当于除以 2<sup>n</sup>.</p>
+<h2 id="异或判断两数符号的异同"><a href="#异或判断两数符号的异同" class="headerlink" title="异或判断两数符号的异同"></a>异或判断两数符号的异同</h2><p>判断两个有符号数是同号还是异号，我们可以用条件控制语句进行判断；也可以将两数相乘判断积的正负；同样也可以使用异或运算符。</p>
+<p>由于有符号数最高位为符号位，因此在进行异或运算时，两数的符号位也将参与运算。若两数的符号位相同，则异或结果 res 的符号位为 0，即 res &gt;= 0; 若两数的符号位不同，则异或结果 res 的符号位为 1，即 res &lt; 0.</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isSameSign</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">^</span> b<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h2 id="与运算判断数的奇偶性"><a href="#与运算判断数的奇偶性" class="headerlink" title="与运算判断数的奇偶性"></a>与运算判断数的奇偶性</h2><p>和异或判断两数符号异同类似原理类似，根据二进制数的最低位是 1 还是 0 来判断该数是奇数还是偶数。</p>
+<p>要判断一个数 a 的奇偶性，可以先计算 res = a &amp; 1 的值。若 res = 0，则为偶数；若 res = 1，则为奇数。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isOdd</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
 ]]></content>
       <categories>
-        <category>计算机组成与系统结构</category>
+        <category>计算机基础</category>
       </categories>
       <tags>
-        <tag>计算机组成与系统结构</tag>
-        <tag>学习总结</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>编译原理学习总结（Chapter1）</title>
-    <url>/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter1%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="第一章：绪论"><a href="#第一章：绪论" class="headerlink" title="第一章：绪论"></a>第一章：绪论</h1><h2 id="编译与解释"><a href="#编译与解释" class="headerlink" title="编译与解释"></a>编译与解释</h2><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><p>编译器就是一个程序，它读入用某种语言编写的源程序，并翻译成一个<strong>与之等价</strong>的另一种语言编写的源程序。常见的编译型语言比如C语言，它在经编译器编译后会生成一个与之等价的exe文件，计算机可以直接执行该文件，此过程类似于英文翻译中的笔译。</p>
-<h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><p>把源语言写的源程序作为输入，但不产生目标程序，而是边解释便执行源程序本身。常见的解释型语言比如Python，一个Python程序经Python解释器解释后并不会直接生成一个计算机可执行的程序，而是便执行边对源代码进行解释，此过程类似于英文翻译中的同声传译。</p>
-<h2 id="编译过程概述"><a href="#编译过程概述" class="headerlink" title="编译过程概述"></a>编译过程概述</h2><h3 id="过程"><a href="#过程" class="headerlink" title="过程"></a>过程</h3><p>编译过程主要分为以下几个步骤：</p>
-<ol>
-<li>词法分析</li>
-<li>语法分析</li>
-<li>语义分析</li>
-<li>中间代码生成</li>
-<li>代码优化</li>
-<li>目标代码生成</li>
-</ol>
-<p>以 a = b + c * d为例，具体过程如下：</p>
-<h3 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h3><ol>
-<li>读入源程序</li>
-<li>识别出程序中的各单词：a、=、b、+、c、*、d</li>
-<li>用记号方式表示识别出的单词</li>
-<li>词法检查：检查词法错误，主要是检查单词中使用了非法字符错误</li>
-<li>删除空白符、注释等</li>
-</ol>
-<h3 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h3><ol>
-<li>在词法分析的基础上，根据语言的语法规则，将单词符号串组成各类语法单位。</li>
-</ol>
-<p>具体来说，语法分析是在单词流的基础上建立一个层次结构——建立语法树。</p>
-<p><img src="/2021/09/14/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93%EF%BC%88Chapter1%EF%BC%89/%E8%AF%AD%E6%B3%95%E6%A0%91.png"></p>
-<ol start="2">
-<li>检查形式语法错误：</li>
-</ol>
-<p>例如：Y := A + B;  //C语言赋值语句应为 =</p>
-<p>​            (x + y)) * z  //括号不匹配</p>
-<h3 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h3><p>检查（静态）语义错误，提取语义信息，即利用语法分析阶段确定的层次结构来识别表达式及语句中的操作信息及类型信息。</p>
-<p>语义错误分为<strong>静态</strong>和<strong>动态</strong>两种：</p>
-<ol>
-<li>静态语义错误</li>
-</ol>
-<p>在编译期间可以检查到的语义错误，例如两指针相加或使用未声明的变量这种行为，这类错误如今功能强大的IDE一般能在编写代码的过程中指出。</p>
-<ol start="2">
-<li>动态语义错误</li>
-</ol>
-<p>在目标程序运行时才可以检查到的语义错误，例如除数为0等错误。</p>
-<h3 id="中间代码生成"><a href="#中间代码生成" class="headerlink" title="中间代码生成"></a>中间代码生成</h3><p>在源程序的语法分析和词法分析后，很多编译器会生成一个明确的低级的或类机器语言的中间表示。我们可以把这个表示看作是某个抽象机器的程序。这种中间表示应该具有两个重要性质：</p>
-<ol>
-<li>易于生成</li>
-<li>能够轻松的翻译成目标机器上的语言</li>
-</ol>
-<p>常见的中间表示形式比如三地址码（四元式）：</p>
-<p>temp1 = c * d            (*, c, d, temp1)</p>
-<h3 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h3><p>试图改进中间代码，以便生成更好的目标代码。例如将 a = b + c; d = a; 优化成 d = b + c;</p>
-<p>优化的种类包括表达式的优化、公共子表达式的优化、循环优化等等。</p>
-<h3 id="目标代码生成"><a href="#目标代码生成" class="headerlink" title="目标代码生成"></a>目标代码生成</h3><p>代码生成器以源程序的中间表示形式作为输入，并把它映射到目标语言。如果目标语言是机器代码，那么就必须为程序使用的每个变量选择寄存器或内存位置。然后，中间代码被翻译成为能够完成相同任务的机器指令序列。</p>
-<p>目标代码的三种形式：</p>
-<ol>
-<li>绝对指令代码：具有绝对地址的机器指令代码，无需连接即可运行。</li>
-<li>可重定位的指令代码：具有浮动地址的机器指令代码，需连接装配后方能运行。</li>
-<li>汇编指令代码：汇编语言形式的目标程序，需经汇编程序汇编产生相应的机器代码。</li>
-</ol>
-<h2 id="编译各阶段的分组"><a href="#编译各阶段的分组" class="headerlink" title="编译各阶段的分组"></a>编译各阶段的分组</h2><p>有时可以将编译过程分为前端和后端</p>
-<h3 id="前端"><a href="#前端" class="headerlink" title="前端"></a>前端</h3><ol>
-<li><p>前端包括词法分析、语法分析、语义分析，以及相关的错误处理和符号表的建立。</p>
-</li>
-<li><p>前端依赖于源程序且很大程度上独立于目标机器。</p>
-</li>
-<li><p>前端生成与平台无关的字节码。</p>
-</li>
-</ol>
-<h3 id="后端"><a href="#后端" class="headerlink" title="后端"></a>后端</h3><ol>
-<li>后端依赖于目标机器。</li>
-<li>后端处理对象是由前端产生的结果，即中间代码。</li>
-</ol>
-]]></content>
-      <categories>
-        <category>编译原理</category>
-      </categories>
-      <tags>
-        <tag>学习总结</tag>
-        <tag>编译原理</tag>
+        <tag>位运算</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
