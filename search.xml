@@ -141,6 +141,318 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
       </tags>
   </entry>
   <entry>
+    <title>C++比较函数cmp</title>
+    <url>/2021/11/19/C++%E6%AF%94%E8%BE%83%E5%87%BD%E6%95%B0cmp/</url>
+    <content><![CDATA[<p>本文将简单介绍C++比较函数 cmp.</p>
+<h1 id="排序函数sort"><a href="#排序函数sort" class="headerlink" title="排序函数sort()"></a>排序函数sort()</h1><p>sort函数是我们常用的库函数，它的参数如下：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">sort</span> <span class="token punctuation">(</span>RandomAccessIterator first<span class="token punctuation">,</span> RandomAccessIterator last<span class="token punctuation">,</span> Compare cmp<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>通过传入容器的迭代器（或指针），我们可以对指定位置进行排序：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> nums <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span></code></pre>
+
+<p>可见，sort 函数的比较函数 cmp 默认参数为升序排列，当然也可以自定义函数来实现不同的排序方法。</p>
+<h1 id="比较函数cmp"><a href="#比较函数cmp" class="headerlink" title="比较函数cmp()"></a>比较函数cmp()</h1><h2 id="自定义比较函数"><a href="#自定义比较函数" class="headerlink" title="自定义比较函数"></a>自定义比较函数</h2><p>首先编写一个示例用以解释：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">MyStruct</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> weigth<span class="token punctuation">;</span>
+    string str<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token keyword">bool</span> <span class="token function">cmp</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms1<span class="token punctuation">,</span> <span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> ms1<span class="token punctuation">.</span>weight <span class="token operator">&lt;</span> ms2<span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    vector<span class="token operator">&lt;</span>MyStruct<span class="token operator">></span> msVector<span class="token punctuation">;</span>
+    <span class="token function">sort</span><span class="token punctuation">(</span>msVector<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msVector<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cmp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>一般来说，cmp 函数具有以下规范：</p>
+<ol>
+<li>返回值为 bool 类型，用来表示当前的排序是否正确。</li>
+<li>参数为两个相同类型的变量，且类型与要排序的容器模板类型相同。</li>
+</ol>
+<p>关于 cmp 作为比较函数实现排序的原理，可以这样来进行理解：在示例中，ms1 和 ms2 是两个参数，即 msVector 容器中的元素，且此时 ms1 位于 ms2 之前，此时函数的返回值其实就是给出此时排序的正确性。若正确则返回 true，反之返回 false。例如在示例中，该比较函数想要实现 MyStruct 结构体元素按照其 weight 值从小到大进行排列，因此返回值为 ms1.weight &lt; ms2.weight。ms1 位于 ms2 之前，若 ms1.weight &lt; ms2.weight，则返回 true，反之返回 false，与我们的预期相同。</p>
+<h2 id="标准库比较函数"><a href="#标准库比较函数" class="headerlink" title="标准库比较函数"></a>标准库比较函数</h2><p>如果只是想实现简单的容器的升序或者降序排列，可以直接使用 C++ 标准库中的比较函数：<code>greater()</code> 和 <code>less()</code>，顾名思义，它们分别实现的是升序和降序排列。以下为使用示例：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> nums <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">greater</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span>
+<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">less</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 5,4,3,2,1 &#125;</span></code></pre>
+
+<p>由此不难发现，sort 函数中 cmp 的默认参数就是 <code>greater&lt;Type&gt;()</code>.</p>
+<h2 id="简化比较函数"><a href="#简化比较函数" class="headerlink" title="简化比较函数"></a>简化比较函数</h2><p>对于一个简单的比较函数，我们可以使用 <strong>lambda 表达式</strong>来对代码进行简化。（有关 lambda 表达式的内容，可以参考<a href="https://www.cnblogs.com/DswCnblog/p/5629165.html">C++ 11 Lambda表达式</a>）</p>
+<p>使用 lambda 表达式，我们可以将“自定义比较函数”处的示例简化。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">sort</span><span class="token punctuation">(</span>msVector<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msVector<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms1<span class="token punctuation">,</span> <span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> ms1<span class="token punctuation">.</span>weight <span class="token operator">&lt;</span> ms2<span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><p>题目链接：<a href="https://leetcode-cn.com/problems/maximum-product-of-word-lengths/">最大单词长度乘积</a></p>
+<p>对于本题，比较容易想到的是暴力解法，但是直接进行暴力求解将会进行大量的无效计算。因此考虑将数组 words 按其元素的 string 长度从大到小进行排序，并依次两两判断是否是有效解，将有效解保存，在之后的遍历中若当前两 string 长度乘积不大于已保存的解，则立即终止当前循环。</p>
+<p>而将数组 words 按其元素的 string 长度从大到小进行排序这一过程，就用到了 sort 函数以及自定义比较函数。</p>
+<p>以下为解题代码：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token keyword">bool</span> <span class="token function">isLegal</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> ch1 <span class="token operator">:</span> s1<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> ch2 <span class="token operator">:</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>ch1 <span class="token operator">==</span> ch2<span class="token punctuation">)</span>
+                    <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">int</span> <span class="token function">maxProduct</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>string<span class="token operator">></span><span class="token operator">&amp;</span> words<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">sort</span><span class="token punctuation">(</span>words<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> words<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> x<span class="token punctuation">,</span> <span class="token keyword">const</span> string<span class="token operator">&amp;</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> x<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> y<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> maxRes <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> words<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t j <span class="token operator">=</span> i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> words<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>maxRes <span class="token operator">>=</span> words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isLegal</span><span class="token punctuation">(</span>words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                    maxRes <span class="token operator">=</span> words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> maxRes<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>2021年游戏总结 上</title>
+    <url>/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/</url>
+    <content><![CDATA[<p>​    转眼间 2021 年已经过去，这一年间也体验了很多不同平台、不同类型的作品。本文将对此做一个小小的总结，内容主要是个人对 2021 年玩过的游戏的一些个人想法。此外，由于篇幅受限，因此并不会包含所有的游戏，部分体验不够深入的或者无话可聊的游戏将不会出现。</p>
+<span id="more"></span>
+
+<h1 id="双人成形"><a href="#双人成形" class="headerlink" title="双人成形"></a>双人成形</h1><p>这算是今年玩过的最开心的游戏了，和两个室友花了大概 15 小时通关。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%8F%8C%E4%BA%BA%E6%88%90%E5%BD%A2.png"></p>
+<p>游戏在本身的关卡设计就很优秀，在融合了双人机制下更加显得精妙。且游戏对于资源的利用可谓毫不吝啬，每一大关就完全舍弃掉之前机制，完全变成“另一个游戏”。虽然这样各种机制浅尝辄止的设计理念可能会带来所谓的游戏深度不足，但这并不是本作所追求的，本作就是想给玩家一个极为丰富的一周目流程。仔细想想现在很多游戏的流程越来越长，但很多内容都是注水的，玩家在这些重复劳动的过程中可能会对游戏失去兴趣，最终导致游戏烂尾。而双人成形就是一个每个关卡细节精心编排打磨，每种机制总能在玩家感到无聊之前及时结束，从而转向新的机制。我在实际游戏过程中的感受也是如此，对之后关卡机制的期待是我在现在大部分游戏中所体会不到的。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%8F%8C%E4%BA%BA%E6%88%90%E5%BD%A22.jpg"></p>
+<p>还有一点值得提的就是本作的箱庭式关卡设计，几乎每个关卡都会有一个箱庭式的“游乐园”以供调节游戏节奏。这些箱庭式关卡中遍布着的大量可供游玩的小物件，很多都是童年时的一些小玩具，看到让人会心一笑。本作中唯一的收集元素也是可以游玩的，它们是一些双人对战的小游戏，例如打地鼠之类的，很大程度上增进了玩家之间的感情（bushi）。</p>
+<h1 id="见证者"><a href="#见证者" class="headerlink" title="见证者"></a>见证者</h1><p>本作绝对是今年给我最大震撼的游戏，它让我认识一位偏执的布道者—— Jonathan Blow 以及他所贯彻的游戏哲学。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E8%A7%81%E8%AF%81%E8%80%85.png"></p>
+<p>游戏最开始给人的印象只是一个简单的一笔画小游戏，但随着游戏进程的推进，玩家会发现基于这样一个极为简单的规则所衍生出的无数种可能性：例如镜像式的一笔画，将区域分块，构造指定形状等等。同时，部分谜题的设计不光基于 Pad（解题板） 本身，还与周围的环境相联系。有的谜题需要玩家在指定的角度观察才能看到答案；有的谜题则是将周围的环境进行抽象从而得到答案；还有的甚至需要根据环境的声音来得到答案。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E8%A7%81%E8%AF%81%E8%80%852.jpg"></p>
+<p>不仅于此，本作所呈现出来的整体感更是极为难得的。游戏几乎没有任何的 ui 界面，玩家与对于场景的机关控制同样是根据本作的核心机制——一笔画来实现的，这样的设计看似没有什么用处，实际上却极大地使得整个游戏系统更加合理自洽。</p>
+<p>事实上，本作的谜题并不仅仅局限于 Pad 上的抽象线条，而是这一规则融入了整个游戏的地图之中。在游戏中，玩家可以在地图的各个角落找到 Pad 上的“蝌蚪文”图案，并且作为游戏的隐藏要素而存在。而类似这样的环境谜题事实上是 Blow 本人最开始真正想做的内容，而 Pad 上的谜题反而是后来才加上去的。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E8%A7%81%E8%AF%81%E8%80%853.jpg"></p>
+<p>《见证者》是一个非常反传统的游戏，它与市面上几乎所有的游戏都有所区别。它所追求的是无奖励机制，这意味着玩家在解决谜题后事实上几乎不会得到任何的直接奖励，它的奖励只是玩家对游戏系统更深的理解，从这一角度上说，《见证者》相比其它游戏来讲更加纯粹。玩家通关游戏之后，一切归为原点，留下的只是玩家对游戏规则的更深层次的认知。</p>
+<p>整个《见证者》的旅途其实就是一场追寻真理的旅途。回想人类文明的发展历程，自然界中很多的现象和规律并不在某一时间节点突然出现，它们其实一直都存在，只是当时人们对于世界的认知过于浅显，对此并没有感知。《见证者》的游戏历程亦是如此，如果在通关后重新开始游戏流程会发现，很多环境谜题都存在于游戏较为前期的区域，甚至游戏游戏隐藏结局的入口就存在于游戏最早期的场景，只是当时的玩家并不会注意到这一切。这样的设计也与本作所要传达的思想高度契合。</p>
+<h1 id="极限竞速：地平线5"><a href="#极限竞速：地平线5" class="headerlink" title="极限竞速：地平线5"></a>极限竞速：地平线5</h1><p>早就听过这个系列的大名，直到今年入了 Xbox Series S 后才真正入坑该系列。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%9C%B0%E5%B9%B3%E7%BA%BF5.jpg"></p>
+<p>本作作为半娱乐半拟真的竞速游戏，可以说几乎适合所有对竞速游戏不反感的人游玩。首先是辅助功能非常完备，玩家可以非常深度的对游戏的难度进行定制。不想要复杂操作的玩家可以将尽量开启辅助功能跑跑圈看看风景，而渴望拟真竞速的硬核玩家也可以关闭一定的辅助功能体验不断练习提升技术的过程。</p>
+<p>这个系列之所以那么令人着迷以至于成为如今娱乐竞速游戏的天花板很大程度上要归功于这个在如今游戏业界显得不那么正面的“公式化开放世界”。事实上，本作的开放世界非常的公式化，场景中遍布着供处理的清单任务，有的是比赛，还有的是供收集的广告牌和房车宝物等等。但是由于本作实质上是一个竞速游戏，竞速游戏的核心玩法就是跑图，因此公式化开放世界所为人诟病的重复性高、跑图繁琐等缺点在本作中都不再是缺点，它们共同是构建起了整个游戏的 GamePlay 部分。</p>
+<p>本系列可能不是最好的竞速游戏，但一定是玩起来最开心的竞速游戏。</p>
+<p>以下是我在游玩过程中的部分截图。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/fh1.png"></p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/fh2.png"></p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/fh3.jpeg"></p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/fh4.jpeg"></p>
+<h1 id="FIFA-21"><a href="#FIFA-21" class="headerlink" title="FIFA 21"></a>FIFA 21</h1><p>本作毫不意外的成为了我 2021 年游戏时间最长的游戏（第二是 FIFA 20）。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/fifa1.jpg"></p>
+<p>作为年货足球游戏，在实况足球最新作转为免费游戏后算是真正成为了单机足球玩家的唯一选择了。游戏本身内容没有什么好聊的，简单聊聊它相比 FIFA 20 有哪些变化。</p>
+<p>由于我几乎只玩生涯模式，因此也只关心生涯模式的变化。总而言之，本次生涯模式的改变并没有达到预期。比较大的一个改变是更改球员所踢的位置并且球员能力可以根据特定位置进行针对性的提升，这一点我觉得还是很不错的。此外球员的模拟训练会直接根据训练达到的最大评级自动进行，不用反复进行手动训练了，这也是一个比较好的改变。但印象中除此之外的改变就不明显了，尤其是球员生涯模式，几乎没有什么提升，还是糟糕的站位问题，仍然无法替补登场，位置设定仍然非常不合理。希望后面的作品能够有所改善。</p>
+<h1 id="伊迪斯芬奇的记忆"><a href="#伊迪斯芬奇的记忆" class="headerlink" title="伊迪斯芬奇的记忆"></a>伊迪斯芬奇的记忆</h1><p>电子游戏相较于其他艺术形式的最主要区别在哪？答案是交互性。而《伊迪斯芬奇的记忆》就是这样一个利用游戏的交互性将叙事能力发挥到极致的作品。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E4%BC%8A%E8%BF%AA%E6%96%AF%E8%8A%AC%E5%A5%87.jpg"></p>
+<p>本作作为步行模拟器，并没有传统游戏中所谓的“玩法”，或者说，本作的玩法其实就是它的交互式叙事部分。游戏中的字幕并不像其它游戏那样作为 ui 层，独立于游戏之外，而是嵌入在游戏之中，作为一个整体，这样极大了提升游戏的沉浸感。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E4%BC%8A%E8%BF%AA%E6%96%AF%E8%8A%AC%E5%A5%872.jpg"></p>
+<p>本作的叙事手法简直就是天马行空，利用十余个不同的表现形式极为自然的阐述了芬奇家族人们因为意外而去世的过程。死亡本是个无比沉重的话题，游戏中家族成员的死亡方式又基本是突然的意外死亡，游戏却用极为华丽的手法将死亡渲染的轰轰烈烈，并且这一切都与玩家的交互密切相关，真正将游戏这种艺术形式的特点发挥的淋漓尽致。</p>
+<h1 id="小小梦魇2"><a href="#小小梦魇2" class="headerlink" title="小小梦魇2"></a>小小梦魇2</h1><p>综合素质非常优秀的恐怖冒险解谜游戏。《小小梦魇2》大体上沿袭了一代的框架，并没有做出什么比较大的改变，但整体的游玩体验上却比一代好上不少。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%B0%8F%E5%B0%8F%E6%A2%A6%E9%AD%87.jpg"></p>
+<p>首先是谜题设计有一定提升。一代给我的感觉更偏向于动作冒险游戏，谜题的量不多且质量也一般，但二代在这方面有比较明显的提升。尤其部分关卡的隐性引导做得很好，十分自然地提示给玩家谜题的解决方案。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%B0%8F%E5%B0%8F%E6%A2%A6%E9%AD%872.jpg"></p>
+<p>其次就是关卡节奏上，每个部分间的衔接过渡非常自然，潜入、逃脱、解密三者以一个非常合理的比例分配在整个游戏流程之中，让玩家时刻保持在心流状态下。本作流程并不长，我通关大概花了 7 小时，由于本作出色的节奏控制，我几乎是一口气通关的。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%B0%8F%E5%B0%8F%E6%A2%A6%E9%AD%873.jpg"></p>
+<p>最后还想聊一聊这个系列的 3D 场景，本系列的 3D 场景无疑是把双刃剑。一方面它极大的增强了游戏的氛围和敌人的压迫感；但另一方面它使得系列的操作和跳跃判定十分糟糕，这些问题即使到了二代也依旧存在。因为角色与互动对象不在同一个 z 轴从而互动失败的情况屡屡发生。还有一点令人失望的部分在于本作的牵手系统更像是对上田文人《ico》的致敬，而并没有我最初想像的将其融合到游戏机制当中，但这也无伤大雅。综合来看，《小小梦魇2》绝对是一款不容错过的作品。</p>
+<h1 id="空洞骑士"><a href="#空洞骑士" class="headerlink" title="空洞骑士"></a>空洞骑士</h1><p>独立游戏中的“大作”，本作的内容非常丰富并且完成度很高。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E7%A9%BA%E6%B4%9E%E9%AA%91%E5%A3%AB.jpg"></p>
+<p>本作用一个不那么友好的词来形容就是“缝合怪”，大体框架继承自 Metroveinia 的自由探索玩法，死亡机制与隐性叙事又借鉴自《黑暗之魂》系列。但《空洞骑士》却不是一个拙劣模仿的产物，它很好的将这些要素加以融合，加之一定的微创新，最终形成了属于自己的一套框架。</p>
+<p>我认为本作设计非常好的一个机制便是地图标记，玩家可以在一些当前需要特定能力解锁的区域添加特定的标记，以便后续针对性的探索。这样很好的解决了银河恶魔城游戏迷路的窘境，同时极大地增强了地图的探索欲望。本作的另一个亮点就是它的战斗系统，战斗系统虽然并不复杂，但是本作出色的手感调教和 boss 战设计使得这样简约而不简单的战斗十分流畅且具有观赏性。制作组显然也是知道本作的优势所在，于是在后面的版本中更新了 boss rush 模式，也成为了很多玩家研究练习的舞台。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E7%A9%BA%E6%B4%9E%E9%AA%91%E5%A3%AB2.jpg"></p>
+<p>但本作也并非做到完美，它在玩家体验层面上还是有很多不令人满意的部分。首先便是平台跳跃关卡，个人认为这个部分确实有些多余，主要原因还是本作的跳跃手感实在不敢恭维，加上这一部分与其它关卡体验上有些割裂。其次就是本作难度曲线控制并不平稳，很大程度上还是游戏对于玩家的关卡引导不够明确，玩家很容易陷入此时的关卡是否是主线目的地的困惑当中，这样的情况会遍布在游戏的整个流程，使得整个游戏流程体验较为破碎。</p>
+<p>但本作的整体优异表现还是值得推荐给所有喜欢银河恶魔城游戏的玩家，话说<strong>丝之歌</strong>怎么就没消息了呢？</p>
+<h1 id="影子工厂"><a href="#影子工厂" class="headerlink" title="影子工厂"></a>影子工厂</h1><p>《去月球》系列的第三部也可能是最后一部作品，又是一个美好且温馨的故事。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%BD%B1%E5%AD%90%E5%B7%A5%E5%8E%82.jpg"></p>
+<p>本作故事上的冲击性可能没有前作《去月球》和《寻找天堂》来的强烈，但却是成为了我三部作品中最喜欢的一部。很大的原因是本作引入了更多叙事上的技法，悬念设计相较以往作品更为出色，最后以一个十分美好且令前作玩家震惊的方式将三部曲串联起来，为三部曲画上一个完美的句号（大概）。本作的故事值得反复回味，不得不佩服高瞰老师对于人物情感上的刻画，让一个比较普通的不能再普通的故事讲述的如此令人动容。</p>
+<p><img src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/%E5%BD%B1%E5%AD%90%E5%B7%A5%E5%8E%822.jpg"></p>
+<p>此外本作基本舍弃了那些与叙事无关的“小游戏”部分，个人认为这是非常明智的选择。前两作可能是为了更加贴近所谓的游戏，而比较强行地加入类似拼图等小游戏，但这些与游戏实际玩法割裂的部分在我看来实际上打乱了游戏的节奏。而本作在叙事上给我的感受就是流畅，全程无尿点，时刻都有一定的悬念吸引着玩家。</p>
+<p>虽然本作与前两部作品在剧情上并无直接关联，但还是建议至少游玩前面任意一作体验会更好。</p>
+]]></content>
+      <categories>
+        <category>游戏</category>
+      </categories>
+      <tags>
+        <tag>游戏</tag>
+        <tag>闲谈</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ZIP格式分析</title>
+    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
+<span id="more"></span>
+
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
+<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
+</blockquote>
+<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
+<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
+<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
+<pre class="language-none"><code class="language-none">[local file header 1]
+[file data 1]
+[data descriptor 1]
+. 
+.
+.
+[local file header n]
+[file data n]
+[data descriptor n]
+[archive decryption header] (EFS)
+[archive extra data record] (EFS)
+[central directory]
+[zip64 end of central directory record]
+[zip64 end of central directory locator] 
+[end of central directory record]</code></pre>
+
+<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
+<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
+version needed to extract       2 bytes
+general purpose bit flag        2 bytes
+compression method              2 bytes
+last mod file time              2 bytes
+last mod file date              2 bytes
+crc-32                          4 bytes
+compressed size                 4 bytes
+uncompressed size               4 bytes
+file name length                2 bytes
+extra field length              2 bytes
+
+file name (variable size)
+extra field (variable size)</code></pre>
+
+<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
+<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
+<ol>
+<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
+<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
+<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
+<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：无</li>
+</ol>
+<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
+<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes</code></pre>
+
+<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
+<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
+.
+.
+. 
+[file header n]
+[digital signature] </code></pre>
+
+<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
+      version made by                 2 bytes
+      version needed to extract       2 bytes
+      general purpose bit flag        2 bytes
+      compression method              2 bytes
+      last mod file time              2 bytes
+      last mod file date              2 bytes
+      crc-32                          4 bytes
+      compressed size                 4 bytes
+      uncompressed size               4 bytes
+      file name length                2 bytes
+      extra field length              2 bytes
+      file comment length             2 bytes
+      disk number start               2 bytes
+      internal file attributes        2 bytes
+      external file attributes        4 bytes
+      relative offset of local header 4 bytes
+
+      file name (variable size)
+      extra field (variable size)
+      file comment (variable size)</code></pre>
+
+<ol>
+<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
+<li>压缩所用pkware版本(version mad by)：0x003f.</li>
+<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
+<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
+<li>压缩方式(compression method)：0x0000.</li>
+<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
+<li>文件最后修改日期(last mod file date)：0x531d.</li>
+<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
+<li>压缩后大小(compressed size)：0x0000001a.</li>
+<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
+<li>文件名长度(file name length)：0x0008.</li>
+<li>扩展区长度(extra field length)：0x0024.</li>
+<li>文件注释长度(file comment length)：0x0000.</li>
+<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
+<li>内部文件属性(internal file attributes)：0x0000.</li>
+<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
+<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
+<li>文件名(file name)：0x7478742e74736574.</li>
+<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
+<li>文件注释(file comment)：无</li>
+</ol>
+<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
+      size of data                    2 bytes
+      signature data (variable size)</code></pre>
+
+<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
+<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
+      number of this disk             2 bytes
+      number of the disk with the
+      start of the central directory  2 bytes
+      total number of entries in the
+      central directory on this disk  2 bytes
+      total number of entries in
+      the central directory           2 bytes
+      size of the central directory   4 bytes
+      offset of start of central
+      directory with respect to
+      the starting disk number        4 bytes
+      .ZIP file comment length        2 bytes
+      .ZIP file comment       (variable size)</code></pre>
+
+<ol>
+<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
+<li>该磁盘编号(number of this disk)：0x0000.</li>
+<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
+<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
+<li>核心目录大小(size of the central directory)：0x0000005a.</li>
+<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
+<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
+<li>ZIP文件注释(.ZIP file comment)：无</li>
+</ol>
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
+<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>CTF</tag>
+        <tag>信息安全</tag>
+        <tag>文件</tag>
+        <tag>编码格式</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Crypto基础</title>
     <url>/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/</url>
     <content><![CDATA[<p>密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以<strong>攻防世界</strong>新手练习区例题为例进行分析。</p>
@@ -510,256 +822,9 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </categories>
       <tags>
         <tag>CTF</tag>
+        <tag>信息安全</tag>
         <tag>Crypto</tag>
-        <tag>信息安全</tag>
         <tag>攻防世界</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ZIP格式分析</title>
-    <url>/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<p>最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。</p>
-<span id="more"></span>
-
-<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
-<p>ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。</p>
-</blockquote>
-<h1 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h1><p>如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下：</p>
-<p><a href="https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.2.0.txt">.ZIP File Format Specification</a></p>
-<h1 id="格式分析"><a href="#格式分析" class="headerlink" title="格式分析"></a>格式分析</h1><p>根据官方文档，我们可以得知，一个标准的zip格式文件由以下结构组成：</p>
-<pre class="language-none"><code class="language-none">[local file header 1]
-[file data 1]
-[data descriptor 1]
-. 
-.
-.
-[local file header n]
-[file data n]
-[data descriptor n]
-[archive decryption header] (EFS)
-[archive extra data record] (EFS)
-[central directory]
-[zip64 end of central directory record]
-[zip64 end of central directory locator] 
-[end of central directory record]</code></pre>
-
-<p>在这里我们只考虑 <code>local file header</code> + <code>file data</code> + <code>data descriptor</code> + <code>central directory</code> + <code>end of central directory record</code>.</p>
-<h2 id="文件头-Local-file-header"><a href="#文件头-Local-file-header" class="headerlink" title="文件头(Local file header)"></a>文件头(Local file header)</h2><pre class="language-none"><code class="language-none">local file header signature     4 bytes  (0x04034b50)
-version needed to extract       2 bytes
-general purpose bit flag        2 bytes
-compression method              2 bytes
-last mod file time              2 bytes
-last mod file date              2 bytes
-crc-32                          4 bytes
-compressed size                 4 bytes
-uncompressed size               4 bytes
-file name length                2 bytes
-extra field length              2 bytes
-
-file name (variable size)
-extra field (variable size)</code></pre>
-
-<p>为了演示的方便，以下我们以一个包含了文本内容为26个英文字母的文本文件的压缩包做对照分析。</p>
-<p><img src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/010.png"></p>
-<ol>
-<li>文件头位置即为灰色区域，首先是本地文件头标识位(local file header signature)，值为固定的0x04034b50（需要注意的是单个字节数据在内存中的存储是低位在前，高位在后）。</li>
-<li>解压文件所需pkware的最低版本(version needed to extract)：0x000a，一般不需要考虑。</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000，通常只需要考虑当bit 0为1时表示文件被加密。</li>
-<li>压缩方式(compression method)：0x0000，当值为：0x0000时表示无压缩。</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a，以standard MS-DOS格式编码。 </li>
-<li>文件最后修改日期(last mod file date)：0x531d，同上。</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a，单位为byte，由此我们可以推断出标准ZIP格式最大压缩容量为：16^8 - 1 bytes ≈ 4 GB，而ZIP64格式最大压缩容量为 2^64 - 1 bytes ≈ 16EB。</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a，可见该文件并没有被压缩，这也与压缩方式为0x0000相吻合。</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：无</li>
-</ol>
-<h2 id="文件数据-File-data"><a href="#文件数据-File-data" class="headerlink" title="文件数据(File data)"></a>文件数据(File data)</h2><p>存储被压缩文件的数据：本例中即为26个英文字母，图中的黑色区域。</p>
-<h2 id="数据描述符-Data-descriptor"><a href="#数据描述符-Data-descriptor" class="headerlink" title="数据描述符(Data descriptor)"></a>数据描述符(Data descriptor)</h2><pre class="language-none"><code class="language-none">crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes</code></pre>
-
-<p>该区域只有在文件头的通用比特标志位的第3位(0x0008)为1时才存在，紧跟在压缩文件的数据区之后，只用在不能对输出的 ZIP 文件进行检索时使用。</p>
-<h2 id="核心目录-Central-directory"><a href="#核心目录-Central-directory" class="headerlink" title="核心目录(Central directory)"></a>核心目录(Central directory)</h2><pre class="language-none"><code class="language-none">[file header 1]
-.
-.
-. 
-[file header n]
-[digital signature] </code></pre>
-
-<h3 id="文件头-File-header"><a href="#文件头-File-header" class="headerlink" title="文件头(File header)"></a>文件头(File header)</h3><pre class="language-none"><code class="language-none">central file header signature   4 bytes  (0x02014b50)
-      version made by                 2 bytes
-      version needed to extract       2 bytes
-      general purpose bit flag        2 bytes
-      compression method              2 bytes
-      last mod file time              2 bytes
-      last mod file date              2 bytes
-      crc-32                          4 bytes
-      compressed size                 4 bytes
-      uncompressed size               4 bytes
-      file name length                2 bytes
-      extra field length              2 bytes
-      file comment length             2 bytes
-      disk number start               2 bytes
-      internal file attributes        2 bytes
-      external file attributes        4 bytes
-      relative offset of local header 4 bytes
-
-      file name (variable size)
-      extra field (variable size)
-      file comment (variable size)</code></pre>
-
-<ol>
-<li>核心文件头标识位(central file header signature)：0x02014b50，为固定数值。</li>
-<li>压缩所用pkware版本(version mad by)：0x003f.</li>
-<li>解压所需的pkware最低版本(version needed to extract)：0x000a.</li>
-<li>通用比特标志位(general purpose bit flag)：0x0000.</li>
-<li>压缩方式(compression method)：0x0000.</li>
-<li>文件最后修改时间(last mod file time)：0x4e5a.</li>
-<li>文件最后修改日期(last mod file date)：0x531d.</li>
-<li>CRC32校验码(crc-32)：0x4c2750bd.</li>
-<li>压缩后大小(compressed size)：0x0000001a.</li>
-<li>未压缩的大小(uncompressed size)：0x0000001a.</li>
-<li>文件名长度(file name length)：0x0008.</li>
-<li>扩展区长度(extra field length)：0x0024.</li>
-<li>文件注释长度(file comment length)：0x0000.</li>
-<li>文件开始位置的磁盘编号(disk number start)：0x0000.</li>
-<li>内部文件属性(internal file attributes)：0x0000.</li>
-<li>外部文件属性(external file attributes)：0x00000002，外部属性的映射取决于主机系统，对于MS-DOS，低位字节是MS-DOS目录属性字节，如果输入来自于标准输入，该区域置为零。</li>
-<li>本地文件头的相互偏移(relative offset of local header)：0x00000000.</li>
-<li>文件名(file name)：0x7478742e74736574.</li>
-<li>扩展区(extra field)：即文件名后的36个字节数据。</li>
-<li>文件注释(file comment)：无</li>
-</ol>
-<h3 id="数字签名-Digital-signature"><a href="#数字签名-Digital-signature" class="headerlink" title="数字签名(Digital signature)"></a>数字签名(Digital signature)</h3><pre class="language-none"><code class="language-none">header signature                4 bytes  (0x05054b50)
-      size of data                    2 bytes
-      signature data (variable size)</code></pre>
-
-<p>本区域不是必须的，在此不多赘述，感兴趣可以查看官方文档。</p>
-<h2 id="目录结束标识-End-of-central-directory-record"><a href="#目录结束标识-End-of-central-directory-record" class="headerlink" title="目录结束标识(End of central directory record)"></a>目录结束标识(End of central directory record)</h2><pre class="language-none"><code class="language-none">end of central dir signature    4 bytes  (0x06054b50)
-      number of this disk             2 bytes
-      number of the disk with the
-      start of the central directory  2 bytes
-      total number of entries in the
-      central directory on this disk  2 bytes
-      total number of entries in
-      the central directory           2 bytes
-      size of the central directory   4 bytes
-      offset of start of central
-      directory with respect to
-      the starting disk number        4 bytes
-      .ZIP file comment length        2 bytes
-      .ZIP file comment       (variable size)</code></pre>
-
-<ol>
-<li>核心目录结束标识位(end of central dir signature)：0x06054b50，为固定数值。</li>
-<li>该磁盘编号(number of this disk)：0x0000.</li>
-<li>核心目录开始位置的磁盘编号(number of the disk with the start of the central directory)：0x0000.</li>
-<li>该磁盘所记录的核心目录总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录结构总数(total number of entries in the central directory on this disk)：0x0001.</li>
-<li>核心目录大小(size of the central directory)：0x0000005a.</li>
-<li>核心目录开始位置相较于起始磁盘号的偏移量(offset of start of central directory with respect to the starting disk number)：0x00000040.</li>
-<li>ZIP文件注释长度(.ZIP file comment length)：0x0000.</li>
-<li>ZIP文件注释(.ZIP file comment)：无</li>
-</ol>
-<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://adworld.xctf.org.cn/task/answer?type=crypto&number=5&grade=1&id=4930&page=1">你猜猜</a></p>
-<h2 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h2><p>由于对ZIP格式编码不熟悉，刚看到这一串字符以为是某种加密方式，在学习过本文后在看，很明显<strong>504B0304</strong>为ZIP格式的文件头标识位，因此我们打开010Editor，导入这一串16进制编码，并保存为ZIP格式。解压时发现设置了密码，考虑密码应该不会太复杂，直接暴力破解得到结果。</p>
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>CTF</tag>
-        <tag>信息安全</tag>
-        <tag>文件</tag>
-        <tag>编码格式</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>文件路径的表示方法</title>
-    <url>/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/</url>
-    <content><![CDATA[<p>文件路径作为计算机基础内容，在很多时候都扮演着十分重要的角色，例如控制台命令、资源文件的存放等等，以下将介绍计算机文件路径的表示方法以及一些常见的使用场景。</p>
-<span id="more"></span>
-
-<p>文件路径的表示分为两种方式：绝对路径表示法和相对路径表示法。</p>
-<h1 id="绝对路径与相对路径的区别"><a href="#绝对路径与相对路径的区别" class="headerlink" title="绝对路径与相对路径的区别"></a>绝对路径与相对路径的区别</h1><h2 id="绝对路径的表示"><a href="#绝对路径的表示" class="headerlink" title="绝对路径的表示"></a>绝对路径的表示</h2><p>绝对路径顾名思义就是文件在硬盘上存储的真正路径，它不会被更改，除非文件在硬盘中的位置发生改变。绝对路径表示格式为：“&lt;硬盘符&gt;\&lt;目录1&gt;\&lt;目录2&gt;…\&lt;文件名&gt;”，例如test.txt文件存储在C盘cat1下的cat2的cat3中，它用绝对路径表示为<code>C:\cat1\cat2\test.txt</code>。</p>
-<h2 id="相对路径的表示"><a href="#相对路径的表示" class="headerlink" title="相对路径的表示"></a>相对路径的表示</h2><p>相对路径表示从当前文件位置出发，指向目标文件的路径，它是目标文件与当前文件的相对位置，会随着当前文件位置的不同而使与同一文件的相对位置发生改变。相对路径的表示格式为：“./&lt;目录1&gt;/&lt;目录2&gt;…/&lt;文件名&gt;”（这里的“./”可以省略），例如当前HTML文件root.html位于C盘根目录下，text.txt文件存储在C盘cat1文件夹下的cat2文件夹中，要想在root.html中引用text.txt则用相对路径表示为<code>cat1/cat2/test.txt</code>（“./”已省略）。</p>
-<p>如果想要表示当前文件上级目录的文件，可以使用“../”来表示，还是上面的例子，假如我们要在test.txt文件下用相对路径表示root.html，则可以表示为<code>../../root.html</code>。</p>
-<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
-<li>不同盘符间的文件不能用相对路径来表示，例如位于C盘下的文件无法使用相对路径来表示D盘中的文件，其实可以这么来理解：<strong>所谓相对路径，就是相对非根目录的某个目录的绝对路径</strong>。</li>
-<li>绝对路径不同目录间既可以用“\”也可以用“/”来分隔，而相对路径只能用“/”，这里推荐表示绝对路径时使用“\”，可以为两种表示方法做一个很好的区分。</li>
-</ol>
-<h1 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h1><h2 id="控制台命令”cd”"><a href="#控制台命令”cd”" class="headerlink" title="控制台命令”cd”"></a>控制台命令”cd”</h2><p>“cd”命令可以更改执行控制台命令的目录，这个目录既可以用绝对路径表示也可以用相对路径表示，但是无论哪种路径表示都只能更改为初始盘符中的目录，也就是系统盘目录。</p>
-<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-no.png"></p>
-<p>如果要更改执行目录为其他盘符下的目录，可以先输入“&lt;硬盘符&gt;”，比方说要切换到上图试图切换的目录，可以先输入<code>D:</code>，然后再选择绝对路径。</p>
-<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-yes.png"></p>
-<h2 id="程序中资源的引用"><a href="#程序中资源的引用" class="headerlink" title="程序中资源的引用"></a>程序中资源的引用</h2><p>如果想要在编写的程序中引用外部资源文件（图片、音频等等），则<strong>必须要用相对路径</strong>，除非你编写的程序只需要在你当前设备上运行。因为你的程序往往放在一个大的文件夹当中，当这个大的文件夹被放置在计算机不同目录下时，资源文件的绝对路径也不相同，而源代码与资源文件之间的相对位置则是保持不变的，这保证了只要用户不刻意的去改变资源文件的存放位置，那么不管整个文件夹被放置在何处，资源文件都能被正常的引用。</p>
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>文件</tag>
-        <tag>Windows10</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>经验</tag>
-        <tag>博客</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>让批处理文件中的中文正常显示</title>
-    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
-    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
-<span id="more"></span>
-
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
-<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
-<blockquote>
-<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
-</blockquote>
-<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
-<blockquote>
-<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
-</blockquote>
-<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
-<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
-<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
-<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
-<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
-<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
-<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
-<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
-<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
-[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
-&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
-
-<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>编码格式</tag>
-        <tag>Windows10</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-        <tag>注册表</tag>
       </tags>
   </entry>
   <entry>
@@ -819,10 +884,10 @@ pause</code></pre>
         <category>经验</category>
       </categories>
       <tags>
-        <tag>经验</tag>
         <tag>博客</tag>
-        <tag>批处理</tag>
         <tag>备份</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
       </tags>
   </entry>
   <entry>
@@ -868,8 +933,93 @@ pause</code></pre>
         <category>计算机基础</category>
       </categories>
       <tags>
-        <tag>位运算</tag>
         <tag>C++</tag>
+        <tag>位运算</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>经验</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>文件路径的表示方法</title>
+    <url>/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/</url>
+    <content><![CDATA[<p>文件路径作为计算机基础内容，在很多时候都扮演着十分重要的角色，例如控制台命令、资源文件的存放等等，以下将介绍计算机文件路径的表示方法以及一些常见的使用场景。</p>
+<span id="more"></span>
+
+<p>文件路径的表示分为两种方式：绝对路径表示法和相对路径表示法。</p>
+<h1 id="绝对路径与相对路径的区别"><a href="#绝对路径与相对路径的区别" class="headerlink" title="绝对路径与相对路径的区别"></a>绝对路径与相对路径的区别</h1><h2 id="绝对路径的表示"><a href="#绝对路径的表示" class="headerlink" title="绝对路径的表示"></a>绝对路径的表示</h2><p>绝对路径顾名思义就是文件在硬盘上存储的真正路径，它不会被更改，除非文件在硬盘中的位置发生改变。绝对路径表示格式为：“&lt;硬盘符&gt;\&lt;目录1&gt;\&lt;目录2&gt;…\&lt;文件名&gt;”，例如test.txt文件存储在C盘cat1下的cat2的cat3中，它用绝对路径表示为<code>C:\cat1\cat2\test.txt</code>。</p>
+<h2 id="相对路径的表示"><a href="#相对路径的表示" class="headerlink" title="相对路径的表示"></a>相对路径的表示</h2><p>相对路径表示从当前文件位置出发，指向目标文件的路径，它是目标文件与当前文件的相对位置，会随着当前文件位置的不同而使与同一文件的相对位置发生改变。相对路径的表示格式为：“./&lt;目录1&gt;/&lt;目录2&gt;…/&lt;文件名&gt;”（这里的“./”可以省略），例如当前HTML文件root.html位于C盘根目录下，text.txt文件存储在C盘cat1文件夹下的cat2文件夹中，要想在root.html中引用text.txt则用相对路径表示为<code>cat1/cat2/test.txt</code>（“./”已省略）。</p>
+<p>如果想要表示当前文件上级目录的文件，可以使用“../”来表示，还是上面的例子，假如我们要在test.txt文件下用相对路径表示root.html，则可以表示为<code>../../root.html</code>。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>不同盘符间的文件不能用相对路径来表示，例如位于C盘下的文件无法使用相对路径来表示D盘中的文件，其实可以这么来理解：<strong>所谓相对路径，就是相对非根目录的某个目录的绝对路径</strong>。</li>
+<li>绝对路径不同目录间既可以用“\”也可以用“/”来分隔，而相对路径只能用“/”，这里推荐表示绝对路径时使用“\”，可以为两种表示方法做一个很好的区分。</li>
+</ol>
+<h1 id="常见使用场景"><a href="#常见使用场景" class="headerlink" title="常见使用场景"></a>常见使用场景</h1><h2 id="控制台命令”cd”"><a href="#控制台命令”cd”" class="headerlink" title="控制台命令”cd”"></a>控制台命令”cd”</h2><p>“cd”命令可以更改执行控制台命令的目录，这个目录既可以用绝对路径表示也可以用相对路径表示，但是无论哪种路径表示都只能更改为初始盘符中的目录，也就是系统盘目录。</p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-no.png"></p>
+<p>如果要更改执行目录为其他盘符下的目录，可以先输入“&lt;硬盘符&gt;”，比方说要切换到上图试图切换的目录，可以先输入<code>D:</code>，然后再选择绝对路径。</p>
+<p><img src="/2021/05/16/%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9A%84%E8%A1%A8%E7%A4%BA%E6%96%B9%E6%B3%95/cd-yes.png"></p>
+<h2 id="程序中资源的引用"><a href="#程序中资源的引用" class="headerlink" title="程序中资源的引用"></a>程序中资源的引用</h2><p>如果想要在编写的程序中引用外部资源文件（图片、音频等等），则<strong>必须要用相对路径</strong>，除非你编写的程序只需要在你当前设备上运行。因为你的程序往往放在一个大的文件夹当中，当这个大的文件夹被放置在计算机不同目录下时，资源文件的绝对路径也不相同，而源代码与资源文件之间的相对位置则是保持不变的，这保证了只要用户不刻意的去改变资源文件的存放位置，那么不管整个文件夹被放置在何处，资源文件都能被正常的引用。</p>
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>文件</tag>
+        <tag>Windows10</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>让批处理文件中的中文正常显示</title>
+    <url>/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</url>
+    <content><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p>
+<span id="more"></span>
+
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p>
+<h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p>
+<blockquote>
+<p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p>
+</blockquote>
+<p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p>
+<blockquote>
+<p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p>
+</blockquote>
+<p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p>
+<h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p>
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p>
+<p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p>
+<h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p>
+<h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p>
+<p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p>
+<h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p>
+<pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00
+[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]
+&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre>
+
+<p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>编码格式</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
+        <tag>Windows10</tag>
+        <tag>注册表</tag>
       </tags>
   </entry>
   <entry>
@@ -976,91 +1126,9 @@ pause</code></pre>
         <category>经验</category>
       </categories>
       <tags>
+        <tag>C++</tag>
         <tag>经验</tag>
-        <tag>C++</tag>
         <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>C++比较函数cmp</title>
-    <url>/2021/11/19/C++%E6%AF%94%E8%BE%83%E5%87%BD%E6%95%B0cmp/</url>
-    <content><![CDATA[<p>本文将简单介绍C++比较函数 cmp.</p>
-<h1 id="排序函数sort"><a href="#排序函数sort" class="headerlink" title="排序函数sort()"></a>排序函数sort()</h1><p>sort函数是我们常用的库函数，它的参数如下：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">sort</span> <span class="token punctuation">(</span>RandomAccessIterator first<span class="token punctuation">,</span> RandomAccessIterator last<span class="token punctuation">,</span> Compare cmp<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<p>通过传入容器的迭代器（或指针），我们可以对指定位置进行排序：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> nums <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span></code></pre>
-
-<p>可见，sort 函数的比较函数 cmp 默认参数为升序排列，当然也可以自定义函数来实现不同的排序方法。</p>
-<h1 id="比较函数cmp"><a href="#比较函数cmp" class="headerlink" title="比较函数cmp()"></a>比较函数cmp()</h1><h2 id="自定义比较函数"><a href="#自定义比较函数" class="headerlink" title="自定义比较函数"></a>自定义比较函数</h2><p>首先编写一个示例用以解释：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">MyStruct</span> <span class="token punctuation">&#123;</span>
-    <span class="token keyword">int</span> weigth<span class="token punctuation">;</span>
-    string str<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-<span class="token keyword">bool</span> <span class="token function">cmp</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms1<span class="token punctuation">,</span> <span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-    <span class="token keyword">return</span> ms1<span class="token punctuation">.</span>weight <span class="token operator">&lt;</span> ms2<span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    vector<span class="token operator">&lt;</span>MyStruct<span class="token operator">></span> msVector<span class="token punctuation">;</span>
-    <span class="token function">sort</span><span class="token punctuation">(</span>msVector<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msVector<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cmp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-<p>一般来说，cmp 函数具有以下规范：</p>
-<ol>
-<li>返回值为 bool 类型，用来表示当前的排序是否正确。</li>
-<li>参数为两个相同类型的变量，且类型与要排序的容器模板类型相同。</li>
-</ol>
-<p>关于 cmp 作为比较函数实现排序的原理，可以这样来进行理解：在示例中，ms1 和 ms2 是两个参数，即 msVector 容器中的元素，且此时 ms1 位于 ms2 之前，此时函数的返回值其实就是给出此时排序的正确性。若正确则返回 true，反之返回 false。例如在示例中，该比较函数想要实现 MyStruct 结构体元素按照其 weight 值从小到大进行排列，因此返回值为 ms1.weight &lt; ms2.weight。ms1 位于 ms2 之前，若 ms1.weight &lt; ms2.weight，则返回 true，反之返回 false，与我们的预期相同。</p>
-<h2 id="标准库比较函数"><a href="#标准库比较函数" class="headerlink" title="标准库比较函数"></a>标准库比较函数</h2><p>如果只是想实现简单的容器的升序或者降序排列，可以直接使用 C++ 标准库中的比较函数：<code>greater()</code> 和 <code>less()</code>，顾名思义，它们分别实现的是升序和降序排列。以下为使用示例：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> nums <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">greater</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span>
-<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">less</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 5,4,3,2,1 &#125;</span></code></pre>
-
-<p>由此不难发现，sort 函数中 cmp 的默认参数就是 <code>greater&lt;Type&gt;()</code>.</p>
-<h2 id="简化比较函数"><a href="#简化比较函数" class="headerlink" title="简化比较函数"></a>简化比较函数</h2><p>对于一个简单的比较函数，我们可以使用 <strong>lambda 表达式</strong>来对代码进行简化。（有关 lambda 表达式的内容，可以参考<a href="https://www.cnblogs.com/DswCnblog/p/5629165.html">C++ 11 Lambda表达式</a>）</p>
-<p>使用 lambda 表达式，我们可以将“自定义比较函数”处的示例简化。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">sort</span><span class="token punctuation">(</span>msVector<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msVector<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms1<span class="token punctuation">,</span> <span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">return</span> ms1<span class="token punctuation">.</span>weight <span class="token operator">&lt;</span> ms2<span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><p>题目链接：<a href="https://leetcode-cn.com/problems/maximum-product-of-word-lengths/">最大单词长度乘积</a></p>
-<p>对于本题，比较容易想到的是暴力解法，但是直接进行暴力求解将会进行大量的无效计算。因此考虑将数组 words 按其元素的 string 长度从大到小进行排序，并依次两两判断是否是有效解，将有效解保存，在之后的遍历中若当前两 string 长度乘积不大于已保存的解，则立即终止当前循环。</p>
-<p>而将数组 words 按其元素的 string 长度从大到小进行排序这一过程，就用到了 sort 函数以及自定义比较函数。</p>
-<p>以下为解题代码：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    <span class="token keyword">bool</span> <span class="token function">isLegal</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> ch1 <span class="token operator">:</span> s1<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> ch2 <span class="token operator">:</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>ch1 <span class="token operator">==</span> ch2<span class="token punctuation">)</span>
-                    <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-    <span class="token keyword">int</span> <span class="token function">maxProduct</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>string<span class="token operator">></span><span class="token operator">&amp;</span> words<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        <span class="token function">sort</span><span class="token punctuation">(</span>words<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> words<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> x<span class="token punctuation">,</span> <span class="token keyword">const</span> string<span class="token operator">&amp;</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> x<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> y<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> maxRes <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> words<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t j <span class="token operator">=</span> i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> words<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>maxRes <span class="token operator">>=</span> words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-                    <span class="token keyword">break</span><span class="token punctuation">;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isLegal</span><span class="token punctuation">(</span>words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-                    maxRes <span class="token operator">=</span> words<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> words<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> maxRes<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>C++</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-        <tag>算法</tag>
       </tags>
   </entry>
   <entry>
@@ -1250,8 +1318,8 @@ m <span class="token operator">=</span> <span class="token string">""</span>
       </categories>
       <tags>
         <tag>CTF</tag>
-        <tag>Crypto</tag>
         <tag>信息安全</tag>
+        <tag>Crypto</tag>
       </tags>
   </entry>
 </search>
