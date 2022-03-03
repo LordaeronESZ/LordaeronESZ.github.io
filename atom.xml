@@ -6,7 +6,7 @@
   <link href="http://lordaeronesz.github.io/atom.xml" rel="self"/>
   
   <link href="http://lordaeronesz.github.io/"/>
-  <updated>2022-01-23T06:50:24.119Z</updated>
+  <updated>2022-03-03T07:06:01.398Z</updated>
   <id>http://lordaeronesz.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>C++复合类型的声明</title>
+    <link href="http://lordaeronesz.github.io/2022/03/03/C++%E5%A4%8D%E5%90%88%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%A3%B0%E6%98%8E/"/>
+    <id>http://lordaeronesz.github.io/2022/03/03/C++%E5%A4%8D%E5%90%88%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%A3%B0%E6%98%8E/</id>
+    <published>2022-03-03T06:28:52.000Z</published>
+    <updated>2022-03-03T07:06:01.398Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="声明语句的构成"><a href="#声明语句的构成" class="headerlink" title="声明语句的构成"></a>声明语句的构成</h1><blockquote><p>在 C++ 中，一条声明语句由一个<strong>基本数据类型</strong>（base type）和紧随其后的一个<strong>声明符</strong>（declarator）列表组成。</p></blockquote><span id="more"></span><h1 id="复合类型的声明"><a href="#复合类型的声明" class="headerlink" title="复合类型的声明"></a>复合类型的声明</h1><h2 id="定义多个变量"><a href="#定义多个变量" class="headerlink" title="定义多个变量"></a>定义多个变量</h2><p>对于基本数据类型变量的声明，声明符就是变量名。但对于复合类型来讲，例如指针类型和引用类型，变量名却只是声明符的一部分。例如 <code>int *b;</code> 需要注意的是， “*”运算符修饰的对象是变量名，而不是基本类型名。例如 <code>int *a, b; </code>，此处变量 b 的数据类型为 int，而非 int *。</p><h2 id="指针的引用"><a href="#指针的引用" class="headerlink" title="指针的引用"></a>指针的引用</h2><p>指针引用的正确定义形式如下：</p><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">*</span> b <span class="token operator">=</span> <span class="token operator">&amp;</span>a<span class="token punctuation">;</span><span class="token keyword">int</span><span class="token operator">*</span><span class="token operator">&amp;</span> c <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// c为指针b的引用</span><span class="token keyword">int</span><span class="token operator">&amp;</span><span class="token operator">*</span> d <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// 错误，d表示指向引用的指针，而引用本身并不是一个对象，无法使用指针进行指向</span></code></pre><p>要想正确理解一个复杂的复合类型，可以从右向左进行阅读，离变量名最近的符号越接近该变量的真实类型，如上例中的引用符。</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;声明语句的构成&quot;&gt;&lt;a href=&quot;#声明语句的构成&quot; class=&quot;headerlink&quot; title=&quot;声明语句的构成&quot;&gt;&lt;/a&gt;声明语句的构成&lt;/h1&gt;&lt;blockquote&gt;
+&lt;p&gt;在 C++ 中，一条声明语句由一个&lt;strong&gt;基本数据类型&lt;/strong&gt;（base type）和紧随其后的一个&lt;strong&gt;声明符&lt;/strong&gt;（declarator）列表组成。&lt;/p&gt;
+&lt;/blockquote&gt;</summary>
+    
+    
+    
+    <category term="C++" scheme="http://lordaeronesz.github.io/categories/C/"/>
+    
+    
+    <category term="C++" scheme="http://lordaeronesz.github.io/tags/C/"/>
+    
+  </entry>
   
   <entry>
     <title>LeetCode周赛总结 第277场</title>
