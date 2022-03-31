@@ -798,12 +798,12 @@ myDelegate <span class="token operator">-=</span> Func1<span class="token punctu
 <li>参数为两个相同类型的变量，且类型与要排序的容器模板类型相同。</li>
 </ol>
 <p>关于 cmp 作为比较函数实现排序的原理，可以这样来进行理解：在示例中，ms1 和 ms2 是两个参数，即 msVector 容器中的元素，且此时 ms1 位于 ms2 之前，此时函数的返回值其实就是给出此时排序的正确性。若正确则返回 true，反之返回 false。例如在示例中，该比较函数想要实现 MyStruct 结构体元素按照其 weight 值从小到大进行排列，因此返回值为 ms1.weight &lt; ms2.weight。ms1 位于 ms2 之前，若 ms1.weight &lt; ms2.weight，则返回 true，反之返回 false，与我们的预期相同。</p>
-<h2 id="标准库比较函数"><a href="#标准库比较函数" class="headerlink" title="标准库比较函数"></a>标准库比较函数</h2><p>如果只是想实现简单的容器的升序或者降序排列，可以直接使用 C++ 标准库中的比较函数：<code>greater()</code> 和 <code>less()</code>，顾名思义，它们分别实现的是升序和降序排列。以下为使用示例：</p>
+<h2 id="标准库比较函数"><a href="#标准库比较函数" class="headerlink" title="标准库比较函数"></a>标准库比较函数</h2><p>如果只是想实现简单的容器的升序或者降序排列，可以直接使用 C++ 标准库中的比较函数：<code>greater()</code> 和 <code>less()</code>，顾名思义，它们分别实现的是降序和升序排列。以下为使用示例：</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> nums <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">greater</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span>
-<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">less</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 5,4,3,2,1 &#125;</span></code></pre>
+<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">greater</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 5,4,3,2,1 &#125;</span>
+<span class="token function">sort</span><span class="token punctuation">(</span>nums<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> nums<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">less</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//排序得到nums = &#123; 1,2,3,4,5 &#125;</span></code></pre>
 
-<p>由此不难发现，sort 函数中 cmp 的默认参数就是 <code>greater&lt;Type&gt;()</code>.</p>
+<p>由此不难发现，sort 函数中 cmp 的默认参数就是 <code>less&lt;Type&gt;()</code>.</p>
 <h2 id="简化比较函数"><a href="#简化比较函数" class="headerlink" title="简化比较函数"></a>简化比较函数</h2><p>对于一个简单的比较函数，我们可以使用 <strong>lambda 表达式</strong>来对代码进行简化。（有关 lambda 表达式的内容，可以参考<a href="https://www.cnblogs.com/DswCnblog/p/5629165.html">C++ 11 Lambda表达式</a>）</p>
 <p>使用 lambda 表达式，我们可以将“自定义比较函数”处的示例简化。</p>
 <pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">sort</span><span class="token punctuation">(</span>msVector<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msVector<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms1<span class="token punctuation">,</span> <span class="token keyword">const</span> MyStruct<span class="token operator">&amp;</span> ms2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
@@ -2170,6 +2170,53 @@ mvStack<span class="token punctuation">.</span><span class="token function">pop<
         <tag>OpenGL</tag>
         <tag>计算机图形学</tag>
         <tag>矩阵堆栈</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>循环语句中指针赋值出错</title>
+    <url>/2022/03/30/%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5%E4%B8%AD%E6%8C%87%E9%92%88%E8%B5%8B%E5%80%BC%E5%87%BA%E9%94%99/</url>
+    <content><![CDATA[<p>最近在写人工智能作业的时候遇到了一点问题，就是在循环语句中对指针类型赋值出现错误，导致所有的结点的前驱指针最终指向自身。</p>
+<span id="more"></span>
+
+<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>以下使用一个简单的示例来模拟当时出现的问题。</p>
+<p>MyStruct 为一个自定义结构体类型，包含数据成员 val 和前驱结点 pre。首先将初始结点<code>(0，nullptr)</code>加入队列 Q，随后在每次循环中，用变量 fs 接收队列 Q 的队首元素并将其出队，并根据该结点生成一个新结点，该新结点 <code>val = fs.val + 1</code>，且将其前驱结点设为 fs 并加入到队列 Q 中。直到 <code>fs.val &gt;= 5</code> 时退出循环。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">MyStruct</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> val<span class="token punctuation">;</span>
+	MyStruct<span class="token operator">*</span> pre<span class="token punctuation">;</span>
+	<span class="token function">MyStruct</span><span class="token punctuation">(</span><span class="token keyword">int</span> v <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> MyStruct<span class="token operator">*</span> p <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">val</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pre</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	std<span class="token double-colon punctuation">::</span>queue<span class="token operator">&lt;</span>MyStruct<span class="token operator">></span> Q<span class="token punctuation">;</span>
+	Q<span class="token punctuation">.</span><span class="token function">emplace</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	MyStruct target<span class="token punctuation">;</span>
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>Q<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		MyStruct fs <span class="token operator">=</span> Q<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		Q<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>fs<span class="token punctuation">.</span>val <span class="token operator">>=</span> <span class="token number">5</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			target <span class="token operator">=</span> fs<span class="token punctuation">;</span>
+			<span class="token keyword">break</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		Q<span class="token punctuation">.</span><span class="token function">emplace</span><span class="token punctuation">(</span>fs<span class="token punctuation">.</span>val <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>fs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	std<span class="token double-colon punctuation">::</span>cin<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>如果代码运行如我们预期，最终将会得到一个 val 为 5 的结点，并且其前驱为一个 val 为 4 的结点，以此类推，形成一个 val 从 5 到 0 的链表。但事实上，最终结点之间并没有彼此相连，结点 target 的 pre 为自身。</p>
+<p><img src="/2022/03/30/%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5%E4%B8%AD%E6%8C%87%E9%92%88%E8%B5%8B%E5%80%BC%E5%87%BA%E9%94%99/wrong.png"></p>
+<h1 id="问题原因"><a href="#问题原因" class="headerlink" title="问题原因"></a>问题原因</h1><p>如果仔细观察，变量 fs 在整个循环过程中都占用同一片内存空间，而子节点的前驱结点 pre 直接指定为了 fs 的地址，那么如果 fs 的值遭到改变，即该地址的数据被改变，那么结点的前驱结点 pre 也会被改变。即下次循环执行 <code>MyStruct fs = Q.front();</code> 后结点的前驱结点就遭到了改变，且指向了自身。</p>
+<h1 id="解放方法"><a href="#解放方法" class="headerlink" title="解放方法"></a>解放方法</h1><p>由于 fs 的始终占用一片内存空间，为了防止因 fs 的数据被改变而使得结点前驱结点数据遭到改变，可以为结点的前驱结点重新开辟一片内存空间并赋予当前 fs 的数据。</p>
+<p><img src="/2022/03/30/%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5%E4%B8%AD%E6%8C%87%E9%92%88%E8%B5%8B%E5%80%BC%E5%87%BA%E9%94%99/right.png"></p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>经验</tag>
+        <tag>数据结构与算法</tag>
       </tags>
   </entry>
 </search>
