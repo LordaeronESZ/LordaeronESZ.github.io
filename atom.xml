@@ -6,7 +6,7 @@
   <link href="http://lordaeronesz.github.io/atom.xml" rel="self"/>
   
   <link href="http://lordaeronesz.github.io/"/>
-  <updated>2022-03-30T15:51:04.902Z</updated>
+  <updated>2022-04-13T00:47:47.319Z</updated>
   <id>http://lordaeronesz.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>C++代码优化 Chapter2</title>
+    <link href="http://lordaeronesz.github.io/2022/04/12/C++%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%20Chapter2/"/>
+    <id>http://lordaeronesz.github.io/2022/04/12/C++%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%20Chapter2/</id>
+    <published>2022-04-12T01:03:08.000Z</published>
+    <updated>2022-04-13T00:47:47.319Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文将继续介绍一些常见的 C++ 代码优化技巧，本文为该系列的第二章，未来不定期更新。</p><span id="more"></span><h1 id="非必要时使用常量引用"><a href="#非必要时使用常量引用" class="headerlink" title="非必要时使用常量引用"></a>非必要时使用常量引用</h1><p>在上一章我们介绍了在进行函数的参数传递时，尤其对于所占内存空间较大的参数的传递，为了避免拷贝所带来的不必要的性能开销，应当尽量使用引用传递。并且，当该函数不需要对传入的参数进行更改时，应当在参数类型前添加 <strong>const</strong> 关键字表示这是一个常量引用。</p><p>可能有朋友认为这里的 const 关键字的添加并不是必要的，但这样会带来两个问题：首先便是程序的可读性的下降，如果不添加 const 关键字，用户可能会认为该函数的变量是可更改的。其次它还将导致<strong>字面值</strong>将无法作为该函数的参数进行传递。所谓字面值，就是指代码中用数字或字符直接表示出来的常量（例如 <code>1</code>, <code>&quot;hello world&quot;</code>），这部分数据嵌入在程序中，当程序运行时被复制到内存的常量区，该区域为只读区域。示例如下：</p><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">findChar</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s<span class="token punctuation">,</span> <span class="token keyword">char</span> target<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> s<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">==</span> target<span class="token punctuation">)</span><span class="token keyword">return</span> i<span class="token punctuation">;</span><span class="token punctuation">&#125;</span><span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span><span class="token punctuation">&#125;</span><span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token keyword">auto</span> ind <span class="token operator">=</span> <span class="token function">findChar</span><span class="token punctuation">(</span><span class="token string">"constant reference"</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 编译出错</span><span class="token punctuation">&#125;</span></code></pre><p>以上实例中 <code>findChar()</code> 函数功能为在字符串 s 中寻找字符 target 并返回第一个 target 字符的下标，若未找到，则返回 -1. </p><p>当用实参初始化形参时，会忽略掉顶层的 const（即修饰整个变量类型的 const）。因此，当形参包含顶层 const 时，实参类型既可以是常量类型，也可以是非常量类型。但如果形参不含顶层 const，正如上例所示，它将无法接收常量类型或者字面值类型，这样将很大程度上限制该函数的适用范围，同时还可能会导致一些意想不到的错误。</p><p>正确的做法应该是在类型前添加 const 关键字，<code>int findChar(const std::string&amp; s, char target)</code></p><h1 id="使用内联函数替代复杂条件表达式"><a href="#使用内联函数替代复杂条件表达式" class="headerlink" title="使用内联函数替代复杂条件表达式"></a>使用内联函数替代复杂条件表达式</h1><p>我们在编写程序时可能会遇到需要使用复杂的条件表达式的情况，例如 <code>std::string s = s1.size() &gt; s2.size() ? s1 : s2;</code> ，这是一个常规的布尔表达式，作用是得到字符串 s1 和字符串 s2 中长度较小的一个。这样写固然没错，但可读性不佳，尤其当该表达式需要被反复使用时。</p><p>因此可以考虑将该表达式的操作定义为一个函数，如下所示：</p><pre class="language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>string <span class="token function">longerStr</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token keyword">return</span> s1<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> s2<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> s1 <span class="token operator">:</span> s2<span class="token punctuation">;</span><span class="token punctuation">&#125;</span></code></pre><p>但是函数调用过程由于涉及到参数拷贝以及上一个调用函数的上下文保存，本身就存在一定的开销。那有没有一种办法使得该表达式操作即被封装成函数，又不会带来不必要的性能开销呢？内联函数就能够达成这样的目的。</p><p>内联函数会在编译期间会将函数体直接在所有函数调用位置处展开，这样运行效率就与条件表达式无异了。将函数声明为内联函数的方法是在函数返回值类型前添加 <strong>inline</strong> 关键字。</p><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">inline</span> std<span class="token double-colon punctuation">::</span>string <span class="token function">longerStr</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token keyword">return</span> s1<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> s2<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> s1 <span class="token operator">:</span> s2<span class="token punctuation">;</span><span class="token punctuation">&#125;</span><span class="token comment">// 编译期间展开为 std::string s = s1.size() > s2.size() ? s1 : s2;</span>std<span class="token double-colon punctuation">::</span>string s <span class="token operator">=</span> <span class="token function">longerStr</span><span class="token punctuation">(</span>s1<span class="token punctuation">,</span> s2<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre><p>这其实与 C 语言中的宏定义操作类似：<code>#define LS(s1, s2) s1.size() &gt; s2.size() ? s1 : s2</code>，但宏定义是十分简单的文本替换，它不会执行<strong>类型检查</strong>，导致的错误可能会十分隐蔽，因此在现代 C++ 程序中应当尽量避免使用宏定义。</p><p>值得注意的是，内联函数通常只适用于函数体较短，逻辑较为简单的函数，通常函数体不超过 10 行。同时，对于一个多文件的程序，内联函数的定义通常直接位于头文件中，而不应先在头文件中声明，再在 cpp 文件中定义。</p>]]></content>
+    
+    
+    <summary type="html">&lt;p&gt;本文将继续介绍一些常见的 C++ 代码优化技巧，本文为该系列的第二章，未来不定期更新。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="C++" scheme="http://lordaeronesz.github.io/categories/C/"/>
+    
+    
+    <category term="C++" scheme="http://lordaeronesz.github.io/tags/C/"/>
+    
+  </entry>
   
   <entry>
     <title>循环语句中指针赋值出错</title>
@@ -482,35 +503,6 @@
     <category term="文件" scheme="http://lordaeronesz.github.io/tags/%E6%96%87%E4%BB%B6/"/>
     
     <category term="Windows10" scheme="http://lordaeronesz.github.io/tags/Windows10/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>让批处理文件中的中文正常显示</title>
-    <link href="http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/"/>
-    <id>http://lordaeronesz.github.io/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/</id>
-    <published>2021-05-11T11:05:45.000Z</published>
-    <updated>2021-09-02T05:44:41.198Z</updated>
-    
-    <content type="html"><![CDATA[<p>最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。</p><span id="more"></span><p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/cmd%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81.png"></p><h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><h2 id="编码相关的那些事"><a href="#编码相关的那些事" class="headerlink" title="编码相关的那些事"></a>编码相关的那些事</h2><p>现在主要的两种编码格式为UTF-8和ANSI。</p><blockquote><p>ANSI是一种字符代码，为使计算机支持更多语言，通常使用 0x00~0x7f 范围的1 个字节来表示 1 个英文字符。超出此范围的使用0x80~0xffff来编码，即扩展的ASCII编码。</p></blockquote><p>为了应对不同国家和地区的使用，ANSI编码存在很多不同的标准：由于汉字的种类非常多，而一个字节（Byte）最多只能表示<strong>2^8 = 256</strong>种文字与符号，这肯定是远远不够的。因此在中国、日本、韩国等采用象形字符的地区，通常采用<em>双字节字符集</em>的方式来表示文字符号，即采用两个字节来表示一个字符。在简体中文系统下采用的是<em>GBK标准</em>，比如汉字“字”就使用[0xd7,0xd6]两个字节进行存储。系统会根据计算机语言来确定ANSI的标准，当然也可用手动更改。</p><blockquote><p>UTF-8（8位元，Universal Character Set/Unicode Transformation Format）是针对Unicode的一种可变长度字符编码。它可以用来表示Unicode标准中的任何字符，而且其编码中的第一个字节仍与ASCII相容，使得原来处理ASCII字符的软件无须或只进行少部分修改后，便可继续使用。因此，它逐渐成为电子邮件、网页及其他存储或传送文字的应用中，优先采用的编码。</p></blockquote><p>UTF-8相较于ANSI最大的特点就是采用了可变长度的编码方式，相较于ANSI对任何字符都采用固定长度编码，UTF-8可对不同范围内的字符使用不同长度的编码，比如英文中一个字符就用一个字节表示，而汉语则使用三个字节，使得不同的文字都可以以一套通用的标准进行编码，这保证了不同语言的系统中编码的通用性。</p><h2 id="产生原因"><a href="#产生原因" class="headerlink" title="产生原因"></a>产生原因</h2><p>查看文本编辑器的编码格式，发现采用的是UTF-8的编码格式，但是win10系统控制台的默认编码格式为ANSI编码，与文本编码格式不符合，导致计算机用ANSI的标准去对采用了UTF-8编码的文本进行解释，结果自然就产生了乱码。</p><p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/notepad++.png"></p><h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以将文本的编码格式改为与控制台编码一致，这里建议都改为ANSI编码，因为UTF-8编码格式下的控制台的提示信息为英文。这里在更改了文件的编码格式为ANSI并重新编辑文本后，中文显示正常。</p><p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%AD%A3%E5%B8%B8.png"></p><p>当然如果你想保证指令的通用性，批处理文件仍要采用UTF-8的编码格式，可以选择更改控制台的编码格式，以下给出了两种<strong>将控制台编码格式更改为UTF-8的方法</strong>。</p><h3 id="方法1：注册表编辑器修改"><a href="#方法1：注册表编辑器修改" class="headerlink" title="方法1：注册表编辑器修改"></a>方法1：注册表编辑器修改</h3><h4 id="Step1：打开注册表编辑器"><a href="#Step1：打开注册表编辑器" class="headerlink" title="Step1：打开注册表编辑器"></a>Step1：打开注册表编辑器</h4><p>可以直接在Win10搜索框中搜索关键字“注册表”打开，也可以Win+R运行“<strong>Regedit</strong>”。</p><h4 id="Step2：找到相应的数据并更改"><a href="#Step2：找到相应的数据并更改" class="headerlink" title="Step2：找到相应的数据并更改"></a>Step2：找到相应的数据并更改</h4><p>找到 <strong>HKEY_CURRENT_USER\Console%SystemRoot%_system32_cmd.exe</strong> 并将其更改为65001（十进制）或fde9（十六进制）。</p><p><img src="/2021/05/11/%E8%AE%A9%E6%89%B9%E5%A4%84%E7%90%86%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E4%B8%AD%E6%96%87%E6%AD%A3%E5%B8%B8%E6%98%BE%E7%A4%BA/%E6%B3%A8%E5%86%8C%E8%A1%A8.png"></p><h3 id="方法2：运行注册表脚本"><a href="#方法2：运行注册表脚本" class="headerlink" title="方法2：运行注册表脚本"></a>方法2：运行注册表脚本</h3><p>可以直接将方法1的操作编写为一个脚本操作，代码如下：</p><pre class="language-none"><code class="language-none">Windows Registry Editor Version 5.00[HKEY_CURRENT_USER\Console\%SystemRoot%_system32_cmd.exe]&quot;CodePage&quot;&#x3D;dword:0000fde9</code></pre><p>复制到新建文本文件并将拓展名改为“.reg”，运行。</p>]]></content>
-    
-    
-    <summary type="html">&lt;p&gt;最近在学习DOS命令和批处理相关内容的时候，遇到了点问题，就是在执行包含中文的批处理文件时，中文无法正常显示，在查阅了相关资料之后，了解了一些编码相关的内容。&lt;/p&gt;</summary>
-    
-    
-    
-    <category term="经验" scheme="http://lordaeronesz.github.io/categories/%E7%BB%8F%E9%AA%8C/"/>
-    
-    
-    <category term="经验" scheme="http://lordaeronesz.github.io/tags/%E7%BB%8F%E9%AA%8C/"/>
-    
-    <category term="批处理" scheme="http://lordaeronesz.github.io/tags/%E6%89%B9%E5%A4%84%E7%90%86/"/>
-    
-    <category term="编码格式" scheme="http://lordaeronesz.github.io/tags/%E7%BC%96%E7%A0%81%E6%A0%BC%E5%BC%8F/"/>
-    
-    <category term="Windows10" scheme="http://lordaeronesz.github.io/tags/Windows10/"/>
-    
-    <category term="注册表" scheme="http://lordaeronesz.github.io/tags/%E6%B3%A8%E5%86%8C%E8%A1%A8/"/>
     
   </entry>
   

@@ -2219,4 +2219,52 @@ mvStack<span class="token punctuation">.</span><span class="token function">pop<
         <tag>数据结构与算法</tag>
       </tags>
   </entry>
+  <entry>
+    <title>C++代码优化 Chapter2</title>
+    <url>/2022/04/12/C++%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%20Chapter2/</url>
+    <content><![CDATA[<p>本文将继续介绍一些常见的 C++ 代码优化技巧，本文为该系列的第二章，未来不定期更新。</p>
+<span id="more"></span>
+
+<h1 id="非必要时使用常量引用"><a href="#非必要时使用常量引用" class="headerlink" title="非必要时使用常量引用"></a>非必要时使用常量引用</h1><p>在上一章我们介绍了在进行函数的参数传递时，尤其对于所占内存空间较大的参数的传递，为了避免拷贝所带来的不必要的性能开销，应当尽量使用引用传递。并且，当该函数不需要对传入的参数进行更改时，应当在参数类型前添加 <strong>const</strong> 关键字表示这是一个常量引用。</p>
+<p>可能有朋友认为这里的 const 关键字的添加并不是必要的，但这样会带来两个问题：首先便是程序的可读性的下降，如果不添加 const 关键字，用户可能会认为该函数的变量是可更改的。其次它还将导致<strong>字面值</strong>将无法作为该函数的参数进行传递。所谓字面值，就是指代码中用数字或字符直接表示出来的常量（例如 <code>1</code>, <code>&quot;hello world&quot;</code>），这部分数据嵌入在程序中，当程序运行时被复制到内存的常量区，该区域为只读区域。示例如下：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">findChar</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s<span class="token punctuation">,</span> <span class="token keyword">char</span> target<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> s<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">==</span> target<span class="token punctuation">)</span>
+			<span class="token keyword">return</span> i<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">auto</span> ind <span class="token operator">=</span> <span class="token function">findChar</span><span class="token punctuation">(</span><span class="token string">"constant reference"</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 编译出错</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>以上实例中 <code>findChar()</code> 函数功能为在字符串 s 中寻找字符 target 并返回第一个 target 字符的下标，若未找到，则返回 -1. </p>
+<p>当用实参初始化形参时，会忽略掉顶层的 const（即修饰整个变量类型的 const）。因此，当形参包含顶层 const 时，实参类型既可以是常量类型，也可以是非常量类型。但如果形参不含顶层 const，正如上例所示，它将无法接收常量类型或者字面值类型，这样将很大程度上限制该函数的适用范围，同时还可能会导致一些意想不到的错误。</p>
+<p>正确的做法应该是在类型前添加 const 关键字，<code>int findChar(const std::string&amp; s, char target)</code></p>
+<h1 id="使用内联函数替代复杂条件表达式"><a href="#使用内联函数替代复杂条件表达式" class="headerlink" title="使用内联函数替代复杂条件表达式"></a>使用内联函数替代复杂条件表达式</h1><p>我们在编写程序时可能会遇到需要使用复杂的条件表达式的情况，例如 <code>std::string s = s1.size() &gt; s2.size() ? s1 : s2;</code> ，这是一个常规的布尔表达式，作用是得到字符串 s1 和字符串 s2 中长度较小的一个。这样写固然没错，但可读性不佳，尤其当该表达式需要被反复使用时。</p>
+<p>因此可以考虑将该表达式的操作定义为一个函数，如下所示：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>string <span class="token function">longerStr</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> s1<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> s2<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> s1 <span class="token operator">:</span> s2<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<p>但是函数调用过程由于涉及到参数拷贝以及上一个调用函数的上下文保存，本身就存在一定的开销。那有没有一种办法使得该表达式操作即被封装成函数，又不会带来不必要的性能开销呢？内联函数就能够达成这样的目的。</p>
+<p>内联函数会在编译期间会将函数体直接在所有函数调用位置处展开，这样运行效率就与条件表达式无异了。将函数声明为内联函数的方法是在函数返回值类型前添加 <strong>inline</strong> 关键字。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">inline</span> std<span class="token double-colon punctuation">::</span>string <span class="token function">longerStr</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s1<span class="token punctuation">,</span> <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> s2<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">return</span> s1<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> s2<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> s1 <span class="token operator">:</span> s2<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// 编译期间展开为 std::string s = s1.size() > s2.size() ? s1 : s2;</span>
+std<span class="token double-colon punctuation">::</span>string s <span class="token operator">=</span> <span class="token function">longerStr</span><span class="token punctuation">(</span>s1<span class="token punctuation">,</span> s2<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>这其实与 C 语言中的宏定义操作类似：<code>#define LS(s1, s2) s1.size() &gt; s2.size() ? s1 : s2</code>，但宏定义是十分简单的文本替换，它不会执行<strong>类型检查</strong>，导致的错误可能会十分隐蔽，因此在现代 C++ 程序中应当尽量避免使用宏定义。</p>
+<p>值得注意的是，内联函数通常只适用于函数体较短，逻辑较为简单的函数，通常函数体不超过 10 行。同时，对于一个多文件的程序，内联函数的定义通常直接位于头文件中，而不应先在头文件中声明，再在 cpp 文件中定义。</p>
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+      </tags>
+  </entry>
 </search>
