@@ -2635,4 +2635,96 @@ string Solution<span class="token double-colon punctuation">::</span>targetStr<s
         <tag>人工智能</tag>
       </tags>
   </entry>
+  <entry>
+    <title>停止等待协议的模拟实现</title>
+    <url>/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/</url>
+    <content><![CDATA[<h1 id="协议原理"><a href="#协议原理" class="headerlink" title="协议原理"></a>协议原理</h1><p><img src="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86.png"></p>
+<h1 id="设计思路"><a href="#设计思路" class="headerlink" title="设计思路"></a>设计思路</h1><h2 id="基本传输"><a href="#基本传输" class="headerlink" title="基本传输"></a>基本传输</h2><p>本次实验我采用了程序模拟的方式实现。发送方和接收方都为一个数组，传输过程即为发送方数组向接收方数组传递数据，并使用随机数生成的方式模拟传输过程中可能出现的差错，并且传输时间也为一个在 50 - 150 ms 间的随机数，用一个迭代器来模拟此时发送方的数据位置。</p>
+<p>传输过程为一个循环语句，终止条件为发送迭代器到达发送方数组的末尾位置。</p>
+<h2 id="选择重传"><a href="#选择重传" class="headerlink" title="选择重传"></a>选择重传</h2><p>每次进行传输，传输时间就会累加，在一轮传输的最后判断累计时间是否超过了规定 t<sub>out</sub>，如果未超过，代表数据成功接收，发送迭代器自增 1。 否则，不进行操作，下一次循环将会再次尝试发送该数据。</p>
+<h2 id="舍弃重复帧"><a href="#舍弃重复帧" class="headerlink" title="舍弃重复帧"></a>舍弃重复帧</h2><p>存在这么一种情况，接收方成功接收了发送方的数据，并返回了一个 ACK 帧，但是此 ACK 帧还未到达发送方就已被其判定为超时，那么发送方将会重新发送上一次的数据帧，若该数据帧成功到达接收方，那么接收方需要将该数据帧舍弃（因此上一次传输时接收方已成功接受了该数据帧）。实现方法是判断接受数组的最后一个元素（即上一次接收的元素）是否与此时接受的相同，若相同，则不接收，并重新发送 ACK 帧。</p>
+<h1 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h1><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;vector></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;Windows.h></span></span>
+<span class="token keyword">using</span> <span class="token keyword">namespace</span> std<span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token class-name">myData</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> bin<span class="token punctuation">;</span>
+	string str<span class="token punctuation">;</span>
+	<span class="token function">myData</span><span class="token punctuation">(</span><span class="token keyword">int</span> b<span class="token punctuation">,</span> string s<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">bin</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">str</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">ARQ</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+	<span class="token keyword">void</span> <span class="token function">transmitData</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>myData<span class="token operator">></span><span class="token operator">&amp;</span> reciver<span class="token punctuation">,</span> vector<span class="token operator">&lt;</span>myData<span class="token operator">></span><span class="token operator">&amp;</span> sender<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">srand</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">int</span><span class="token punctuation">)</span><span class="token function">time</span><span class="token punctuation">(</span><span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">auto</span> itSender <span class="token operator">=</span> sender<span class="token punctuation">.</span><span class="token function">cbegin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span>itSender <span class="token operator">!=</span> sender<span class="token punctuation">.</span><span class="token function">cend</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">int</span> sendBin <span class="token operator">=</span> <span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">2</span><span class="token punctuation">;</span> <span class="token comment">// 传输过程数据可能出错</span>
+			<span class="token keyword">double</span> transTime <span class="token operator">=</span> <span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">101</span> <span class="token operator">+</span> <span class="token number">50</span><span class="token punctuation">;</span> <span class="token comment">// 随机传输时间为 50 - 150 ms</span>
+			myData <span class="token function">sendData</span><span class="token punctuation">(</span>sendBin<span class="token punctuation">,</span> itSender<span class="token operator">-></span>str<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 取数据帧</span>
+			cout <span class="token operator">&lt;&lt;</span> <span class="token string">"sender: 正在发送第 "</span> <span class="token operator">&lt;&lt;</span> itSender <span class="token operator">-</span> sender<span class="token punctuation">.</span><span class="token function">cbegin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 帧..."</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+			<span class="token function">Sleep</span><span class="token punctuation">(</span>transTime<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 数据传输过程</span>
+			<span class="token keyword">bool</span> isRight <span class="token operator">=</span> sendData<span class="token punctuation">.</span>bin<span class="token punctuation">;</span> <span class="token comment">// 检错</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>reciver<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> reciver<span class="token punctuation">.</span><span class="token function">back</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>str <span class="token operator">==</span> sendData<span class="token punctuation">.</span>str<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 舍弃重复帧</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 丢弃重复帧，准备重新发送 ACK 帧。"</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				isRight <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+				transTime <span class="token operator">+=</span> <span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">101</span> <span class="token operator">+</span> <span class="token number">50</span><span class="token punctuation">;</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 正在发送 ACK 帧..."</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				<span class="token function">Sleep</span><span class="token punctuation">(</span>transTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>isRight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 数据正确</span>
+				reciver<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>sendData<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 接收数据</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 数据成功接收，准备发送 ACK 帧。"</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				transTime <span class="token operator">+=</span> <span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">101</span> <span class="token operator">+</span> <span class="token number">50</span><span class="token punctuation">;</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 正在发送 ACK 帧..."</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				<span class="token function">Sleep</span><span class="token punctuation">(</span>transTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 数据错误</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 数据错误，发送 NAK 帧。"</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				transTime <span class="token operator">+=</span> <span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">101</span> <span class="token operator">+</span> <span class="token number">50</span><span class="token punctuation">;</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"reciver: 正在发送 NAK 帧..."</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				<span class="token function">Sleep</span><span class="token punctuation">(</span>transTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>transTime <span class="token operator">&lt;</span> <span class="token number">250</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 未超时</span>
+				<span class="token keyword">if</span> <span class="token punctuation">(</span>isRight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+					cout <span class="token operator">&lt;&lt;</span> <span class="token string">"sender: 成功接收 ACK 帧，准备发送下一帧。"</span> <span class="token operator">&lt;&lt;</span> endl <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+					<span class="token operator">++</span>itSender<span class="token punctuation">;</span>
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+					cout <span class="token operator">&lt;&lt;</span> <span class="token string">"sender: 成功接收 NAK 帧，准备重传。"</span> <span class="token operator">&lt;&lt;</span> endl <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 传输超时</span>
+				cout <span class="token operator">&lt;&lt;</span> <span class="token string">"sender: 超时，准备重传。"</span> <span class="token operator">&lt;&lt;</span> endl <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	ARQ arq<span class="token punctuation">;</span>
+	vector<span class="token operator">&lt;</span>myData<span class="token operator">></span> reciver<span class="token punctuation">;</span> <span class="token comment">// 初始时接收方为空</span>
+	vector<span class="token operator">&lt;</span>myData<span class="token operator">></span> sender <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token function">myData</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"Hello"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token function">myData</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">"World"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">myData</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"!"</span><span class="token punctuation">)</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span> <span class="token comment">// 初始化发送方</span>
+	arq<span class="token punctuation">.</span><span class="token function">transmitData</span><span class="token punctuation">(</span>reciver<span class="token punctuation">,</span> sender<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	cout <span class="token operator">&lt;&lt;</span> <span class="token string">"---------------------------------"</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+	cout <span class="token operator">&lt;&lt;</span> <span class="token string">"数据传输结束，以下为接收者收到的数据："</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> s <span class="token operator">:</span> sender<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		cout <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span>bin <span class="token operator">&lt;&lt;</span> <span class="token string">" "</span> <span class="token operator">&lt;&lt;</span> s<span class="token punctuation">.</span>str <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h1 id="运行效果"><a href="#运行效果" class="headerlink" title="运行效果"></a>运行效果</h1><p><img src="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C.png"></p>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>算法</tag>
+        <tag>计算机网络</tag>
+      </tags>
+  </entry>
 </search>
