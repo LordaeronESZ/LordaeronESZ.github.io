@@ -230,6 +230,29 @@
       </tags>
   </entry>
   <entry>
+    <title>C++复合类型的声明</title>
+    <url>/2022/03/03/C++%E5%A4%8D%E5%90%88%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%A3%B0%E6%98%8E/</url>
+    <content><![CDATA[<h1 id="声明语句的构成"><a href="#声明语句的构成" class="headerlink" title="声明语句的构成"></a>声明语句的构成</h1><blockquote>
+<p>在 C++ 中，一条声明语句由一个<strong>基本数据类型</strong>（base type）和紧随其后的一个<strong>声明符</strong>（declarator）列表组成。</p>
+</blockquote>
+<span id="more"></span>
+
+<h1 id="复合类型的声明"><a href="#复合类型的声明" class="headerlink" title="复合类型的声明"></a>复合类型的声明</h1><h2 id="定义多个变量"><a href="#定义多个变量" class="headerlink" title="定义多个变量"></a>定义多个变量</h2><p>对于基本数据类型变量的声明，声明符就是变量名。但对于复合类型来讲，例如指针类型和引用类型，变量名却只是声明符的一部分。例如 <code>int *b;</code> 需要注意的是， “*”运算符修饰的对象是变量名，而不是基本类型名。例如 <code>int *a, b; </code>，此处变量 b 的数据类型为 int，而非 int *。</p>
+<h2 id="指针的引用"><a href="#指针的引用" class="headerlink" title="指针的引用"></a>指针的引用</h2><p>指针引用的正确定义形式如下：</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">*</span> b <span class="token operator">=</span> <span class="token operator">&amp;</span>a<span class="token punctuation">;</span>
+<span class="token keyword">int</span><span class="token operator">*</span><span class="token operator">&amp;</span> c <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// c为指针b的引用</span>
+<span class="token keyword">int</span><span class="token operator">&amp;</span><span class="token operator">*</span> d <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// 错误，d表示指向引用的指针，而引用本身并不是一个对象，无法使用指针进行指向</span></code></pre>
+
+<p>要想正确理解一个复杂的复合类型，可以从右向左进行阅读，离变量名最近的符号越接近该变量的真实类型，如上例中的引用符。</p>
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C++代码优化 Chapter2</title>
     <url>/2022/04/12/C++%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%20Chapter2/</url>
     <content><![CDATA[<p>本文将继续介绍一些常见的 C++ 代码优化技巧，本文为该系列的第二章，未来不定期更新。</p>
@@ -269,29 +292,6 @@ std<span class="token double-colon punctuation">::</span>string s <span class="t
 
 <p>这其实与 C 语言中的宏定义操作类似：<code>#define LS(s1, s2) s1.size() &gt; s2.size() ? s1 : s2</code>，但宏定义是十分简单的文本替换，它不会执行<strong>类型检查</strong>，导致的错误可能会十分隐蔽，因此在现代 C++ 程序中应当尽量避免使用宏定义。</p>
 <p>值得注意的是，内联函数通常只适用于函数体较短，逻辑较为简单的函数，通常函数体不超过 10 行。同时，对于一个多文件的程序，内联函数的定义通常直接位于头文件中，而不应先在头文件中声明，再在 cpp 文件中定义。</p>
-]]></content>
-      <categories>
-        <category>C++</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>C++复合类型的声明</title>
-    <url>/2022/03/03/C++%E5%A4%8D%E5%90%88%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%A3%B0%E6%98%8E/</url>
-    <content><![CDATA[<h1 id="声明语句的构成"><a href="#声明语句的构成" class="headerlink" title="声明语句的构成"></a>声明语句的构成</h1><blockquote>
-<p>在 C++ 中，一条声明语句由一个<strong>基本数据类型</strong>（base type）和紧随其后的一个<strong>声明符</strong>（declarator）列表组成。</p>
-</blockquote>
-<span id="more"></span>
-
-<h1 id="复合类型的声明"><a href="#复合类型的声明" class="headerlink" title="复合类型的声明"></a>复合类型的声明</h1><h2 id="定义多个变量"><a href="#定义多个变量" class="headerlink" title="定义多个变量"></a>定义多个变量</h2><p>对于基本数据类型变量的声明，声明符就是变量名。但对于复合类型来讲，例如指针类型和引用类型，变量名却只是声明符的一部分。例如 <code>int *b;</code> 需要注意的是， “*”运算符修饰的对象是变量名，而不是基本类型名。例如 <code>int *a, b; </code>，此处变量 b 的数据类型为 int，而非 int *。</p>
-<h2 id="指针的引用"><a href="#指针的引用" class="headerlink" title="指针的引用"></a>指针的引用</h2><p>指针引用的正确定义形式如下：</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">*</span> b <span class="token operator">=</span> <span class="token operator">&amp;</span>a<span class="token punctuation">;</span>
-<span class="token keyword">int</span><span class="token operator">*</span><span class="token operator">&amp;</span> c <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// c为指针b的引用</span>
-<span class="token keyword">int</span><span class="token operator">&amp;</span><span class="token operator">*</span> d <span class="token operator">=</span> b<span class="token punctuation">;</span> <span class="token comment">// 错误，d表示指向引用的指针，而引用本身并不是一个对象，无法使用指针进行指向</span></code></pre>
-
-<p>要想正确理解一个复杂的复合类型，可以从右向左进行阅读，离变量名最近的符号越接近该变量的真实类型，如上例中的引用符。</p>
 ]]></content>
       <categories>
         <category>C++</category>
@@ -898,6 +898,127 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </tags>
   </entry>
   <entry>
+    <title>LeetCode周赛总结 第277场</title>
+    <url>/2022/01/23/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC277%E5%9C%BA/</url>
+    <content><![CDATA[<p>本次周赛没想到比上周还要简单，前三题都可以用非常简单的方法快速解决，第四题如果想对了方向其实也比较简单。</p>
+<span id="more"></span>
+
+<h1 id="元素计数"><a href="#元素计数" class="headerlink" title="元素计数"></a>元素计数</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/count-elements-with-strictly-smaller-and-greater-elements/">元素计数</a></p>
+<h2 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h2><p>相当基础的题目，要同时具有一个严格较小元素和一个严格较大元素，只需要保证这个数 num 满足 <code>num &gt; minVal &amp;&amp; num &lt; maxVal</code>即可。</p>
+<h2 id="解题代码"><a href="#解题代码" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token keyword">int</span> <span class="token function">countElements</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> minVal <span class="token operator">=</span> INT32_MAX<span class="token punctuation">,</span> maxVal <span class="token operator">=</span> INT32_MIN<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            minVal <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minVal<span class="token punctuation">,</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            maxVal <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>maxVal<span class="token punctuation">,</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">int</span> res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">></span> minVal <span class="token operator">&amp;&amp;</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&lt;</span> maxVal<span class="token punctuation">)</span>
+                res<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<h1 id="按符号重排数组"><a href="#按符号重排数组" class="headerlink" title="按符号重排数组"></a>按符号重排数组</h1><h2 id="题目链接-1"><a href="#题目链接-1" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/rearrange-array-elements-by-sign/">按符号重排数组</a></p>
+<h2 id="解题思路-1"><a href="#解题思路-1" class="headerlink" title="解题思路"></a>解题思路</h2><p>最容易想到和实现的方法显然是将正数和负数分别存入两个数组，再合并到一个数组中，虽然这样做空间复杂度比较高，但思路最为简单，代码实现相对较快。</p>
+<h2 id="解题代码-1"><a href="#解题代码-1" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">rearrangeArray</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> posVec<span class="token punctuation">;</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> negVec<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
+                posVec<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                negVec<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> res<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> posVec<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>posVec<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>negVec<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<h1 id="找出数组中的所有孤独数字"><a href="#找出数组中的所有孤独数字" class="headerlink" title="找出数组中的所有孤独数字"></a>找出数组中的所有孤独数字</h1><h2 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/find-all-lonely-numbers-in-the-array/">找出数组中的所有孤独数字</a></p>
+<h2 id="解题思路-2"><a href="#解题思路-2" class="headerlink" title="解题思路"></a>解题思路</h2><p>对数字进行统计，考虑使用哈希表 HashMap 存储数组的数据，哈希表的 key 为数组中的数字，value 为该数字出现的次数。</p>
+<p>再次遍历数组，对数组的每一个元素 num 判断 <code>HashMap[num]</code> 是否为 1，并且 <code>HashMap[num - 1]</code> 和 <code>HashMap[num + 1]</code> 是否存在，若都满足，则该数字为孤独数字，加入结果中。</p>
+<h2 id="解题代码-2"><a href="#解题代码-2" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">findLonely</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        unordered_map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> <span class="token keyword">int</span><span class="token operator">></span> numsMap<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            numsMap<span class="token punctuation">[</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> res<span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>numsMap<span class="token punctuation">[</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>numsMap<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> numsMap<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                    res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<h1 id="基于陈述统计最多好人数"><a href="#基于陈述统计最多好人数" class="headerlink" title="基于陈述统计最多好人数"></a>基于陈述统计最多好人数</h1><h2 id="题目链接-3"><a href="#题目链接-3" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/maximum-good-people-based-on-statements/">基于陈述统计最多好人数</a></p>
+<h2 id="解题思路-3"><a href="#解题思路-3" class="headerlink" title="解题思路"></a>解题思路</h2><p>本题测试用例中中 <code>2 &lt;= n &lt;= 15</code>，数据量很小，可以考虑直接枚举所有的情况，并检验该情况下是否合理。</p>
+<p>所有可能情况个数为 2<sup>n</sup>，每种情况用二进制数 a<sub>n</sub>a<sub>n - 1</sub>···a<sub>0</sub> 来表示，a<sub>n</sub> 为 0 代表该情况下 n 角色为 坏人，a<sub>n</sub> 为 1 代表该情况下 n 角色为 好人。</p>
+<p>在统计了该情况下的角色情况后，就对其进行验证。由于坏人既可能说真话也可能说假话，因此对其验证没有意义，我们只需要对该情况下的好人进行验证。验证方法是遍历这个好人的陈述，若出现陈述与该情况不符，则该情况不符合条件，不统计其好人的数目。最终遍历所有的情况后，得到符合条件的好人最大数目。</p>
+<h2 id="解题代码-3"><a href="#解题代码-3" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token keyword">int</span> <span class="token function">maximumGood</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span><span class="token operator">&amp;</span> statements<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> n <span class="token operator">=</span> statements<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> cnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+            vector<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token operator">></span> <span class="token function">isGood</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>i <span class="token operator">>></span> j<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 统计状态 i 的好人与坏人</span>
+                    isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                    cnt<span class="token operator">++</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+                <span class="token keyword">else</span>
+                    isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token comment">// 验证状态是否合理</span>
+            <span class="token keyword">bool</span> isLegal <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 若 j 是好人，则遍历他的陈述是否正确</span>
+                    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> k<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>statements<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>isGood<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                            isLegal <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                            <span class="token keyword">break</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">&#125;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>statements<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> isGood<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                            isLegal <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                            <span class="token keyword">break</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">&#125;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>isLegal<span class="token punctuation">)</span>
+                res <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>res<span class="token punctuation">,</span> cnt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>数据结构与算法</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>算法</tag>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>LeetCode周赛总结 第276场</title>
     <url>/2022/01/16/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC276%E5%9C%BA/</url>
     <content><![CDATA[<p>本次周赛相对比较简单，前三题花的时间比较短，但无奈最后一题还是没思路。。。</p>
@@ -1024,127 +1145,6 @@ k <span class="token operator">=</span> <span class="token number">0</span>
       </tags>
   </entry>
   <entry>
-    <title>LeetCode周赛总结 第277场</title>
-    <url>/2022/01/23/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC277%E5%9C%BA/</url>
-    <content><![CDATA[<p>本次周赛没想到比上周还要简单，前三题都可以用非常简单的方法快速解决，第四题如果想对了方向其实也比较简单。</p>
-<span id="more"></span>
-
-<h1 id="元素计数"><a href="#元素计数" class="headerlink" title="元素计数"></a>元素计数</h1><h2 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/count-elements-with-strictly-smaller-and-greater-elements/">元素计数</a></p>
-<h2 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h2><p>相当基础的题目，要同时具有一个严格较小元素和一个严格较大元素，只需要保证这个数 num 满足 <code>num &gt; minVal &amp;&amp; num &lt; maxVal</code>即可。</p>
-<h2 id="解题代码"><a href="#解题代码" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    <span class="token keyword">int</span> <span class="token function">countElements</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        <span class="token keyword">int</span> minVal <span class="token operator">=</span> INT32_MAX<span class="token punctuation">,</span> maxVal <span class="token operator">=</span> INT32_MIN<span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            minVal <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minVal<span class="token punctuation">,</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            maxVal <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>maxVal<span class="token punctuation">,</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">int</span> res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">></span> minVal <span class="token operator">&amp;&amp;</span> nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&lt;</span> maxVal<span class="token punctuation">)</span>
-                res<span class="token operator">++</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<h1 id="按符号重排数组"><a href="#按符号重排数组" class="headerlink" title="按符号重排数组"></a>按符号重排数组</h1><h2 id="题目链接-1"><a href="#题目链接-1" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/rearrange-array-elements-by-sign/">按符号重排数组</a></p>
-<h2 id="解题思路-1"><a href="#解题思路-1" class="headerlink" title="解题思路"></a>解题思路</h2><p>最容易想到和实现的方法显然是将正数和负数分别存入两个数组，再合并到一个数组中，虽然这样做空间复杂度比较高，但思路最为简单，代码实现相对较快。</p>
-<h2 id="解题代码-1"><a href="#解题代码-1" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">rearrangeArray</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> posVec<span class="token punctuation">;</span>
-        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> negVec<span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span>
-                posVec<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
-                negVec<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> res<span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> posVec<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>posVec<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>negVec<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<h1 id="找出数组中的所有孤独数字"><a href="#找出数组中的所有孤独数字" class="headerlink" title="找出数组中的所有孤独数字"></a>找出数组中的所有孤独数字</h1><h2 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/find-all-lonely-numbers-in-the-array/">找出数组中的所有孤独数字</a></p>
-<h2 id="解题思路-2"><a href="#解题思路-2" class="headerlink" title="解题思路"></a>解题思路</h2><p>对数字进行统计，考虑使用哈希表 HashMap 存储数组的数据，哈希表的 key 为数组中的数字，value 为该数字出现的次数。</p>
-<p>再次遍历数组，对数组的每一个元素 num 判断 <code>HashMap[num]</code> 是否为 1，并且 <code>HashMap[num - 1]</code> 和 <code>HashMap[num + 1]</code> 是否存在，若都满足，则该数字为孤独数字，加入结果中。</p>
-<h2 id="解题代码-2"><a href="#解题代码-2" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">findLonely</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        unordered_map<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> <span class="token keyword">int</span><span class="token operator">></span> numsMap<span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            numsMap<span class="token punctuation">[</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> res<span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>numsMap<span class="token punctuation">[</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>numsMap<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> numsMap<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
-                    res<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<h1 id="基于陈述统计最多好人数"><a href="#基于陈述统计最多好人数" class="headerlink" title="基于陈述统计最多好人数"></a>基于陈述统计最多好人数</h1><h2 id="题目链接-3"><a href="#题目链接-3" class="headerlink" title="题目链接"></a>题目链接</h2><p><a href="https://leetcode-cn.com/problems/maximum-good-people-based-on-statements/">基于陈述统计最多好人数</a></p>
-<h2 id="解题思路-3"><a href="#解题思路-3" class="headerlink" title="解题思路"></a>解题思路</h2><p>本题测试用例中中 <code>2 &lt;= n &lt;= 15</code>，数据量很小，可以考虑直接枚举所有的情况，并检验该情况下是否合理。</p>
-<p>所有可能情况个数为 2<sup>n</sup>，每种情况用二进制数 a<sub>n</sub>a<sub>n - 1</sub>···a<sub>0</sub> 来表示，a<sub>n</sub> 为 0 代表该情况下 n 角色为 坏人，a<sub>n</sub> 为 1 代表该情况下 n 角色为 好人。</p>
-<p>在统计了该情况下的角色情况后，就对其进行验证。由于坏人既可能说真话也可能说假话，因此对其验证没有意义，我们只需要对该情况下的好人进行验证。验证方法是遍历这个好人的陈述，若出现陈述与该情况不符，则该情况不符合条件，不统计其好人的数目。最终遍历所有的情况后，得到符合条件的好人最大数目。</p>
-<h2 id="解题代码-3"><a href="#解题代码-3" class="headerlink" title="解题代码"></a>解题代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-    <span class="token keyword">int</span> <span class="token function">maximumGood</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span><span class="token operator">&amp;</span> statements<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        <span class="token keyword">int</span> n <span class="token operator">=</span> statements<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">int</span> cnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-            vector<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token operator">></span> <span class="token function">isGood</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>i <span class="token operator">>></span> j<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 统计状态 i 的好人与坏人</span>
-                    isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-                    cnt<span class="token operator">++</span><span class="token punctuation">;</span>
-                <span class="token punctuation">&#125;</span>
-                <span class="token keyword">else</span>
-                    isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-            <span class="token comment">// 验证状态是否合理</span>
-            <span class="token keyword">bool</span> isLegal <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>isGood<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 若 j 是好人，则遍历他的陈述是否正确</span>
-                    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> k<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                        <span class="token keyword">if</span> <span class="token punctuation">(</span>statements<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>isGood<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                            isLegal <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-                            <span class="token keyword">break</span><span class="token punctuation">;</span>
-                        <span class="token punctuation">&#125;</span>
-                        <span class="token keyword">if</span> <span class="token punctuation">(</span>statements<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> isGood<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                            isLegal <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-                            <span class="token keyword">break</span><span class="token punctuation">;</span>
-                        <span class="token punctuation">&#125;</span>
-                    <span class="token punctuation">&#125;</span>
-                <span class="token punctuation">&#125;</span>
-            <span class="token punctuation">&#125;</span>
-            <span class="token keyword">if</span><span class="token punctuation">(</span>isLegal<span class="token punctuation">)</span>
-                res <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>res<span class="token punctuation">,</span> cnt<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-        <span class="token keyword">return</span> res<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>数据结构与算法</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-        <tag>算法</tag>
-        <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>OpenGL入门 矩阵堆栈实现简单行星系统</title>
     <url>/2022/03/17/OpenGL%E5%85%A5%E9%97%A8%20%E7%9F%A9%E9%98%B5%E5%A0%86%E6%A0%88%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E8%A1%8C%E6%98%9F%E7%B3%BB%E7%BB%9F/</url>
     <content><![CDATA[<p>本文介绍如何使用矩阵堆栈原理实现简单的行星运行系统。</p>
@@ -1205,6 +1205,201 @@ mvStack<span class="token punctuation">.</span><span class="token function">pop<
         <tag>OpenGL</tag>
         <tag>计算机图形学</tag>
         <tag>矩阵堆栈</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Ping命令的实现</title>
+    <url>/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/</url>
+    <content><![CDATA[<p>Ping （Packet Internet Groper）是一种因特网包探索器，用于测试网络连接量的程序。本文将基于 Socket 编程，实现一个基本的 Ping 命令程序。</p>
+<span id="more"></span>
+
+<h1 id="ICMP-报文分析"><a href="#ICMP-报文分析" class="headerlink" title="ICMP 报文分析"></a>ICMP 报文分析</h1><h2 id="ICMP-报文捕获"><a href="#ICMP-报文捕获" class="headerlink" title="ICMP 报文捕获"></a>ICMP 报文捕获</h2><p>在控制台输入 <code>ping 202.195.147.248</code>，对该目的主机发起请求，可以看到控制台输出了一系列统计信息：4 个数据包全部接收并且往返时间为 5 ms（较短），表明与该主机之间的连接畅通。</p>
+<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/f1.png"></p>
+<p>使用 Wireshark 工具捕获 icmp 数据包，为了避免无关数据包的干扰，可以使用 filter 对数据包进行过滤，在上部栏输入 <code>ip.src == 202.195.147.248 or ip.dst == 202.195.147.248</code>，表明只筛选源地址或目的地址为 202.195.147.248 的数据包，最终可以得到数据包的内容。</p>
+<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/f2.png"></p>
+<h2 id="Wireshark-数据包分析"><a href="#Wireshark-数据包分析" class="headerlink" title="Wireshark 数据包分析"></a>Wireshark 数据包分析</h2><p>根据 ICMP 报文的格式进行分析: </p>
+<ol>
+<li>Type：数据包类型，占 1 Byte，为 0x00，代表回送报文。</li>
+<li>Code：代码部分，占 1 Byte，为 0x00.</li>
+<li>Checksum：检验和，占 2 Bytes，为 0x554c.</li>
+<li>Identifier(IE)：占 2 Bytes，为 0x0001.</li>
+<li>Identifier(LE)：占 2 Bytes，为 0x0100.</li>
+<li>Sequence Number(BE)：占 2 Bytes，为 0x000f.</li>
+<li>Sequence Number(LE)：占 2 Bytes，为 0x0f00.</li>
+<li>Data：占 32 Bytes，为6162636465666768696a6b6c6d6e6f7071727374757677616263646566676869.</li>
+</ol>
+<h1 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h1><h2 id="构造-ICMP-报文"><a href="#构造-ICMP-报文" class="headerlink" title="构造 ICMP 报文"></a>构造 ICMP 报文</h2><p>自定义数据结构 icmpHeader 表示 ICMP 报文头部，包含类型、代码、检验和、标识符和序列号。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// ICMP 报文头</span>
+<span class="token keyword">struct</span> <span class="token class-name">icmpHeader</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> type<span class="token punctuation">;</span> <span class="token comment">// 类型</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> code<span class="token punctuation">;</span> <span class="token comment">// 代码</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> checkSum<span class="token punctuation">;</span> <span class="token comment">// 检验和</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> id<span class="token punctuation">;</span> <span class="token comment">// 标识符</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> sequence<span class="token punctuation">;</span> <span class="token comment">// 序列号</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<p>填充该报文，类型为 8 表示请求报文。检验和使用特定的算法计算，关于算法的具体内容可以自行查看相关文档，在此不过多赘述。标识符使用进程 id 填充。最后在 ICMP 报文头的尾部，添加 32 字节的数据作为 ICMP 报文的数据部分。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// 构造 ICMP 报文</span>
+<span class="token keyword">char</span> sendBuf<span class="token punctuation">[</span><span class="token number">8</span> <span class="token operator">+</span> <span class="token number">32</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">0</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+icmpHeader<span class="token operator">*</span> pIcmp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">;</span>
+pIcmp<span class="token operator">-></span>type <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">;</span>
+pIcmp<span class="token operator">-></span>code <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+pIcmp<span class="token operator">-></span>id <span class="token operator">=</span> <span class="token punctuation">(</span>USHORT<span class="token punctuation">)</span><span class="token double-colon punctuation">::</span><span class="token function">GetCurrentProcessId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+pIcmp<span class="token operator">-></span>sequence <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token comment">// 填充数据部分</span>
+<span class="token function">memcpy</span><span class="token punctuation">(</span>sendBuf <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token string">"abcdelmnopqrstuvwiammekakuactor"</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 计算检验和</span>
+pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token function">computeCks</span><span class="token punctuation">(</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<h2 id="发送请求报文"><a href="#发送请求报文" class="headerlink" title="发送请求报文"></a>发送请求报文</h2><p>该部分使用 Socket 编程向指定 IP 地址发送 ICMP 请求报文。需要注意的是，在创建套接字时，需要使用原始套接字，且 protocol 参数为 <code>IPPROTO_ICMP</code>，表明使用 ICMP 协议。<code>SOCKET s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);</code> 报文发送成功后，接收从客户端发送的回送报文信息。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// 初始化套接字库</span>
+WORD wReq <span class="token operator">=</span> <span class="token function">MAKEWORD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+WSADATA wsadata<span class="token punctuation">;</span>
+<span class="token function">WSAStartup</span><span class="token punctuation">(</span>wReq<span class="token punctuation">,</span> <span class="token operator">&amp;</span>wsadata<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 填充服务端地址</span>
+SOCKADDR_IN serverAddr<span class="token punctuation">;</span>
+<span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serverAddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+serverAddr<span class="token punctuation">.</span>sin_family <span class="token operator">=</span> AF_INET<span class="token punctuation">;</span>
+serverAddr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">.</span>S_un<span class="token punctuation">.</span>S_addr <span class="token operator">=</span> <span class="token function">inet_addr</span><span class="token punctuation">(</span>targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 创建套接字</span>
+SOCKET s <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_RAW<span class="token punctuation">,</span> IPPROTO_ICMP<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+
+<p>为了得到报文往返的时间，可以在发送前和接收后使用 <code>GetTickCount64()</code> 获取从操作系统启动到现在所经历的的时间 start 和 end，两时间相减得到时间差。</p>
+<p>此外，由于 <code>recvfrom()</code> 在未收到报文时将会阻塞，因此可以使用 <code>setsockopt()</code> 设定一个接收超时时间，在超过指定时间未受到数据时返回 -1，表示接收异常。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">setsockopt</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_RCVTIMEO<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>timeOut<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>timeOut<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 设置接收超时</span></code></pre>
+
+<h2 id="解析回送报文"><a href="#解析回送报文" class="headerlink" title="解析回送报文"></a>解析回送报文</h2><p>根据回送的 IP 数据包的指定格式对信息进行解析，IPv4 头部的 4 到 8 位为 IP 报文头部长度，第 9 个字节是 TTL 的值。</p>
+<h1 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h1><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;winsock.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;thread></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">pragma</span> <span class="token expression"><span class="token function">comment</span><span class="token punctuation">(</span>lib<span class="token punctuation">,</span></span><span class="token string">"ws2_32.lib"</span><span class="token expression"><span class="token punctuation">)</span></span></span>
+
+<span class="token comment">// ICMP 报文头</span>
+<span class="token keyword">struct</span> <span class="token class-name">icmpHeader</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> type<span class="token punctuation">;</span> <span class="token comment">// 类型</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> code<span class="token punctuation">;</span> <span class="token comment">// 代码</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> checkSum<span class="token punctuation">;</span> <span class="token comment">// 检验和</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> id<span class="token punctuation">;</span> <span class="token comment">// 标识符</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> sequence<span class="token punctuation">;</span> <span class="token comment">// 序列号</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 计算检验和</span>
+<span class="token keyword">unsigned</span> <span class="token keyword">short</span> <span class="token function">computeCks</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span> picmp<span class="token punctuation">,</span> <span class="token keyword">int</span> len<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">long</span> sum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token operator">*</span> pusicmp <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token operator">*</span><span class="token punctuation">)</span>picmp<span class="token punctuation">;</span>
+	<span class="token keyword">while</span> <span class="token punctuation">(</span>len <span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		sum <span class="token operator">+=</span> <span class="token operator">*</span><span class="token punctuation">(</span>pusicmp<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0x80000000</span><span class="token punctuation">)</span>
+			sum <span class="token operator">=</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0xffff</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		len <span class="token operator">-=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>len<span class="token punctuation">)</span>
+		sum <span class="token operator">+=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span>pusicmp<span class="token punctuation">;</span>
+	<span class="token keyword">while</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span>
+		sum <span class="token operator">=</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0xffff</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token punctuation">)</span><span class="token operator">~</span>sum<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">ping</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> targetIP<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token comment">// 初始化套接字库</span>
+	WORD wReq <span class="token operator">=</span> <span class="token function">MAKEWORD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	WSADATA wsadata<span class="token punctuation">;</span>
+	<span class="token function">WSAStartup</span><span class="token punctuation">(</span>wReq<span class="token punctuation">,</span> <span class="token operator">&amp;</span>wsadata<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 填充服务端地址</span>
+	SOCKADDR_IN serverAddr<span class="token punctuation">;</span>
+	<span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serverAddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	serverAddr<span class="token punctuation">.</span>sin_family <span class="token operator">=</span> AF_INET<span class="token punctuation">;</span>
+	serverAddr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">.</span>S_un<span class="token punctuation">.</span>S_addr <span class="token operator">=</span> <span class="token function">inet_addr</span><span class="token punctuation">(</span>targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 创建套接字</span>
+	SOCKET s <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_RAW<span class="token punctuation">,</span> IPPROTO_ICMP<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+	<span class="token comment">// 构造 ICMP 报文</span>
+	<span class="token keyword">char</span> sendBuf<span class="token punctuation">[</span><span class="token number">8</span> <span class="token operator">+</span> <span class="token number">32</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">0</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	icmpHeader<span class="token operator">*</span> pIcmp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">;</span>
+	pIcmp<span class="token operator">-></span>type <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">;</span>
+	pIcmp<span class="token operator">-></span>code <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	pIcmp<span class="token operator">-></span>id <span class="token operator">=</span> <span class="token punctuation">(</span>USHORT<span class="token punctuation">)</span><span class="token double-colon punctuation">::</span><span class="token function">GetCurrentProcessId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	pIcmp<span class="token operator">-></span>sequence <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token comment">// 填充数据部分</span>
+	<span class="token function">memcpy</span><span class="token punctuation">(</span>sendBuf <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token string">"abcdelmnopqrstuvwiammekakuactor"</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 计算检验和</span>
+	pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token function">computeCks</span><span class="token punctuation">(</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+	<span class="token comment">// 发送报文</span>
+	DWORD start <span class="token operator">=</span> <span class="token function">GetTickCount64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">int</span> sendLen <span class="token operator">=</span> <span class="token function">sendto</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>SOCKADDR<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>SOCKADDR<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>sendLen <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"errno = %d\n"</span><span class="token punctuation">,</span> <span class="token function">GetLastError</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 接收报文</span>
+	<span class="token keyword">char</span> recvBuf<span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	SOCKADDR_IN fromAddr<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> fLen <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>fromAddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">unsigned</span> timeOut <span class="token operator">=</span> <span class="token number">1000</span><span class="token punctuation">;</span> <span class="token comment">// 超时时间</span>
+	<span class="token function">setsockopt</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_RCVTIMEO<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>timeOut<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>timeOut<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 设置接收超时</span>
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">int</span> len <span class="token operator">=</span> <span class="token function">recvfrom</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> recvBuf<span class="token punctuation">,</span> <span class="token number">1024</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>SOCKADDR<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>fromAddr<span class="token punctuation">,</span> <span class="token operator">&amp;</span>fLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>len <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"请求超时"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+			<span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">else</span> <span class="token keyword">break</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	DWORD end <span class="token operator">=</span> <span class="token function">GetTickCount64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	DWORD timeSpan <span class="token operator">=</span> end <span class="token operator">-</span> start<span class="token punctuation">;</span>
+
+	<span class="token comment">// 回送报文解析</span>
+	<span class="token keyword">char</span> ipInfo <span class="token operator">=</span> recvBuf<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token comment">// ipv4 头部的第 9 个字节为 TTL 的值</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> ttl <span class="token operator">=</span> recvBuf<span class="token punctuation">[</span><span class="token number">8</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">int</span> ipHeadLen <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token punctuation">)</span><span class="token punctuation">(</span>ipInfo <span class="token operator">&lt;&lt;</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">4</span><span class="token punctuation">;</span> <span class="token comment">// IP报文头部长度</span>
+	icmpHeader<span class="token operator">*</span> icmpResp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>recvBuf <span class="token operator">+</span> ipHeadLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>icmpResp<span class="token operator">-></span>type <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">//回显应答报文</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"来自 %s 的回复：字节=32 时间=%2dms TTL=%d\n"</span><span class="token punctuation">,</span>
+			targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> timeSpan<span class="token punctuation">,</span> ttl<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> timeSpan<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"请求超时。type = %d\n"</span><span class="token punctuation">,</span> icmpResp<span class="token operator">-></span>type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"请输入目的IP地址："</span><span class="token punctuation">;</span>
+	std<span class="token double-colon punctuation">::</span>string IP<span class="token punctuation">;</span>
+	std<span class="token double-colon punctuation">::</span>cin <span class="token operator">>></span> IP<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> maxTime <span class="token operator">=</span> INT32_MIN<span class="token punctuation">,</span> minTime <span class="token operator">=</span> INT32_MAX<span class="token punctuation">,</span> timeSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> acpkgCnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n正在 Ping %s 具有 32 字节的数据:\n"</span><span class="token punctuation">,</span> IP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">4</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		std<span class="token double-colon punctuation">::</span>this_thread<span class="token double-colon punctuation">::</span><span class="token function">sleep_for</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>chrono<span class="token double-colon punctuation">::</span><span class="token function">seconds</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">int</span> timeSpan <span class="token operator">=</span> <span class="token function">ping</span><span class="token punctuation">(</span>IP<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		acpkgCnt <span class="token operator">+=</span> timeSpan <span class="token operator">!=</span> INT32_MAX<span class="token punctuation">;</span>
+		maxTime <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>maxTime<span class="token punctuation">,</span> timeSpan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		minTime <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minTime<span class="token punctuation">,</span> timeSpan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		timeSum <span class="token operator">+=</span> timeSpan<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n%s 的 Ping 统计信息:\n"</span><span class="token punctuation">,</span> IP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"    数据包: 已发送 = 4，已接收 = %d，丢失 = %d (%d%% 丢失)，\n"</span><span class="token punctuation">,</span>
+		acpkgCnt<span class="token punctuation">,</span> <span class="token number">4</span> <span class="token operator">-</span> acpkgCnt<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">4</span> <span class="token operator">-</span> acpkgCnt<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span> <span class="token operator">/</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>acpkgCnt<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"往返行程的估计时间(以毫秒为单位):\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"    最短 = %dms，最长 = %dms，平均 = %dms\n"</span><span class="token punctuation">,</span> minTime<span class="token punctuation">,</span> maxTime<span class="token punctuation">,</span> timeSum <span class="token operator">/</span> acpkgCnt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h1 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h1><p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/1.png"></p>
+<p>可见，本地与该目的主机的连通性较好。</p>
+<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/2.png"></p>
+<p>可见，本地与该目的主机无法连通。</p>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
+        <tag>Socket编程</tag>
+        <tag>Ping</tag>
       </tags>
   </entry>
   <entry>
@@ -1370,69 +1565,6 @@ extra field (variable size)</code></pre>
       </tags>
   </entry>
   <entry>
-    <title>hexo博客的备份与恢复</title>
-    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
-    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
-<span id="more"></span>
-
-<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
-<p>首先我们先来观察整个博客目录的结构：</p>
-<ul>
-<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
-</li>
-<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
-</li>
-<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
-</li>
-<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
-</li>
-<li><p>source    保存了用户文章的源文件，需要备份。</p>
-</li>
-<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
-</li>
-<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
-</li>
-<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
-</li>
-<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
-</li>
-<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
-</li>
-<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
-</li>
-</ul>
-<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
-<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
-<span class="token function">echo</span> 备份完成！
-pause</code></pre>
-
-<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
-<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
-<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
-<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
-<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
-<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
-<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
-<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>备份</tag>
-        <tag>经验</tag>
-        <tag>批处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>人工智能作业 使用AStar算法解决八数码问题</title>
     <url>/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8AStar%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E5%85%AB%E6%95%B0%E7%A0%81%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<p>八数码问题是一个经典的搜索问题，本文将介绍如何使用启发式搜索—— AStar 算法来求解八数码问题。</p>
@@ -1552,6 +1684,69 @@ string Solution<span class="token double-colon punctuation">::</span>targetStr<s
         <tag>算法</tag>
         <tag>数据结构</tag>
         <tag>人工智能</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hexo博客的备份与恢复</title>
+    <url>/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/</url>
+    <content><![CDATA[<p>为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。</p>
+<span id="more"></span>
+
+<h1 id="备份"><a href="#备份" class="headerlink" title="备份"></a>备份</h1><h2 id="需备份的文件目录"><a href="#需备份的文件目录" class="headerlink" title="需备份的文件目录"></a>需备份的文件目录</h2><p>我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。</p>
+<p>首先我们先来观察整个博客目录的结构：</p>
+<ul>
+<li><p>.deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。</p>
+</li>
+<li><p>node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。</p>
+</li>
+<li><p>public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。</p>
+</li>
+<li><p>scaffolds    保存了用户文章的模板，需要备份。</p>
+</li>
+<li><p>source    保存了用户文章的源文件，需要备份。</p>
+</li>
+<li><p>themes    保存了用户下载的主题文件与配置，需要备份。</p>
+</li>
+<li><p>.gitignore    保存了推送到github时忽略的文件名，需要备份。</p>
+</li>
+<li><p>_config.yml    保存了用户配置信息，需要备份。</p>
+</li>
+<li><p>db.json    保存了网页的数据文件，在编译生成静态网页时会自动更新，无需备份。</p>
+</li>
+<li><p>package.json    保存了依赖的模块列表，需要备份。</p>
+</li>
+<li><p>package-lock.json    保存了依赖的模块安装记录，无需备份。</p>
+</li>
+</ul>
+<h2 id="备份操作"><a href="#备份操作" class="headerlink" title="备份操作"></a>备份操作</h2><p>在了解了需要备份的文件后，就可以进行备份了，可以手动找到这些文件并将其拷贝出来，或者上传到云端，但这样无疑是比较麻烦的。复制这一重复性操作可以编写一个批处理脚本进行操作：</p>
+<pre class="language-powershell" data-language="powershell"><code class="language-powershell">@<span class="token function">echo</span> off
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"scaffolds"</span> <span class="token string">"../Back-up/MyBlog/scaffolds"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"source"</span> <span class="token string">"../Back-up/MyBlog/source"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> d<span class="token punctuation">|</span>xcopy <span class="token string">"themes"</span> <span class="token string">"../Back-up/MyBlog/themes"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">".gitignore"</span> <span class="token string">"../Back-up/MyBlog/.gitignore"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"_config.yml"</span> <span class="token string">"../Back-up/MyBlog/_config.yml"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> f<span class="token punctuation">|</span>xcopy <span class="token string">"package.json"</span> <span class="token string">"../Back-up/MyBlog/package.json"</span>  <span class="token operator">/</span>E<span class="token operator">/</span>I<span class="token operator">/</span>Y
+<span class="token function">echo</span> 备份完成！
+pause</code></pre>
+
+<p>使用xcopy命令来完成复制操作，格式为：xcopy  &lt;需拷贝的文件路径&gt;  &lt;拷贝后的文件路径&gt;，有时系统可能会无法判断路径是文件名还是目录名，在执行时会让用户进行输入选择，输入d是目录名，输入f是文件名。为了防止程序因此中断，我们可以使用管道命令：A | B，表示A命令输出的结果作为B命令的输入。</p>
+<p>这样我们便将需要备份的文件拷贝出来了，之后便可以保存在U盘或者上传云端，这里我选择直接将备份的文件夹拖入Onedrive中进行同步，一键操作，简单快捷。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/Onedrive.png"></p>
+<h1 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h1><p>如果电脑上已经安装了hexo博客，由于某些误操作只是想恢复到之前备份的状态的话，只需要将备份的那六个文件和目录覆盖当前博客相应的文件和目录即可。而如果想在其他电脑上恢复博客内容的话，需要进行如下操作：</p>
+<h2 id="安装git-bash和node-js"><a href="#安装git-bash和node-js" class="headerlink" title="安装git bash和node.js"></a>安装git bash和node.js</h2><p>安装后可以在cmd中输入<code>git version</code>，<code>node -v</code>，<code>npm -v</code>查看版本来检测是否成功安装。</p>
+<p><img src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/cmd.png"></p>
+<h2 id="安装Hexo"><a href="#安装Hexo" class="headerlink" title="安装Hexo"></a>安装Hexo</h2><p>在cmd中输入<code>npm install -g hexo-cli</code></p>
+<h2 id="初始化Hexo"><a href="#初始化Hexo" class="headerlink" title="初始化Hexo"></a>初始化Hexo</h2><p>在想要保存hexo目录的位置，右键打开git bash here（也可以cmd进入此目录），执行<code>hexo init</code></p>
+<h2 id="恢复备份文件"><a href="#恢复备份文件" class="headerlink" title="恢复备份文件"></a>恢复备份文件</h2><p>将备份的六个文件和目录覆盖到当前博客目录，恢复操作完成，可以<code>hexo g</code>，<code>hexo s</code>进行检验。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>备份</tag>
+        <tag>经验</tag>
+        <tag>批处理</tag>
       </tags>
   </entry>
   <entry>
@@ -2077,53 +2272,6 @@ string Solution<span class="token double-colon punctuation">::</span>targetStr<s
       </tags>
   </entry>
   <entry>
-    <title>位运算基础及应用</title>
-    <url>/2021/09/26/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%BA%94%E7%94%A8/</url>
-    <content><![CDATA[<p>计算机中的数据以二进制的形式存储，即0、1两种状态。<strong>位运算</strong>就是直接对整数在内存中的二进制位进行操作。本文将介绍位运算的各操作符以及常见应用。</p>
-<span id="more"></span>
-
-<h1 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h1><h2 id="amp-（与）"><a href="#amp-（与）" class="headerlink" title="&amp;（与）"></a>&amp;（与）</h2><p>参加运算的两个数据，按二进制位进行与运算。（两位都为1时才为1，否则为0）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行与运算得：0100 = 4. 即 12 &amp; 5 = 4.</p>
-<h2 id="（或）"><a href="#（或）" class="headerlink" title="|（或）"></a>|（或）</h2><p>参加运算的两个数据，按二进制位进行或运算。（两位都为0时才为0，否则为1）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行或运算得：1101 = 13. 即 12 | 5 = 13.</p>
-<h2 id="（异或）"><a href="#（异或）" class="headerlink" title="^（异或）"></a>^（异或）</h2><p>参加运算的两个数据，按二进制位进行异或运算。（相同为0，不同为1）</p>
-<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行异或运算得：1001 = 9. 即 12 ^ 5 = 9.</p>
-<h2 id="（取反）"><a href="#（取反）" class="headerlink" title="~（取反）"></a>~（取反）</h2><p>参加运算的数据，其各二进制位进行取反运算。（0变成1，1变成0）</p>
-<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 取反后得：1 111 1111 1111 1010（符号位为 1，为负数）将此补码转换为原码得：1 000 0000 0000 0110，十进制为 -6. 即 ~5 = -6.</p>
-<h2 id="lt-lt-（左移）"><a href="#lt-lt-（左移）" class="headerlink" title="&lt;&lt;（左移）"></a>&lt;&lt;（左移）</h2><p>参加运算的数据，其各二进制位向左进行移位操作，高位丢弃，低位补0.</p>
-<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 3 位后得：0 000 0000 0010 1000 = 40.</p>
-<p>即 5 &lt;&lt; 3 = 40.</p>
-<h2 id="gt-gt-（右移）"><a href="#gt-gt-（右移）" class="headerlink" title="&gt;&gt;（右移）"></a>&gt;&gt;（右移）</h2><p>参加运算的数据，其各二进制位向右进行移位操作，低位丢弃，对于无符号数，高位补 0，对于有符号数，高位补原来的符号位。</p>
-<ul>
-<li>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 2 位后得：0 000 0000 0000 0001 = 1. 即 5 &gt;&gt; 2 = 1.</li>
-<li>例如 -5，对于一个 int16 型数据，它的二进制形式为 1 111 1111 1111 1011. 右移 2 位后得：1 111 1111 1111 1110 = -2. 即 -5 &gt;&gt; 2 = -2.</li>
-</ul>
-<h1 id="常见应用"><a href="#常见应用" class="headerlink" title="常见应用"></a>常见应用</h1><h2 id="左移、右移实现乘除法"><a href="#左移、右移实现乘除法" class="headerlink" title="左移、右移实现乘除法"></a>左移、右移实现乘除法</h2><p>由左移、右移的定义可知，一个二进制数 0000 1010 左移两位后为 0010 1000 = 2<sup>5</sup> * 2<sup>3</sup> = 2<sup>2</sup> * (2<sup>3</sup> * 2<sup>1</sup>). 由此可见，在数据未溢出的情况下，左移 n 位，相当于原数的值乘以 2<sup>n</sup>. </p>
-<p>同理，右移相当于除以 2<sup>n</sup>.</p>
-<h2 id="异或判断两数符号的异同"><a href="#异或判断两数符号的异同" class="headerlink" title="异或判断两数符号的异同"></a>异或判断两数符号的异同</h2><p>判断两个有符号数是同号还是异号，我们可以用条件控制语句进行判断；也可以将两数相乘判断积的正负；同样也可以使用异或运算符。</p>
-<p>由于有符号数最高位为符号位，因此在进行异或运算时，两数的符号位也将参与运算。若两数的符号位相同，则异或结果 res 的符号位为 0，即 res &gt;= 0; 若两数的符号位不同，则异或结果 res 的符号位为 1，即 res &lt; 0.</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isSameSign</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">^</span> b<span class="token punctuation">;</span>
-    <span class="token keyword">return</span> res <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-<h2 id="与运算判断数的奇偶性"><a href="#与运算判断数的奇偶性" class="headerlink" title="与运算判断数的奇偶性"></a>与运算判断数的奇偶性</h2><p>和异或判断两数符号异同类似原理类似，根据二进制数的最低位是 1 还是 0 来判断该数是奇数还是偶数。</p>
-<p>要判断一个数 a 的奇偶性，可以先计算 res = a &amp; 1 的值。若 res = 0，则为偶数；若 res = 1，则为奇数。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isOdd</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
-    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
-    <span class="token keyword">return</span> res <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>计算机基础</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
-        <tag>位运算</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>使用OpenGL渲染一个立方体</title>
     <url>/2022/01/19/%E4%BD%BF%E7%94%A8OpenGL%E6%B8%B2%E6%9F%93%E4%B8%80%E4%B8%AA%E7%AB%8B%E6%96%B9%E4%BD%93/</url>
     <content><![CDATA[<p>本文将介绍如何使用最为常用的图形 API —— OpenGL 来渲染一个立方体，代码部分来自于《Computer Graphics Programming in OpenGL with C++》，并加入了自己的理解。</p>
@@ -2420,6 +2568,128 @@ GLuint <span class="token function">createShaderProgram</span><span class="token
       </tags>
   </entry>
   <entry>
+    <title>位运算基础及应用</title>
+    <url>/2021/09/26/%E4%BD%8D%E8%BF%90%E7%AE%97%E5%9F%BA%E7%A1%80%E5%8F%8A%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<p>计算机中的数据以二进制的形式存储，即0、1两种状态。<strong>位运算</strong>就是直接对整数在内存中的二进制位进行操作。本文将介绍位运算的各操作符以及常见应用。</p>
+<span id="more"></span>
+
+<h1 id="操作符"><a href="#操作符" class="headerlink" title="操作符"></a>操作符</h1><h2 id="amp-（与）"><a href="#amp-（与）" class="headerlink" title="&amp;（与）"></a>&amp;（与）</h2><p>参加运算的两个数据，按二进制位进行与运算。（两位都为1时才为1，否则为0）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行与运算得：0100 = 4. 即 12 &amp; 5 = 4.</p>
+<h2 id="（或）"><a href="#（或）" class="headerlink" title="|（或）"></a>|（或）</h2><p>参加运算的两个数据，按二进制位进行或运算。（两位都为0时才为0，否则为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行或运算得：1101 = 13. 即 12 | 5 = 13.</p>
+<h2 id="（异或）"><a href="#（异或）" class="headerlink" title="^（异或）"></a>^（异或）</h2><p>参加运算的两个数据，按二进制位进行异或运算。（相同为0，不同为1）</p>
+<p>例如 12 和 5 两个数，二进制形式分别为 1100、0101. 逐个按位进行异或运算得：1001 = 9. 即 12 ^ 5 = 9.</p>
+<h2 id="（取反）"><a href="#（取反）" class="headerlink" title="~（取反）"></a>~（取反）</h2><p>参加运算的数据，其各二进制位进行取反运算。（0变成1，1变成0）</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 取反后得：1 111 1111 1111 1010（符号位为 1，为负数）将此补码转换为原码得：1 000 0000 0000 0110，十进制为 -6. 即 ~5 = -6.</p>
+<h2 id="lt-lt-（左移）"><a href="#lt-lt-（左移）" class="headerlink" title="&lt;&lt;（左移）"></a>&lt;&lt;（左移）</h2><p>参加运算的数据，其各二进制位向左进行移位操作，高位丢弃，低位补0.</p>
+<p>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 3 位后得：0 000 0000 0010 1000 = 40.</p>
+<p>即 5 &lt;&lt; 3 = 40.</p>
+<h2 id="gt-gt-（右移）"><a href="#gt-gt-（右移）" class="headerlink" title="&gt;&gt;（右移）"></a>&gt;&gt;（右移）</h2><p>参加运算的数据，其各二进制位向右进行移位操作，低位丢弃，对于无符号数，高位补 0，对于有符号数，高位补原来的符号位。</p>
+<ul>
+<li>例如 5，对于一个 int16 型数据，它的二进制形式为 0 000 0000 0000 0101. 左移 2 位后得：0 000 0000 0000 0001 = 1. 即 5 &gt;&gt; 2 = 1.</li>
+<li>例如 -5，对于一个 int16 型数据，它的二进制形式为 1 111 1111 1111 1011. 右移 2 位后得：1 111 1111 1111 1110 = -2. 即 -5 &gt;&gt; 2 = -2.</li>
+</ul>
+<h1 id="常见应用"><a href="#常见应用" class="headerlink" title="常见应用"></a>常见应用</h1><h2 id="左移、右移实现乘除法"><a href="#左移、右移实现乘除法" class="headerlink" title="左移、右移实现乘除法"></a>左移、右移实现乘除法</h2><p>由左移、右移的定义可知，一个二进制数 0000 1010 左移两位后为 0010 1000 = 2<sup>5</sup> * 2<sup>3</sup> = 2<sup>2</sup> * (2<sup>3</sup> * 2<sup>1</sup>). 由此可见，在数据未溢出的情况下，左移 n 位，相当于原数的值乘以 2<sup>n</sup>. </p>
+<p>同理，右移相当于除以 2<sup>n</sup>.</p>
+<h2 id="异或判断两数符号的异同"><a href="#异或判断两数符号的异同" class="headerlink" title="异或判断两数符号的异同"></a>异或判断两数符号的异同</h2><p>判断两个有符号数是同号还是异号，我们可以用条件控制语句进行判断；也可以将两数相乘判断积的正负；同样也可以使用异或运算符。</p>
+<p>由于有符号数最高位为符号位，因此在进行异或运算时，两数的符号位也将参与运算。若两数的符号位相同，则异或结果 res 的符号位为 0，即 res &gt;= 0; 若两数的符号位不同，则异或结果 res 的符号位为 1，即 res &lt; 0.</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isSameSign</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">^</span> b<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">>=</span> <span class="token number">0</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+<h2 id="与运算判断数的奇偶性"><a href="#与运算判断数的奇偶性" class="headerlink" title="与运算判断数的奇偶性"></a>与运算判断数的奇偶性</h2><p>和异或判断两数符号异同类似原理类似，根据二进制数的最低位是 1 还是 0 来判断该数是奇数还是偶数。</p>
+<p>要判断一个数 a 的奇偶性，可以先计算 res = a &amp; 1 的值。若 res = 0，则为偶数；若 res = 1，则为奇数。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token function">isOdd</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> a <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> res <span class="token operator">==</span> <span class="token number">1</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>计算机基础</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>位运算</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>子集生成算法</title>
+    <url>/2022/03/16/%E5%AD%90%E9%9B%86%E7%94%9F%E6%88%90%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<p>本文介绍生成一个集合子集的两种常见算法，借此从中深入理解搜索问题中常见的两种思路。</p>
+<span id="more"></span>
+
+<h1 id="递归回溯"><a href="#递归回溯" class="headerlink" title="递归回溯"></a>递归回溯</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>对于集合中的每个元素，我们都有选择和不选择两种处理方式，这种思路类似于二叉树的遍历，每种情况都向下衍生出两种情况，最终当遍历到下标 <code>index = nums.size()</code> 时，将生成的子集保存。</p>
+<p>由于此处我们使用一个数组的引用来保存子集元素，因此在递归回溯时，我们需要手动将上一步中加入添加的元素去除，来回溯到该元素未被选择的状态。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> Sets<span class="token punctuation">;</span>
+	<span class="token keyword">void</span> <span class="token function">search</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> subset<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>index <span class="token operator">==</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			Sets<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>subset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">return</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		subset<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		subset<span class="token punctuation">.</span><span class="token function">pop_back</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> <span class="token function">getSubset</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> subset<span class="token punctuation">;</span>
+		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> Sets<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+<h1 id="状态压缩"><a href="#状态压缩" class="headerlink" title="状态压缩"></a>状态压缩</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>我们知道，一个集合的非空子集个数为 2<sup>n</sup> - 1，因此可以将子集状态表示为一个范围在 [1, 2<sup>n</sup>] 的二进制数。</p>
+<p>二进制数位 ai 若为 0，表示第 i 位未被选中；若为 1，表示第 i 位被选中。而要分析一个压缩的状态，即获取表示该状态二进制数各位的值，可以运用位运算的操作。由于一个二进制数和 1 进行按位与（&amp;）操作得到的结果将只由该数的最低位决定，如果最低位为 0，则运算结果为 0，否则为 1. 由此可以想到，将一个状态数依次右移 n 位得到一个以 an 结尾的二进制数，再将该二进制数和 1 进行按位与得到 an 的值。依次遍历所有的右移步数得到该状态的所有信息。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> Sets<span class="token punctuation">;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> <span class="token function">getSubset</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">int</span> n <span class="token operator">=</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> subset<span class="token punctuation">;</span>
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> <span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			subset<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">int</span> isChoosed <span class="token operator">=</span> i <span class="token operator">>></span> j <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
+				<span class="token keyword">if</span> <span class="token punctuation">(</span>isChoosed<span class="token punctuation">)</span>
+					subset<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			Sets<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>subset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">return</span> Sets<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+
+]]></content>
+      <categories>
+        <category>数据结构与算法</category>
+      </categories>
+      <tags>
+        <tag>算法</tag>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>开始写个人博客了</title>
+    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
+    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
+<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
+<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
+]]></content>
+      <categories>
+        <category>经验</category>
+      </categories>
+      <tags>
+        <tag>博客</tag>
+        <tag>经验</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>停止等待协议的模拟实现</title>
     <url>/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/</url>
     <content><![CDATA[<h1 id="协议原理"><a href="#协议原理" class="headerlink" title="协议原理"></a>协议原理</h1><p><img src="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/%E5%8D%8F%E8%AE%AE%E5%8E%9F%E7%90%86.png"></p>
@@ -2509,81 +2779,6 @@ GLuint <span class="token function">createShaderProgram</span><span class="token
       <tags>
         <tag>算法</tag>
         <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>子集生成算法</title>
-    <url>/2022/03/16/%E5%AD%90%E9%9B%86%E7%94%9F%E6%88%90%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<p>本文介绍生成一个集合子集的两种常见算法，借此从中深入理解搜索问题中常见的两种思路。</p>
-<span id="more"></span>
-
-<h1 id="递归回溯"><a href="#递归回溯" class="headerlink" title="递归回溯"></a>递归回溯</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>对于集合中的每个元素，我们都有选择和不选择两种处理方式，这种思路类似于二叉树的遍历，每种情况都向下衍生出两种情况，最终当遍历到下标 <code>index = nums.size()</code> 时，将生成的子集保存。</p>
-<p>由于此处我们使用一个数组的引用来保存子集元素，因此在递归回溯时，我们需要手动将上一步中加入添加的元素去除，来回溯到该元素未被选择的状态。</p>
-<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">private</span><span class="token operator">:</span>
-	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> Sets<span class="token punctuation">;</span>
-	<span class="token keyword">void</span> <span class="token function">search</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> subset<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">if</span> <span class="token punctuation">(</span>index <span class="token operator">==</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-			Sets<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>subset<span class="token punctuation">)</span><span class="token punctuation">;</span>
-			<span class="token keyword">return</span><span class="token punctuation">;</span>
-		<span class="token punctuation">&#125;</span>
-		subset<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		subset<span class="token punctuation">.</span><span class="token function">pop_back</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> <span class="token function">getSubset</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> subset<span class="token punctuation">;</span>
-		<span class="token function">search</span><span class="token punctuation">(</span>subset<span class="token punctuation">,</span> nums<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">return</span> Sets<span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<h1 id="状态压缩"><a href="#状态压缩" class="headerlink" title="状态压缩"></a>状态压缩</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>我们知道，一个集合的非空子集个数为 2<sup>n</sup> - 1，因此可以将子集状态表示为一个范围在 [1, 2<sup>n</sup>] 的二进制数。</p>
-<p>二进制数位 ai 若为 0，表示第 i 位未被选中；若为 1，表示第 i 位被选中。而要分析一个压缩的状态，即获取表示该状态二进制数各位的值，可以运用位运算的操作。由于一个二进制数和 1 进行按位与（&amp;）操作得到的结果将只由该数的最低位决定，如果最低位为 0，则运算结果为 0，否则为 1. 由此可以想到，将一个状态数依次右移 n 位得到一个以 an 结尾的二进制数，再将该二进制数和 1 进行按位与得到 an 的值。依次遍历所有的右移步数得到该状态的所有信息。</p>
-<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Solution</span> <span class="token punctuation">&#123;</span>
-<span class="token keyword">private</span><span class="token operator">:</span>
-	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> Sets<span class="token punctuation">;</span>
-<span class="token keyword">public</span><span class="token operator">:</span>
-	std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">>></span> <span class="token function">getSubset</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span><span class="token operator">&amp;</span> nums<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">int</span> n <span class="token operator">=</span> nums<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> subset<span class="token punctuation">;</span>
-		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> <span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-			subset<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-			<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-				<span class="token keyword">int</span> isChoosed <span class="token operator">=</span> i <span class="token operator">>></span> j <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">;</span>
-				<span class="token keyword">if</span> <span class="token punctuation">(</span>isChoosed<span class="token punctuation">)</span>
-					subset<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>nums<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-			<span class="token punctuation">&#125;</span>
-			Sets<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>subset<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token punctuation">&#125;</span>
-		<span class="token keyword">return</span> Sets<span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-]]></content>
-      <categories>
-        <category>数据结构与算法</category>
-      </categories>
-      <tags>
-        <tag>算法</tag>
-        <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>开始写个人博客了</title>
-    <url>/2021/05/06/%E5%BC%80%E5%A7%8B%E5%86%99%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E4%BA%86/</url>
-    <content><![CDATA[<h1 id="博客搭建"><a href="#博客搭建" class="headerlink" title="博客搭建"></a>博客搭建</h1><p>经过两天的折腾，利用Hexo框架和github托管的方式搭建的静态博客也算有了个雏形，这两天将继续对其进行美化以及添加新功能，今后打算在这里不定期分享一些自己感兴趣的编程、数码、游戏相关的内容。</p>
-<h1 id="搭建博客的目的"><a href="#搭建博客的目的" class="headerlink" title="搭建博客的目的"></a>搭建博客的目的</h1><p>一方面是想锻炼自己的表达能力（我在这方面确实有所欠缺），另一方面也是想将自己感兴趣的内容分享出去，既加深了自己对知识的理解，也能让他人学到新东西。</p>
-<h1 id="博客的内容"><a href="#博客的内容" class="headerlink" title="博客的内容"></a>博客的内容</h1><p>包含但不限于编程、游戏、数码相关内容，只要是我觉得有分享价值的东西，都有可能出现在博文中。</p>
-]]></content>
-      <categories>
-        <category>经验</category>
-      </categories>
-      <tags>
-        <tag>博客</tag>
-        <tag>经验</tag>
       </tags>
   </entry>
   <entry>
@@ -3001,201 +3196,6 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>C++</tag>
         <tag>数据结构</tag>
         <tag>经验</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Ping命令的实现</title>
-    <url>/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/</url>
-    <content><![CDATA[<p>Ping （Packet Internet Groper）是一种因特网包探索器，用于测试网络连接量的程序。本文将基于 Socket 编程，实现一个基本的 Ping 命令程序。</p>
-<span id="more"></span>
-
-<h1 id="ICMP-报文分析"><a href="#ICMP-报文分析" class="headerlink" title="ICMP 报文分析"></a>ICMP 报文分析</h1><h2 id="ICMP-报文捕获"><a href="#ICMP-报文捕获" class="headerlink" title="ICMP 报文捕获"></a>ICMP 报文捕获</h2><p>在控制台输入 <code>ping 202.195.147.248</code>，对该目的主机发起请求，可以看到控制台输出了一系列统计信息：4 个数据包全部接收并且往返时间为 5 ms（较短），表明与该主机之间的连接畅通。</p>
-<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/f1.png"></p>
-<p>使用 Wireshark 工具捕获 icmp 数据包，为了避免无关数据包的干扰，可以使用 filter 对数据包进行过滤，在上部栏输入 <code>ip.src == 202.195.147.248 or ip.dst == 202.195.147.248</code>，表明只筛选源地址或目的地址为 202.195.147.248 的数据包，最终可以得到数据包的内容。</p>
-<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/f2.png"></p>
-<h2 id="Wireshark-数据包分析"><a href="#Wireshark-数据包分析" class="headerlink" title="Wireshark 数据包分析"></a>Wireshark 数据包分析</h2><p>根据 ICMP 报文的格式进行分析: </p>
-<ol>
-<li>Type：数据包类型，占 1 Byte，为 0x00，代表回送报文。</li>
-<li>Code：代码部分，占 1 Byte，为 0x00.</li>
-<li>Checksum：检验和，占 2 Bytes，为 0x554c.</li>
-<li>Identifier(IE)：占 2 Bytes，为 0x0001.</li>
-<li>Identifier(LE)：占 2 Bytes，为 0x0100.</li>
-<li>Sequence Number(BE)：占 2 Bytes，为 0x000f.</li>
-<li>Sequence Number(LE)：占 2 Bytes，为 0x0f00.</li>
-<li>Data：占 32 Bytes，为6162636465666768696a6b6c6d6e6f7071727374757677616263646566676869.</li>
-</ol>
-<h1 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h1><h2 id="构造-ICMP-报文"><a href="#构造-ICMP-报文" class="headerlink" title="构造 ICMP 报文"></a>构造 ICMP 报文</h2><p>自定义数据结构 icmpHeader 表示 ICMP 报文头部，包含类型、代码、检验和、标识符和序列号。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// ICMP 报文头</span>
-<span class="token keyword">struct</span> <span class="token class-name">icmpHeader</span> <span class="token punctuation">&#123;</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> type<span class="token punctuation">;</span> <span class="token comment">// 类型</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> code<span class="token punctuation">;</span> <span class="token comment">// 代码</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> checkSum<span class="token punctuation">;</span> <span class="token comment">// 检验和</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> id<span class="token punctuation">;</span> <span class="token comment">// 标识符</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> sequence<span class="token punctuation">;</span> <span class="token comment">// 序列号</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
-
-<p>填充该报文，类型为 8 表示请求报文。检验和使用特定的算法计算，关于算法的具体内容可以自行查看相关文档，在此不过多赘述。标识符使用进程 id 填充。最后在 ICMP 报文头的尾部，添加 32 字节的数据作为 ICMP 报文的数据部分。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// 构造 ICMP 报文</span>
-<span class="token keyword">char</span> sendBuf<span class="token punctuation">[</span><span class="token number">8</span> <span class="token operator">+</span> <span class="token number">32</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">0</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-icmpHeader<span class="token operator">*</span> pIcmp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">;</span>
-pIcmp<span class="token operator">-></span>type <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">;</span>
-pIcmp<span class="token operator">-></span>code <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-pIcmp<span class="token operator">-></span>id <span class="token operator">=</span> <span class="token punctuation">(</span>USHORT<span class="token punctuation">)</span><span class="token double-colon punctuation">::</span><span class="token function">GetCurrentProcessId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-pIcmp<span class="token operator">-></span>sequence <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-<span class="token comment">// 填充数据部分</span>
-<span class="token function">memcpy</span><span class="token punctuation">(</span>sendBuf <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token string">"abcdelmnopqrstuvwiammekakuactor"</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// 计算检验和</span>
-pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token function">computeCks</span><span class="token punctuation">(</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<h2 id="发送请求报文"><a href="#发送请求报文" class="headerlink" title="发送请求报文"></a>发送请求报文</h2><p>该部分使用 Socket 编程向指定 IP 地址发送 ICMP 请求报文。需要注意的是，在创建套接字时，需要使用原始套接字，且 protocol 参数为 <code>IPPROTO_ICMP</code>，表明使用 ICMP 协议。<code>SOCKET s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);</code> 报文发送成功后，接收从客户端发送的回送报文信息。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// 初始化套接字库</span>
-WORD wReq <span class="token operator">=</span> <span class="token function">MAKEWORD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-WSADATA wsadata<span class="token punctuation">;</span>
-<span class="token function">WSAStartup</span><span class="token punctuation">(</span>wReq<span class="token punctuation">,</span> <span class="token operator">&amp;</span>wsadata<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// 填充服务端地址</span>
-SOCKADDR_IN serverAddr<span class="token punctuation">;</span>
-<span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serverAddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-serverAddr<span class="token punctuation">.</span>sin_family <span class="token operator">=</span> AF_INET<span class="token punctuation">;</span>
-serverAddr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">.</span>S_un<span class="token punctuation">.</span>S_addr <span class="token operator">=</span> <span class="token function">inet_addr</span><span class="token punctuation">(</span>targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token comment">// 创建套接字</span>
-SOCKET s <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_RAW<span class="token punctuation">,</span> IPPROTO_ICMP<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
-
-<p>为了得到报文往返的时间，可以在发送前和接收后使用 <code>GetTickCount64()</code> 获取从操作系统启动到现在所经历的的时间 start 和 end，两时间相减得到时间差。</p>
-<p>此外，由于 <code>recvfrom()</code> 在未收到报文时将会阻塞，因此可以使用 <code>setsockopt()</code> 设定一个接收超时时间，在超过指定时间未受到数据时返回 -1，表示接收异常。</p>
-<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">setsockopt</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_RCVTIMEO<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>timeOut<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>timeOut<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 设置接收超时</span></code></pre>
-
-<h2 id="解析回送报文"><a href="#解析回送报文" class="headerlink" title="解析回送报文"></a>解析回送报文</h2><p>根据回送的 IP 数据包的指定格式对信息进行解析，IPv4 头部的 4 到 8 位为 IP 报文头部长度，第 9 个字节是 TTL 的值。</p>
-<h1 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h1><pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;iostream></span></span>
-<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;string></span></span>
-<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;winsock.h></span></span>
-<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span><span class="token string">&lt;thread></span></span>
-<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">pragma</span> <span class="token expression"><span class="token function">comment</span><span class="token punctuation">(</span>lib<span class="token punctuation">,</span></span><span class="token string">"ws2_32.lib"</span><span class="token expression"><span class="token punctuation">)</span></span></span>
-
-<span class="token comment">// ICMP 报文头</span>
-<span class="token keyword">struct</span> <span class="token class-name">icmpHeader</span> <span class="token punctuation">&#123;</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> type<span class="token punctuation">;</span> <span class="token comment">// 类型</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> code<span class="token punctuation">;</span> <span class="token comment">// 代码</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> checkSum<span class="token punctuation">;</span> <span class="token comment">// 检验和</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> id<span class="token punctuation">;</span> <span class="token comment">// 标识符</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span> sequence<span class="token punctuation">;</span> <span class="token comment">// 序列号</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-
-<span class="token comment">// 计算检验和</span>
-<span class="token keyword">unsigned</span> <span class="token keyword">short</span> <span class="token function">computeCks</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span> picmp<span class="token punctuation">,</span> <span class="token keyword">int</span> len<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	<span class="token keyword">long</span> sum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token operator">*</span> pusicmp <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token operator">*</span><span class="token punctuation">)</span>picmp<span class="token punctuation">;</span>
-	<span class="token keyword">while</span> <span class="token punctuation">(</span>len <span class="token operator">></span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		sum <span class="token operator">+=</span> <span class="token operator">*</span><span class="token punctuation">(</span>pusicmp<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">if</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0x80000000</span><span class="token punctuation">)</span>
-			sum <span class="token operator">=</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0xffff</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		len <span class="token operator">-=</span> <span class="token number">2</span><span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span>len<span class="token punctuation">)</span>
-		sum <span class="token operator">+=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token punctuation">)</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span>pusicmp<span class="token punctuation">;</span>
-	<span class="token keyword">while</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span>
-		sum <span class="token operator">=</span> <span class="token punctuation">(</span>sum <span class="token operator">&amp;</span> <span class="token number">0xffff</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span>sum <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span> <span class="token keyword">short</span><span class="token punctuation">)</span><span class="token operator">~</span>sum<span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">int</span> <span class="token function">ping</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string<span class="token operator">&amp;</span> targetIP<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	<span class="token comment">// 初始化套接字库</span>
-	WORD wReq <span class="token operator">=</span> <span class="token function">MAKEWORD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	WSADATA wsadata<span class="token punctuation">;</span>
-	<span class="token function">WSAStartup</span><span class="token punctuation">(</span>wReq<span class="token punctuation">,</span> <span class="token operator">&amp;</span>wsadata<span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token comment">// 填充服务端地址</span>
-	SOCKADDR_IN serverAddr<span class="token punctuation">;</span>
-	<span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serverAddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	serverAddr<span class="token punctuation">.</span>sin_family <span class="token operator">=</span> AF_INET<span class="token punctuation">;</span>
-	serverAddr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">.</span>S_un<span class="token punctuation">.</span>S_addr <span class="token operator">=</span> <span class="token function">inet_addr</span><span class="token punctuation">(</span>targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token comment">// 创建套接字</span>
-	SOCKET s <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_RAW<span class="token punctuation">,</span> IPPROTO_ICMP<span class="token punctuation">)</span><span class="token punctuation">;</span>
-	
-	<span class="token comment">// 构造 ICMP 报文</span>
-	<span class="token keyword">char</span> sendBuf<span class="token punctuation">[</span><span class="token number">8</span> <span class="token operator">+</span> <span class="token number">32</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span> <span class="token number">0</span> <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
-	icmpHeader<span class="token operator">*</span> pIcmp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">;</span>
-	pIcmp<span class="token operator">-></span>type <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">;</span>
-	pIcmp<span class="token operator">-></span>code <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	pIcmp<span class="token operator">-></span>id <span class="token operator">=</span> <span class="token punctuation">(</span>USHORT<span class="token punctuation">)</span><span class="token double-colon punctuation">::</span><span class="token function">GetCurrentProcessId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	pIcmp<span class="token operator">-></span>sequence <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	<span class="token comment">// 填充数据部分</span>
-	<span class="token function">memcpy</span><span class="token punctuation">(</span>sendBuf <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token string">"abcdelmnopqrstuvwiammekakuactor"</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token comment">// 计算检验和</span>
-	pIcmp<span class="token operator">-></span>checkSum <span class="token operator">=</span> <span class="token function">computeCks</span><span class="token punctuation">(</span><span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span>sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	
-	<span class="token comment">// 发送报文</span>
-	DWORD start <span class="token operator">=</span> <span class="token function">GetTickCount64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">int</span> sendLen <span class="token operator">=</span> <span class="token function">sendto</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> sendBuf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>sendBuf<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>SOCKADDR<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>serverAddr<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>SOCKADDR<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span>sendLen <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"errno = %d\n"</span><span class="token punctuation">,</span> <span class="token function">GetLastError</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token comment">// 接收报文</span>
-	<span class="token keyword">char</span> recvBuf<span class="token punctuation">[</span><span class="token number">1024</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-	SOCKADDR_IN fromAddr<span class="token punctuation">;</span>
-	<span class="token keyword">int</span> fLen <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>fromAddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">unsigned</span> timeOut <span class="token operator">=</span> <span class="token number">1000</span><span class="token punctuation">;</span> <span class="token comment">// 超时时间</span>
-	<span class="token function">setsockopt</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_RCVTIMEO<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>timeOut<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>timeOut<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 设置接收超时</span>
-	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		<span class="token keyword">int</span> len <span class="token operator">=</span> <span class="token function">recvfrom</span><span class="token punctuation">(</span>s<span class="token punctuation">,</span> recvBuf<span class="token punctuation">,</span> <span class="token number">1024</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>SOCKADDR<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>fromAddr<span class="token punctuation">,</span> <span class="token operator">&amp;</span>fLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">if</span> <span class="token punctuation">(</span>len <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-			std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"请求超时"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
-			<span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span>
-		<span class="token punctuation">&#125;</span>
-		<span class="token keyword">else</span> <span class="token keyword">break</span><span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-	DWORD end <span class="token operator">=</span> <span class="token function">GetTickCount64</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	DWORD timeSpan <span class="token operator">=</span> end <span class="token operator">-</span> start<span class="token punctuation">;</span>
-
-	<span class="token comment">// 回送报文解析</span>
-	<span class="token keyword">char</span> ipInfo <span class="token operator">=</span> recvBuf<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token comment">// ipv4 头部的第 9 个字节为 TTL 的值</span>
-	<span class="token keyword">unsigned</span> <span class="token keyword">char</span> ttl <span class="token operator">=</span> recvBuf<span class="token punctuation">[</span><span class="token number">8</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
-	<span class="token keyword">int</span> ipHeadLen <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token punctuation">)</span><span class="token punctuation">(</span>ipInfo <span class="token operator">&lt;&lt;</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">4</span><span class="token punctuation">;</span> <span class="token comment">// IP报文头部长度</span>
-	icmpHeader<span class="token operator">*</span> icmpResp <span class="token operator">=</span> <span class="token punctuation">(</span>icmpHeader<span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>recvBuf <span class="token operator">+</span> ipHeadLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span>icmpResp<span class="token operator">-></span>type <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">//回显应答报文</span>
-		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"来自 %s 的回复：字节=32 时间=%2dms TTL=%d\n"</span><span class="token punctuation">,</span>
-			targetIP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> timeSpan<span class="token punctuation">,</span> ttl<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">return</span> timeSpan<span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-	<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
-		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"请求超时。type = %d\n"</span><span class="token punctuation">,</span> icmpResp<span class="token operator">-></span>type<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span>
-
-<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-	std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"请输入目的IP地址："</span><span class="token punctuation">;</span>
-	std<span class="token double-colon punctuation">::</span>string IP<span class="token punctuation">;</span>
-	std<span class="token double-colon punctuation">::</span>cin <span class="token operator">>></span> IP<span class="token punctuation">;</span>
-	<span class="token keyword">int</span> maxTime <span class="token operator">=</span> INT32_MIN<span class="token punctuation">,</span> minTime <span class="token operator">=</span> INT32_MAX<span class="token punctuation">,</span> timeSum <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> acpkgCnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n正在 Ping %s 具有 32 字节的数据:\n"</span><span class="token punctuation">,</span> IP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">4</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-		std<span class="token double-colon punctuation">::</span>this_thread<span class="token double-colon punctuation">::</span><span class="token function">sleep_for</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>chrono<span class="token double-colon punctuation">::</span><span class="token function">seconds</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-		<span class="token keyword">int</span> timeSpan <span class="token operator">=</span> <span class="token function">ping</span><span class="token punctuation">(</span>IP<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		acpkgCnt <span class="token operator">+=</span> timeSpan <span class="token operator">!=</span> INT32_MAX<span class="token punctuation">;</span>
-		maxTime <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>maxTime<span class="token punctuation">,</span> timeSpan<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		minTime <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minTime<span class="token punctuation">,</span> timeSpan<span class="token punctuation">)</span><span class="token punctuation">;</span>
-		timeSum <span class="token operator">+=</span> timeSpan<span class="token punctuation">;</span>
-	<span class="token punctuation">&#125;</span>
-	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n%s 的 Ping 统计信息:\n"</span><span class="token punctuation">,</span> IP<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"    数据包: 已发送 = 4，已接收 = %d，丢失 = %d (%d%% 丢失)，\n"</span><span class="token punctuation">,</span>
-		acpkgCnt<span class="token punctuation">,</span> <span class="token number">4</span> <span class="token operator">-</span> acpkgCnt<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">4</span> <span class="token operator">-</span> acpkgCnt<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span> <span class="token operator">/</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>acpkgCnt<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
-    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"往返行程的估计时间(以毫秒为单位):\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"    最短 = %dms，最长 = %dms，平均 = %dms\n"</span><span class="token punctuation">,</span> minTime<span class="token punctuation">,</span> maxTime<span class="token punctuation">,</span> timeSum <span class="token operator">/</span> acpkgCnt<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">&#125;</span></code></pre>
-
-<h1 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h1><p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/1.png"></p>
-<p>可见，本地与该目的主机的连通性较好。</p>
-<p><img src="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/2.png"></p>
-<p>可见，本地与该目的主机无法连通。</p>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-        <tag>Socket编程</tag>
-        <tag>Ping</tag>
       </tags>
   </entry>
 </search>
