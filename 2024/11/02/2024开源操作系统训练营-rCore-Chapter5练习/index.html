@@ -1,0 +1,863 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2024开源操作系统训练营 rCore Chapter5练习 | Lordaeron_ESZ's blog</title><meta name="keywords" content="Rust,操作系统,经验"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="编程作业思路进程创建如果只是想根据特定程序来创建进程，而不需要 fork + exec 组合提供的灵活性（如文件重定位等），那么 spawn 将是一个更简洁且效率更高的选择，本实验要求便是实现它。 对于 spawn 的实现，确实可以简单地将 fork 和 exec 拼接起来。但需要注意的是，fork 首先拷贝父进程的地址空间，exec 再将该地址空间替换，二者融合后最开始地址空间的拷贝其实是徒劳的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2024开源操作系统训练营 rCore Chapter5练习">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="编程作业思路进程创建如果只是想根据特定程序来创建进程，而不需要 fork + exec 组合提供的灵活性（如文件重定位等），那么 spawn 将是一个更简洁且效率更高的选择，本实验要求便是实现它。 对于 spawn 的实现，确实可以简单地将 fork 和 exec 拼接起来。但需要注意的是，fork 首先拷贝父进程的地址空间，exec 再将该地址空间替换，二者融合后最开始地址空间的拷贝其实是徒劳的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg">
+<meta property="article:published_time" content="2024-11-02T15:30:11.000Z">
+<meta property="article:modified_time" content="2024-11-04T11:44:00.723Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="经验">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2024开源操作系统训练营 rCore Chapter5练习',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-11-04 19:44:00'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">2024开源操作系统训练营 rCore Chapter5练习</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-11-02T15:30:11.000Z" title="发表于 2024-11-02 23:30:11">2024-11-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-11-04T11:44:00.723Z" title="更新于 2024-11-04 19:44:00">2024-11-04</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>18分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="2024开源操作系统训练营 rCore Chapter5练习"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="编程作业"><a href="#编程作业" class="headerlink" title="编程作业"></a>编程作业</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><h3 id="进程创建"><a href="#进程创建" class="headerlink" title="进程创建"></a>进程创建</h3><p>如果只是想根据特定程序来创建进程，而不需要 <code>fork + exec</code> 组合提供的灵活性（如文件重定位等），那么 <code>spawn</code> 将是一个更简洁且效率更高的选择，本实验要求便是实现它。</p>
+<p>对于 <code>spawn</code> 的实现，确实可以简单地将 <code>fork</code> 和 <code>exec</code> 拼接起来。但需要注意的是，<code>fork</code> 首先拷贝父进程的地址空间，<code>exec</code> 再将该地址空间替换，二者融合后最开始地址空间的拷贝其实是徒劳的。如以下代码所示：</p>
+<pre class="language-rust" data-language="rust"><code class="language-rust"><span class="token keyword">let</span> memory_set <span class="token operator">=</span> <span class="token class-name">MemorySet</span><span class="token punctuation">::</span><span class="token function">from_existed_user</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>parent_inner<span class="token punctuation">.</span>memory_set<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// futile code!</span>
+<span class="token punctuation">...</span>
+<span class="token keyword">let</span> <span class="token punctuation">(</span>memory_set<span class="token punctuation">,</span> user_sp<span class="token punctuation">,</span> entry_point<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token class-name">MemorySet</span><span class="token punctuation">::</span><span class="token function">from_elf</span><span class="token punctuation">(</span>elf_data<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h3 id="stride-调度算法"><a href="#stride-调度算法" class="headerlink" title="stride 调度算法"></a>stride 调度算法</h3><p>实现一个简单的步长调度算法，由于算法思路比较简单，这里直接介绍实现方式。</p>
+<p>首先，为了保存进程的“步长”和优先级信息，需要为进程控制块添加两个字段 <code>stride</code> 和 <code>prio</code>（不考虑性能，为了实现的简单，<code>pass</code> 字段省略，而是在每次增加步长时再计算）。</p>
+<p>在进行调度时（<code>TaskManager.fetch()</code>），需要从进程就绪队列中找到 stride 最小的进程进行调度，并为其 stride 加上对应的 pass，pass 的计算方式是用预先设定的大常数 BigStride 除以进程优先级 prio 得到。这里如果为了效率考虑，就绪队列可以采用优先队列的数据结构，而为了实现的简单，这里选择一次遍历的方式寻找最小值。</p>
+<p>最后，在一个时间片后，重新调度当前 stride 最小的进程。这一时间片轮转策略已经事先实现好，不需要做修改，实现代码如下所示：</p>
+<pre class="language-rust" data-language="rust"><code class="language-rust"><span class="token comment">// os/src/task/mod.rs</span>
+
+<span class="token keyword">pub</span> <span class="token keyword">fn</span> <span class="token function-definition function">trap_handler</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token operator">!</span> <span class="token punctuation">&#123;</span>
+<span class="token punctuation">...</span>
+        <span class="token class-name">Trap</span><span class="token punctuation">::</span><span class="token class-name">Interrupt</span><span class="token punctuation">(</span><span class="token class-name">Interrupt</span><span class="token punctuation">::</span><span class="token class-name">SupervisorTimer</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+            <span class="token function">set_next_trigger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">suspend_current_and_run_next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+<span class="token punctuation">...</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>CPU 每个时钟周期都发起一次时钟中断进入内核，内核的 <code>trap_handler</code> 检测到陷入原因是时钟中断，则调用 <code>suspend_current_and_run_next</code> 将当前进程放入就绪队列中，并重新进行调度。</p>
+<h3 id="前向兼容"><a href="#前向兼容" class="headerlink" title="前向兼容"></a>前向兼容</h3><p>从本实验开始，内核必须前向兼容，能够通过前一章的所有测试用例。根据文档提示，可以采用 <code>git cherry-pick</code> 系列命令，将其他分支的 commit 移植到本章分支。使用方法如下：</p>
+<ol>
+<li>合并特定的 commit 到当前分支：<code>git cherry-pick &lt;commit id&gt;</code>。</li>
+<li>若遇到冲突，首先打开冲突文件，如：<code>os/src/syscall/process.rs</code>，编辑文件，解决冲突。</li>
+<li>冲突解决后，标记已解决冲突的文件：<code>git add os/src/syscall/process.rs</code>。重复 2、3 步骤，直至解决完所有的冲突。</li>
+<li>继续 <code>cherry-pick</code> 过程：<code>git cherry-pick --continue</code>。</li>
+</ol>
+<p>这一章由于涉及到任务到进程的转变，框架改动较大，且前面章节修改的代码也不算多，因此我最终还是选择了手动移植。但在后面章节的实验中还是建议使用 cherry-pick.</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/os/src/config.rs b/os/src/config.rs
+index 5761cdd..b836e56 100644
+<span class="token coord">--- a/os/src/config.rs</span>
+<span class="token coord">+++ b/os/src/config.rs</span>
+@@ -23,3 +23,5 @@ pub const TRAP_CONTEXT_BASE: usize = TRAMPOLINE - PAGE_SIZE;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">pub const CLOCK_FREQ: usize = 12500000;
+</span><span class="token prefix unchanged"> </span><span class="token line">/// the physical memory end
+</span><span class="token prefix unchanged"> </span><span class="token line">pub const MEMORY_END: usize = 0x88000000;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">/// big constant for process scheduling
+</span><span class="token prefix inserted">+</span><span class="token line">pub const BIG_STRIDE: isize = 1000_000;
+</span></span>\ No newline at end of file
+diff --git a/os/src/mm/frame_allocator.rs b/os/src/mm/frame_allocator.rs
+index 44f20cd..2fa6939 100644
+<span class="token coord">--- a/os/src/mm/frame_allocator.rs</span>
+<span class="token coord">+++ b/os/src/mm/frame_allocator.rs</span>
+<span class="token coord">@@ -1,7 +1,7 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">//! Implementation of [`FrameAllocator`] which
+</span><span class="token prefix unchanged"> </span><span class="token line">//! controls all the frames in the operating system.
+</span><span class="token prefix unchanged"> </span><span class="token line">use super::&#123;PhysAddr, PhysPageNum&#125;;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">use crate::config::MEMORY_END;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::config::&#123;MEMORY_END, PAGE_SIZE&#125;;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::sync::UPSafeCell;
+</span><span class="token prefix unchanged"> </span><span class="token line">use alloc::vec::Vec;
+</span><span class="token prefix unchanged"> </span><span class="token line">use core::fmt::&#123;self, Debug, Formatter&#125;;
+</span></span>@@ -134,3 +134,10 @@ pub fn frame_allocator_test() &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    drop(v);
+</span><span class="token prefix unchanged"> </span><span class="token line">    println!("frame_allocator_test passed!");
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">/// Check if the remaining physical memory is sufficient
+</span><span class="token prefix inserted">+</span><span class="token line">pub fn is_mem_sufficient(_len: usize) -> bool &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    let fa = FRAME_ALLOCATOR.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">    let page_cnt = fa.end - fa.current + fa.recycled.len();
+</span><span class="token prefix inserted">+</span><span class="token line">    (_len + PAGE_SIZE - 1) / PAGE_SIZE &lt;= page_cnt
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span></span>diff --git a/os/src/mm/memory_set.rs b/os/src/mm/memory_set.rs
+index c3d15f3..dca8551 100644
+<span class="token coord">--- a/os/src/mm/memory_set.rs</span>
+<span class="token coord">+++ b/os/src/mm/memory_set.rs</span>
+@@ -60,6 +60,19 @@ impl MemorySet &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            None,
+</span><span class="token prefix unchanged"> </span><span class="token line">        );
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    /// Remove framed area
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn remove_framed_area(&amp;mut self, range: VPNRange) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut idx = 0;
+</span><span class="token prefix inserted">+</span><span class="token line">        for area in self.areas.iter_mut() &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            if area.vpn_range.get_start().0 == range.get_start().0 
+</span><span class="token prefix inserted">+</span><span class="token line">                &amp;&amp; area.vpn_range.get_end().0 == range.get_end().0 &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                area.unmap(&amp;mut self.page_table);
+</span><span class="token prefix inserted">+</span><span class="token line">                break;
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">            idx += 1;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        self.areas.remove(idx);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    /// remove a area
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub fn remove_area_with_start_vpn(&amp;mut self, start_vpn: VirtPageNum) &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">        if let Some((idx, area)) = self
+</span></span>diff --git a/os/src/mm/mod.rs b/os/src/mm/mod.rs
+index d216861..8ff9c7b 100644
+<span class="token coord">--- a/os/src/mm/mod.rs</span>
+<span class="token coord">+++ b/os/src/mm/mod.rs</span>
+@@ -11,9 +11,9 @@ mod heap_allocator;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">mod memory_set;
+</span><span class="token prefix unchanged"> </span><span class="token line">mod page_table;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">pub use address::&#123;PhysAddr, PhysPageNum, VirtAddr, VirtPageNum&#125;;
+</span><span class="token prefix deleted">-</span><span class="token line">use address::&#123;StepByOne, VPNRange&#125;;
+</span><span class="token prefix deleted">-</span><span class="token line">pub use frame_allocator::&#123;frame_alloc, FrameTracker&#125;;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">pub use address::&#123;PhysAddr, PhysPageNum, VirtAddr, VirtPageNum, VPNRange&#125;;
+</span><span class="token prefix inserted">+</span><span class="token line">use address::StepByOne;
+</span><span class="token prefix inserted">+</span><span class="token line">pub use frame_allocator::&#123;frame_alloc, FrameTracker, is_mem_sufficient&#125;;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">pub use memory_set::remap_test;
+</span><span class="token prefix unchanged"> </span><span class="token line">pub use memory_set::&#123;MapPermission, MemorySet, KERNEL_SPACE&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">pub use page_table::&#123;translated_byte_buffer, translated_refmut, translated_str, PageTableEntry&#125;;
+</span></span>diff --git a/os/src/syscall/mod.rs b/os/src/syscall/mod.rs
+index 8e0a7dd..ba663a1 100644
+<span class="token coord">--- a/os/src/syscall/mod.rs</span>
+<span class="token coord">+++ b/os/src/syscall/mod.rs</span>
+@@ -45,8 +45,11 @@ mod process;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">use fs::*;
+</span><span class="token prefix unchanged"> </span><span class="token line">use process::*;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">use crate::task::current_task;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// handle syscall exception with `syscall_id` and other arguments
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize &#123;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    current_task().unwrap().inc_syscall_times(syscall_id);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    match syscall_id &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">        SYSCALL_READ => sys_read(args[0], args[1] as *const u8, args[2]),
+</span><span class="token prefix unchanged"> </span><span class="token line">        SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
+</span></span>diff --git a/os/src/syscall/process.rs b/os/src/syscall/process.rs
+index f7aa9c3..13b9abb 100644
+<span class="token coord">--- a/os/src/syscall/process.rs</span>
+<span class="token coord">+++ b/os/src/syscall/process.rs</span>
+<span class="token coord">@@ -1,14 +1,16 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">//! Process management syscalls
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">use core::mem::size_of;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use alloc::sync::Arc;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">use crate::&#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    config::MAX_SYSCALL_NUM,
+</span><span class="token prefix unchanged"> </span><span class="token line">    loader::get_app_data_by_name,
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    mm::&#123;translated_refmut, translated_str&#125;,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    mm::&#123;is_mem_sufficient, translated_byte_buffer, translated_refmut, translated_str, VirtAddr&#125;,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    task::&#123;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        add_task, current_task, current_user_token, exit_current_and_run_next,
+</span><span class="token prefix deleted">-</span><span class="token line">        suspend_current_and_run_next, TaskStatus,
+</span><span class="token prefix deleted">-</span><span class="token line">    &#125;,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        add_task, current_task, current_user_token, exit_current_and_run_next, suspend_current_and_run_next, TaskStatus
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;, timer::get_time_us,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">#[repr(C)]
+</span></span>@@ -119,10 +121,24 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// HINT: What if [`TimeVal`] is splitted by two pages ?
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_get_time NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_get_time",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    let _us = get_time_us();
+</span><span class="token prefix inserted">+</span><span class="token line">    let time_val = TimeVal &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        sec: _us / 1_000_000,
+</span><span class="token prefix inserted">+</span><span class="token line">        usec: _us % 1_000_000,
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;;
+</span><span class="token prefix inserted">+</span><span class="token line">    let buffers = translated_byte_buffer(
+</span><span class="token prefix inserted">+</span><span class="token line">        current_user_token(), _ts as *const u8, size_of::&lt;TimeVal>());
+</span><span class="token prefix inserted">+</span><span class="token line">    let mut time_val_ptr = &amp;time_val as *const _ as *const u8;
+</span><span class="token prefix inserted">+</span><span class="token line">    for buffer in buffers &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        unsafe &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            time_val_ptr.copy_to(buffer.as_mut_ptr(), buffer.len());
+</span><span class="token prefix inserted">+</span><span class="token line">            time_val_ptr = time_val_ptr.add(buffer.len());
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    0
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// YOUR JOB: Finish sys_task_info to pass testcases
+</span></span>@@ -130,28 +146,60 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// HINT: What if [`TaskInfo`] is splitted by two pages ?
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_task_info(_ti: *mut TaskInfo) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_task_info NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_task_info",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    let task_info = TaskInfo &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        status: TaskStatus::Running,
+</span><span class="token prefix inserted">+</span><span class="token line">        syscall_times: current_task().unwrap().get_syscall_times(),
+</span><span class="token prefix inserted">+</span><span class="token line">        time: current_task().unwrap().get_scheduled_timespan(),
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;;
+</span><span class="token prefix inserted">+</span><span class="token line">    let buffers = translated_byte_buffer(
+</span><span class="token prefix inserted">+</span><span class="token line">        current_user_token(), _ti as *const u8, size_of::&lt;TaskInfo>());
+</span><span class="token prefix inserted">+</span><span class="token line">    let mut task_info_ptr = &amp;task_info as *const _ as *const u8;
+</span><span class="token prefix inserted">+</span><span class="token line">    for buffer in buffers &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        unsafe &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            task_info_ptr.copy_to(buffer.as_mut_ptr(), buffer.len());
+</span><span class="token prefix inserted">+</span><span class="token line">            task_info_ptr = task_info_ptr.add(buffer.len());
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    0
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// YOUR JOB: Implement mmap.
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_mmap(_start: usize, _len: usize, _port: usize) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_mmap NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_mmap",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    let start_va = VirtAddr::from(_start);
+</span><span class="token prefix inserted">+</span><span class="token line">    // 1. illegal start virtual address or port
+</span><span class="token prefix inserted">+</span><span class="token line">    if !start_va.aligned() || _port &amp; !0x7 != 0 || _port &amp; 0x7 == 0 &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    // 2. Check is there sufficient physical memory
+</span><span class="token prefix inserted">+</span><span class="token line">    if !is_mem_sufficient(_len) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    
+</span><span class="token prefix inserted">+</span><span class="token line">    let end_va = VirtAddr::from(_start + _len);
+</span><span class="token prefix inserted">+</span><span class="token line">    current_task().unwrap().mmap(start_va, end_va, _port)
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// YOUR JOB: Implement munmap.
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_munmap(_start: usize, _len: usize) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_munmap NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_munmap",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    let start_va = VirtAddr::from(_start);
+</span><span class="token prefix inserted">+</span><span class="token line">    if !start_va.aligned() &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    
+</span><span class="token prefix inserted">+</span><span class="token line">    let end_va = VirtAddr::from(_start + _len);
+</span><span class="token prefix inserted">+</span><span class="token line">    current_task().unwrap().munmap(start_va, end_va)
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// change data segment size
+</span></span>@@ -168,17 +216,34 @@ pub fn sys_sbrk(size: i32) -> isize &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// HINT: fork + exec =/= spawn
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_spawn(_path: *const u8) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_spawn NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_spawn",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    
+</span><span class="token prefix inserted">+</span><span class="token line">    // spawn a new process based upon _path
+</span><span class="token prefix inserted">+</span><span class="token line">    let token = current_user_token();
+</span><span class="token prefix inserted">+</span><span class="token line">    let _path = translated_str(token, _path);
+</span><span class="token prefix inserted">+</span><span class="token line">    let data_opt = get_app_data_by_name(_path.as_str());
+</span><span class="token prefix inserted">+</span><span class="token line">    if data_opt.is_none() &#123;  // invalid file name
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    let current_task = current_task().unwrap();
+</span><span class="token prefix inserted">+</span><span class="token line">    let new_task = current_task.spawn(data_opt.unwrap());
+</span><span class="token prefix inserted">+</span><span class="token line">    let new_pid = new_task.getpid();
+</span><span class="token prefix inserted">+</span><span class="token line">    add_task(new_task);
+</span><span class="token prefix inserted">+</span><span class="token line">    new_pid as isize
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// YOUR JOB: Set task priority.
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_set_priority(_prio: isize) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!(
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_set_priority NOT IMPLEMENTED",
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        "kernel:pid[&#123;&#125;] sys_set_priority",
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        current_task().unwrap().pid.0
+</span><span class="token prefix unchanged"> </span><span class="token line">    );
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    if _prio &lt;= 1 &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    let current_task = current_task().unwrap();
+</span><span class="token prefix inserted">+</span><span class="token line">    current_task.set_prio(_prio);
+</span><span class="token prefix inserted">+</span><span class="token line">    _prio
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>diff --git a/os/src/task/manager.rs b/os/src/task/manager.rs
+index 99393a4..b0f2b52 100644
+<span class="token coord">--- a/os/src/task/manager.rs</span>
+<span class="token coord">+++ b/os/src/task/manager.rs</span>
+@@ -19,11 +19,27 @@ impl TaskManager &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">    /// Add process back to ready queue
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub fn add(&amp;mut self, task: Arc&lt;TaskControlBlock>) &#123;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        task.inc_stride();
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        self.ready_queue.push_back(task);
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">    /// Take a process out of the ready queue
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub fn fetch(&amp;mut self) -> Option&lt;Arc&lt;TaskControlBlock>> &#123;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        self.ready_queue.pop_front()
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        // self.ready_queue.pop_front()
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut min_stride = isize::MAX;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut best_idx = 0;
+</span><span class="token prefix inserted">+</span><span class="token line">        for (idx, tcb) in self.ready_queue.iter().enumerate() &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            let stride = tcb.get_stride();
+</span><span class="token prefix inserted">+</span><span class="token line">            if min_stride > stride &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                min_stride = stride;
+</span><span class="token prefix inserted">+</span><span class="token line">                best_idx = idx;
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        if min_stride == isize::MAX &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            None
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125; else &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            self.ready_queue.swap(0, best_idx);
+</span><span class="token prefix inserted">+</span><span class="token line">            self.ready_queue.pop_front()
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span>diff --git a/os/src/task/processor.rs b/os/src/task/processor.rs
+index f05fa09..14b8ae0 100644
+<span class="token coord">--- a/os/src/task/processor.rs</span>
+<span class="token coord">+++ b/os/src/task/processor.rs</span>
+@@ -8,6 +8,7 @@ use super::__switch;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use super::&#123;fetch_task, TaskStatus&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">use super::&#123;TaskContext, TaskControlBlock&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">use crate::sync::UPSafeCell;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::timer::get_time_ms;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::trap::TrapContext;
+</span><span class="token prefix unchanged"> </span><span class="token line">use alloc::sync::Arc;
+</span><span class="token prefix unchanged"> </span><span class="token line">use lazy_static::*;
+</span></span>@@ -61,6 +62,11 @@ pub fn run_tasks() &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            let mut task_inner = task.inner_exclusive_access();
+</span><span class="token prefix unchanged"> </span><span class="token line">            let next_task_cx_ptr = &amp;task_inner.task_cx as *const TaskContext;
+</span><span class="token prefix unchanged"> </span><span class="token line">            task_inner.task_status = TaskStatus::Running;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">            // if the task is being called for the first time,
+</span><span class="token prefix inserted">+</span><span class="token line">            if task_inner.time == 0usize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                // then set it to the current time
+</span><span class="token prefix inserted">+</span><span class="token line">                task_inner.time = get_time_ms();
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            // release coming task_inner manually
+</span><span class="token prefix unchanged"> </span><span class="token line">            drop(task_inner);
+</span><span class="token prefix unchanged"> </span><span class="token line">            // release coming task TCB manually
+</span></span>diff --git a/os/src/task/task.rs b/os/src/task/task.rs
+index 1402c31..e60021d 100644
+<span class="token coord">--- a/os/src/task/task.rs</span>
+<span class="token coord">+++ b/os/src/task/task.rs</span>
+<span class="token coord">@@ -1,9 +1,10 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">//! Types related to task management &amp; Functions for completely changing TCB
+</span><span class="token prefix unchanged"> </span><span class="token line">use super::TaskContext;
+</span><span class="token prefix unchanged"> </span><span class="token line">use super::&#123;kstack_alloc, pid_alloc, KernelStack, PidHandle&#125;;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">use crate::config::TRAP_CONTEXT_BASE;
+</span><span class="token prefix deleted">-</span><span class="token line">use crate::mm::&#123;MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE&#125;;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::config::&#123;BIG_STRIDE, MAX_SYSCALL_NUM, TRAP_CONTEXT_BASE&#125;;
+</span><span class="token prefix inserted">+</span><span class="token line">use crate::mm::&#123;MapPermission, MemorySet, PhysPageNum, VPNRange, VirtAddr, VirtPageNum, KERNEL_SPACE&#125;;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::sync::UPSafeCell;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::timer::get_time_ms;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::trap::&#123;trap_handler, TrapContext&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">use alloc::sync::&#123;Arc, Weak&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">use alloc::vec::Vec;
+</span></span>@@ -34,6 +35,86 @@ impl TaskControlBlock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        let inner = self.inner_exclusive_access();
+</span><span class="token prefix unchanged"> </span><span class="token line">        inner.memory_set.token()
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    /// Set the schduling priority
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn set_prio(&amp;self, prio: isize) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner_exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.set_prio(prio);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Get the schduling stride
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn get_stride(&amp;self) -> isize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let inner = self.inner_exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.stride
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Increase the stride by pass
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn inc_stride(&amp;self) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner_exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.inc_stride();
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Get syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn get_syscall_times(&amp;self) -> [u32; MAX_SYSCALL_NUM] &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.syscall_times.clone()
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Get time span between current time and first scheduled time
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn get_scheduled_timespan(&amp;self) -> usize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        get_time_ms() - inner.time
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Increase syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn inc_syscall_times(&amp;self, syscall_id: usize) -> bool &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        if syscall_id >= MAX_SYSCALL_NUM &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            return false;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.syscall_times[syscall_id] += 1;
+</span><span class="token prefix inserted">+</span><span class="token line">        true
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Map some pages to memory_set
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn mmap(&amp;self, start_va: VirtAddr, end_va: VirtAddr, port: usize) -> isize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        let vpn_range = VPNRange::new(
+</span><span class="token prefix inserted">+</span><span class="token line">            VirtPageNum::from(start_va),
+</span><span class="token prefix inserted">+</span><span class="token line">            end_va.ceil()
+</span><span class="token prefix inserted">+</span><span class="token line">        );
+</span><span class="token prefix inserted">+</span><span class="token line">        
+</span><span class="token prefix inserted">+</span><span class="token line">        // 3. Check if trying to map mapped page
+</span><span class="token prefix inserted">+</span><span class="token line">        for vpn in vpn_range &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            if let Some(pte) = inner.memory_set.translate(vpn) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                if pte.is_valid() &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                    return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">                &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">        // After checking all errors may occur,
+</span><span class="token prefix inserted">+</span><span class="token line">        // push a new map_area to current memory_set
+</span><span class="token prefix inserted">+</span><span class="token line">        let perm = MapPermission::from_bits((port as u8) &lt;&lt; 1).unwrap() | MapPermission::U;
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.memory_set.insert_framed_area(start_va, end_va, perm);
+</span><span class="token prefix inserted">+</span><span class="token line">        0
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Unmap some pages in memory set
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn munmap(&amp;self, start_va: VirtAddr, end_va: VirtAddr) -> isize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        let vpn_range = VPNRange::new(
+</span><span class="token prefix inserted">+</span><span class="token line">            VirtPageNum::from(start_va),
+</span><span class="token prefix inserted">+</span><span class="token line">            end_va.ceil(),
+</span><span class="token prefix inserted">+</span><span class="token line">        );
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">        // 1. Check if trying to unmap unmapped page
+</span><span class="token prefix inserted">+</span><span class="token line">        for vpn in vpn_range &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            if let Some(pte) = inner.memory_set.translate(vpn) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                if !pte.is_valid() &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                    return -1
+</span><span class="token prefix inserted">+</span><span class="token line">                &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">        // After checking all errors may occur,
+</span><span class="token prefix inserted">+</span><span class="token line">        // remove some pages from current memory_set
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.memory_set.remove_framed_area(vpn_range);
+</span><span class="token prefix inserted">+</span><span class="token line">        0
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">pub struct TaskControlBlockInner &#123;
+</span></span>@@ -68,6 +149,18 @@ pub struct TaskControlBlockInner &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">    /// Program break
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub program_brk: usize,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Scheduling priority
+</span><span class="token prefix inserted">+</span><span class="token line">    pub prio: isize,
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Scheduling stride
+</span><span class="token prefix inserted">+</span><span class="token line">    pub stride: isize,
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// The syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">    pub syscall_times: [u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// The first time the task was scheduled
+</span><span class="token prefix inserted">+</span><span class="token line">    pub time: usize,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">impl TaskControlBlockInner &#123;
+</span></span>@@ -85,6 +178,13 @@ impl TaskControlBlockInner &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    pub fn is_zombie(&amp;self) -> bool &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">        self.get_status() == TaskStatus::Zombie
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    pub fn set_prio(&amp;mut self, prio: isize) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        self.prio = prio;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn inc_stride(&amp;mut self) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let pass = BIG_STRIDE / self.prio;
+</span><span class="token prefix inserted">+</span><span class="token line">        self.stride += pass;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">impl TaskControlBlock &#123;
+</span></span>@@ -118,6 +218,10 @@ impl TaskControlBlock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">                    exit_code: 0,
+</span><span class="token prefix unchanged"> </span><span class="token line">                    heap_bottom: user_sp,
+</span><span class="token prefix unchanged"> </span><span class="token line">                    program_brk: user_sp,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">                    prio: 16,
+</span><span class="token prefix inserted">+</span><span class="token line">                    stride: 0,
+</span><span class="token prefix inserted">+</span><span class="token line">                    syscall_times: [0u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">                    time: 0usize,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">                &#125;)
+</span><span class="token prefix unchanged"> </span><span class="token line">            &#125;,
+</span><span class="token prefix unchanged"> </span><span class="token line">        &#125;;
+</span></span>@@ -191,6 +295,10 @@ impl TaskControlBlock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">                    exit_code: 0,
+</span><span class="token prefix unchanged"> </span><span class="token line">                    heap_bottom: parent_inner.heap_bottom,
+</span><span class="token prefix unchanged"> </span><span class="token line">                    program_brk: parent_inner.program_brk,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">                    prio: 16,
+</span><span class="token prefix inserted">+</span><span class="token line">                    stride: 0,
+</span><span class="token prefix inserted">+</span><span class="token line">                    syscall_times: [0u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">                    time: 0usize,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">                &#125;)
+</span><span class="token prefix unchanged"> </span><span class="token line">            &#125;,
+</span><span class="token prefix unchanged"> </span><span class="token line">        &#125;);
+</span></span>@@ -206,6 +314,55 @@ impl TaskControlBlock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        // ---- release parent PCB
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    /// parent process spawn the child process
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn spawn(self: &amp;Arc&lt;Self>, elf_data: &amp;[u8]) -> Arc&lt;Self> &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut parent_inner = self.inner_exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        // create a user space based upon elf_data
+</span><span class="token prefix inserted">+</span><span class="token line">        let (memory_set, user_sp, entry_point) = MemorySet::from_elf(elf_data);
+</span><span class="token prefix inserted">+</span><span class="token line">        let trap_cx_ppn = memory_set
+</span><span class="token prefix inserted">+</span><span class="token line">            .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
+</span><span class="token prefix inserted">+</span><span class="token line">            .unwrap()
+</span><span class="token prefix inserted">+</span><span class="token line">            .ppn();
+</span><span class="token prefix inserted">+</span><span class="token line">        // alloc a pid and a kernel stack in kernel space
+</span><span class="token prefix inserted">+</span><span class="token line">        let pid_handle = pid_alloc();
+</span><span class="token prefix inserted">+</span><span class="token line">        let kernel_stack = kstack_alloc();
+</span><span class="token prefix inserted">+</span><span class="token line">        let kernel_stack_top = kernel_stack.get_top();
+</span><span class="token prefix inserted">+</span><span class="token line">        let task_control_block = Arc::new(TaskControlBlock &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            pid: pid_handle,
+</span><span class="token prefix inserted">+</span><span class="token line">            kernel_stack,
+</span><span class="token prefix inserted">+</span><span class="token line">            inner: unsafe &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                UPSafeCell::new(TaskControlBlockInner &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                    trap_cx_ppn,
+</span><span class="token prefix inserted">+</span><span class="token line">                    base_size: user_sp,
+</span><span class="token prefix inserted">+</span><span class="token line">                    task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+</span><span class="token prefix inserted">+</span><span class="token line">                    task_status: TaskStatus::Ready,
+</span><span class="token prefix inserted">+</span><span class="token line">                    memory_set,
+</span><span class="token prefix inserted">+</span><span class="token line">                    parent: Some(Arc::downgrade(self)),
+</span><span class="token prefix inserted">+</span><span class="token line">                    children: Vec::new(),
+</span><span class="token prefix inserted">+</span><span class="token line">                    exit_code: 0,
+</span><span class="token prefix inserted">+</span><span class="token line">                    heap_bottom: parent_inner.heap_bottom,
+</span><span class="token prefix inserted">+</span><span class="token line">                    program_brk: parent_inner.program_brk,
+</span><span class="token prefix inserted">+</span><span class="token line">                    prio: 16,
+</span><span class="token prefix inserted">+</span><span class="token line">                    stride: 0,
+</span><span class="token prefix inserted">+</span><span class="token line">                    syscall_times: [0u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">                    time: 0usize,
+</span><span class="token prefix inserted">+</span><span class="token line">                &#125;)
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;,
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;);
+</span><span class="token prefix inserted">+</span><span class="token line">        // add child
+</span><span class="token prefix inserted">+</span><span class="token line">        parent_inner.children.push(task_control_block.clone());
+</span><span class="token prefix inserted">+</span><span class="token line">        // modify trap_cx
+</span><span class="token prefix inserted">+</span><span class="token line">        let trap_cx = task_control_block.inner_exclusive_access().get_trap_cx();
+</span><span class="token prefix inserted">+</span><span class="token line">        *trap_cx = TrapContext::app_init_context(
+</span><span class="token prefix inserted">+</span><span class="token line">            entry_point,
+</span><span class="token prefix inserted">+</span><span class="token line">            user_sp,
+</span><span class="token prefix inserted">+</span><span class="token line">            KERNEL_SPACE.exclusive_access().token(),
+</span><span class="token prefix inserted">+</span><span class="token line">            kernel_stack_top,
+</span><span class="token prefix inserted">+</span><span class="token line">            trap_handler as usize,
+</span><span class="token prefix inserted">+</span><span class="token line">        );
+</span><span class="token prefix inserted">+</span><span class="token line">        task_control_block
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    /// get pid of process
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub fn getpid(&amp;self) -> usize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">        self.pid.0</span></span></code></pre>
+<h1 id="问答作业"><a href="#问答作业" class="headerlink" title="问答作业"></a>问答作业</h1><p>stride 算法原理非常简单，但是有一个比较大的问题。例如两个 <code>pass = 10</code> 的进程，使用 8bit 无符号整型储存 stride， <code>p1.stride = 255, p2.stride = 250</code>，在 p2 执行一个时间片后，理论上下一次应该 p1 执行。</p>
+<p><strong>Q1:</strong> 实际情况是轮到 p1 执行吗？为什么？ </p>
+<p><strong>A1:</strong> 不是，对于 8 位无符号整型而言，它能够表示的最大整数为 255，因此当 p2 执行了一个时间片后，<code>p2.stride = p2.stride + pass = 250 + 10 = 4 (overflow!)</code> 。这样，下一次被调度的进程实际上还是 p2.</p>
+<p>我们之前要求进程优先级 &gt;= 2 其实就是为了解决这个问题。可以证明，<strong>在不考虑溢出的情况下</strong>, 在进程优先级全部 &gt;= 2 的情况下，如果严格按照算法执行，那么 <code>STRIDE_MAX – STRIDE_MIN &lt;= BigStride / 2</code>.</p>
+<p><strong>Q2:</strong> 为什么？尝试简单说明（不要求严格证明）。</p>
+<p><strong>A2:</strong> 进程优先级 &gt;= 2，则有 <code>pass &lt;= BigStride / 2</code>，由于调度策略的影响，最大步长与最小步长的差值最大不超过 pass，那么便有 <code>STRIDE_MAX – STRIDE_MIN &lt;= pass &lt;= BigStride / 2</code>.</p>
+<p><strong>Q3:</strong> 已知以上结论，<strong>考虑溢出的情况下</strong>，可以为 Stride 设计特别的比较器，让 <code>BinaryHeap&lt;Stride&gt;</code> 的 pop 方法能返回真正最小的 Stride。补全下列代码中的 <code>partial_cmp</code> 函数，假设两个 Stride 永远不会相等。</p>
+<pre class="language-rust" data-language="rust"><code class="language-rust"><span class="token keyword">use</span> <span class="token namespace">core<span class="token punctuation">::</span>cmp<span class="token punctuation">::</span></span><span class="token class-name">Ordering</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token type-definition class-name">Stride</span><span class="token punctuation">(</span><span class="token keyword">u64</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">PartialOrd</span> <span class="token keyword">for</span> <span class="token class-name">Stride</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">partial_cmp</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">self</span><span class="token punctuation">,</span> other<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">Self</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">Option</span><span class="token operator">&lt;</span><span class="token class-name">Ordering</span><span class="token operator">></span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// ...</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">PartialEq</span> <span class="token keyword">for</span> <span class="token class-name">Stride</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">eq</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">self</span><span class="token punctuation">,</span> other<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">Self</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token keyword">bool</span> <span class="token punctuation">&#123;</span>
+        <span class="token boolean">false</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<blockquote>
+<p> TIPS: 使用 8 bits 存储 stride, BigStride = 255, 则: <code>(125 &lt; 255) == false</code>, <code>(129 &lt; 255) == true</code>.</p>
+</blockquote>
+<p><strong>A3:</strong> </p>
+<pre class="language-rust" data-language="rust"><code class="language-rust"><span class="token keyword">use</span> <span class="token namespace">core<span class="token punctuation">::</span>cmp<span class="token punctuation">::</span></span><span class="token class-name">Ordering</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token type-definition class-name">Stride</span><span class="token punctuation">(</span><span class="token keyword">u64</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">PartialOrd</span> <span class="token keyword">for</span> <span class="token class-name">Stride</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">partial_cmp</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">self</span><span class="token punctuation">,</span> other<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">Self</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">Option</span><span class="token operator">&lt;</span><span class="token class-name">Ordering</span><span class="token operator">></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">let</span> half <span class="token operator">=</span> <span class="token class-name">BigStride</span> <span class="token operator">/</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    	<span class="token keyword">if</span> <span class="token keyword">self</span><span class="token punctuation">.</span><span class="token number">0</span> <span class="token operator">&lt;</span> other<span class="token number">.0</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> other<span class="token number">.0</span> <span class="token operator">-</span> <span class="token keyword">self</span><span class="token punctuation">.</span><span class="token number">0</span> <span class="token operator">&lt;=</span> half <span class="token punctuation">&#123;</span>
+                <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token class-name">Ordering</span><span class="token punctuation">::</span><span class="token class-name">Less</span><span class="token punctuation">)</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token class-name">Ordering</span><span class="token punctuation">::</span><span class="token class-name">Greater</span><span class="token punctuation">)</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token keyword">self</span><span class="token punctuation">.</span><span class="token number">0</span> <span class="token operator">-</span> other<span class="token number">.0</span> <span class="token operator">&lt;=</span> half <span class="token punctuation">&#123;</span>
+                <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token class-name">Ordering</span><span class="token punctuation">::</span><span class="token class-name">Greater</span><span class="token punctuation">)</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token class-name">Ordering</span><span class="token punctuation">::</span><span class="token class-name">Less</span><span class="token punctuation">)</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">PartialEq</span> <span class="token keyword">for</span> <span class="token class-name">Stride</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">eq</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">self</span><span class="token punctuation">,</span> other<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">Self</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token keyword">bool</span> <span class="token punctuation">&#123;</span>
+        <span class="token boolean">false</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/">http://lordaeronesz.github.io/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Rust/">Rust</a><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a></div><div class="post_share"><div class="social-share" data-image="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/"><img class="prev-cover" src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">2024开源操作系统训练营 rCore Chapter6练习</div></div></a></div><div class="next-post pull-right"><a href="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/"><img class="next-cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/10/28/2024开源操作系统训练营-rCore-Chapter3练习/" title="2024开源操作系统训练营 rCore Chapter3练习"><img class="cover" src="/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-10-28</div><div class="title">2024开源操作系统训练营 rCore Chapter3练习</div></div></a></div><div><a href="/2024/11/01/2024开源操作系统训练营-rCore-Chapter4练习/" title="2024开源操作系统训练营 rCore Chapter4练习"><img class="cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-01</div><div class="title">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div><div><a href="/2024/11/03/2024开源操作系统训练营-rCore-Chapter6练习/" title="2024开源操作系统训练营 rCore Chapter6练习"><img class="cover" src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-03</div><div class="title">2024开源操作系统训练营 rCore Chapter6练习</div></div></a></div><div><a href="/2024/11/04/2024开源操作系统训练营-rCore-Chapter8练习/" title="2024开源操作系统训练营 rCore Chapter8练习"><img class="cover" src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-04</div><div class="title">2024开源操作系统训练营 rCore Chapter8练习</div></div></a></div><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E5%88%9B%E5%BB%BA"><span class="toc-number">1.1.1.</span> <span class="toc-text">进程创建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#stride-%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95"><span class="toc-number">1.1.2.</span> <span class="toc-text">stride 调度算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E5%90%91%E5%85%BC%E5%AE%B9"><span class="toc-number">1.1.3.</span> <span class="toc-text">前向兼容</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">问答作业</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习"><img src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter5练习"/></a><div class="content"><a class="title" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习">2024开源操作系统训练营 rCore Chapter5练习</a><time datetime="2024-11-02T15:30:11.000Z" title="发表于 2024-11-02 23:30:11">2024-11-02</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2024 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

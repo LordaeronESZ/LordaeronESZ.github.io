@@ -1,0 +1,566 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIT6.s081 2021 Lab Utilities | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,经验,xv6"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Boot xv6按照示例切换到 util 分支后，看到目录下包含 Makefile 文件，执行 make qemu 即可。 sleep思路借助系统调用 sleep 实现一个命令行程序，关键是要找到封装了系统调用的 C 函数的位置，根据提示：  … user&#x2F;user.h for the C definition of sleep callable from a user program …  可知">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.s081 2021 Lab Utilities">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="Boot xv6按照示例切换到 util 分支后，看到目录下包含 Makefile 文件，执行 make qemu 即可。 sleep思路借助系统调用 sleep 实现一个命令行程序，关键是要找到封装了系统调用的 C 函数的位置，根据提示：  … user&#x2F;user.h for the C definition of sleep callable from a user program …  可知">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png">
+<meta property="article:published_time" content="2024-06-24T12:45:11.000Z">
+<meta property="article:modified_time" content="2024-06-26T02:10:33.161Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="xv6">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MIT6.s081 2021 Lab Utilities',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-06-26 10:10:33'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MIT6.s081 2021 Lab Utilities</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-06-24T12:45:11.000Z" title="发表于 2024-06-24 20:45:11">2024-06-24</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-06-26T02:10:33.161Z" title="更新于 2024-06-26 10:10:33">2024-06-26</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>11分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MIT6.s081 2021 Lab Utilities"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="Boot-xv6"><a href="#Boot-xv6" class="headerlink" title="Boot xv6"></a>Boot xv6</h1><p>按照示例切换到 <code>util</code> 分支后，看到目录下包含 <code>Makefile</code> 文件，执行 <code>make qemu</code> 即可。</p>
+<h1 id="sleep"><a href="#sleep" class="headerlink" title="sleep"></a>sleep</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>借助系统调用 <code>sleep</code> 实现一个命令行程序，关键是要找到封装了系统调用的 C 函数的位置，根据提示：</p>
+<blockquote>
+<p>… <code>user/user.h</code> for the C definition of <code>sleep</code> callable from a user program …</p>
+</blockquote>
+<p>可知该函数的声明位于 <code>user.h</code> 头文件中，声明方式很简单：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>将其“拷贝”（include）到需要编写的代码 <code>user/sleep.c</code> 中，调用 <code>sleep(&lt;睡眠时间&gt;)</code> 即可。</p>
+<p>最后，按照提示，将编写的 <code>sleep</code> 代码添加到 Makefile 的 <code>UPROGS</code> 中，添加后如下所示：</p>
+<pre class="language-makefile" data-language="makefile"><code class="language-makefile">UPROGS<span class="token operator">=</span>\
+    <span class="token variable">$U/_cat\</span>
+    <span class="token variable">$U/_echo\</span>
+    <span class="token variable">$U/_forktest\</span>
+    <span class="token variable">$U/_grep\</span>
+    <span class="token variable">$U/_init\</span>
+    <span class="token variable">$U/_kill\</span>
+    <span class="token variable">$U/_ln\</span>
+    <span class="token variable">$U/_ls\</span>
+    <span class="token variable">$U/_mkdir\</span>
+    <span class="token variable">$U/_rm\</span>
+    <span class="token variable">$U/_sh\</span>
+    <span class="token variable">$U/_stressfs\</span>
+    <span class="token variable">$U/_usertests\</span>
+    <span class="token variable">$U/_grind\</span>
+    <span class="token variable">$U/_wc\</span>
+    <span class="token variable">$U/_zombie\</span>
+    <span class="token variable">$U/_sleep\</span></code></pre>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// user/sleep.c</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/types.h"</span> <span class="token comment">// 注意先包含types.h</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"user/user.h"</span>    <span class="token comment">// 再包含user.h（user.h中存在在types.h中定义的别名）</span></span>
+
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">!=</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"sleep: argument count error\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">int</span> time <span class="token operator">=</span> <span class="token function">atoi</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sleep</span><span class="token punctuation">(</span>time<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="pingpong"><a href="#pingpong" class="headerlink" title="pingpong"></a>pingpong</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>本题主要是要理解管道的接口设计，以及借助该接口实现父进程与子进程之间的通信。这是 <code>xv6</code> 文档中对于 <code>pipe</code> 调用的描述：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">pipe</span><span class="token punctuation">(</span><span class="token keyword">int</span> p<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token comment">// Create a pipe, put read/write file descriptors in p[0] and p[1].</span></code></pre>
+<p><code>pipe</code> 创建一个管道，并分别将该管道的读、写端文件描述符置为 <code>p[0]</code> 和 <code>p[1]</code>，之后调用 <code>fork</code> 创建一个子进程，由于 <code>fork</code> 的作用是将父进程的数据直接拷贝给子进程，因此子进程同时继承了父进程的管道文件描述符，可以借助该文件描述符进行进程间通信（IPC），相当于借助一个共享文件进行通信，只不过该“文件”存储在内存的内核区域中，而不占用实际的磁盘存储空间。</p>
+<p>利用管道解决本题的基本流程如下，首先需要创建两个管道 pa 和 pb，然后：</p>
+<ol>
+<li>父进程向管道 pa 的写端写入 1 字节数据，然后关闭 pa 的写端。</li>
+<li>子进程从管道 pa 的读端读取 1 字节数据，然后关闭 pa 的读端，打印信息，然后向管道 pb 的写端写入 1 字节数据，关闭 pb 的写端。</li>
+<li>父进程从管道 pb 的读端读取 1 字节数据，关闭 pb 的读端，最后打印信息。</li>
+</ol>
+<p>这里需要解释一下为什么需要两个管道（只是<strong>个人的方法</strong>，其它方法可能只需要一个管道），由于进程调度策略的影响，父进程和子进程的执行顺序并不确定。可能出现这样一种情况：在 <code>fork</code> 创建子进程后，父进程先被调度，将 1 字节数据写入管道，这时理想的情况是子进程被调度，然后读取父进程发送的数据，但是事实可能并不会如我们所愿，子进程可能一直得不到调度，父进程继续向下执行，从管道中读取自己刚刚发送的 1 字节的数据，这样子进程就无法收到父进程发送的数据，父子进程之间的通信也就失败了。</p>
+<p>通过创建两个管道，并分别关闭对应的读端和写端，就能够得到两个单向数据流的管道，也就不会有上述自己写入的数据被被自己读取的情况出现。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// user/pingpong.c</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/types.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"user/user.h"</span></span>
+
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">int</span> pa<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> pb<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token function">pipe</span><span class="token punctuation">(</span>pa<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">pipe</span><span class="token punctuation">(</span>pb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">int</span> pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token comment">// phase_2</span>
+		<span class="token function">read</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> buf<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d: received ping\n"</span><span class="token punctuation">,</span> <span class="token function">getpid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">write</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"a"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token comment">// phase_1</span>
+		<span class="token function">write</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"a"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pa<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token comment">// phase_3</span>
+		<span class="token function">read</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> buf<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>pb<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d: received pong\n"</span><span class="token punctuation">,</span> <span class="token function">getpid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"pingpong: fork failed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="primes"><a href="#primes" class="headerlink" title="primes"></a>primes</h1><h2 id="思路-2"><a href="#思路-2" class="headerlink" title="思路"></a>思路</h2><p>实现一个基于管道的并发埃式筛（The sieve of Eratosthenes），关键是要理解管道的机制，以及仔细阅读题干给出的<a target="_blank" rel="noopener" href="https://swtch.com/~rsc/thread/">文章</a>，该文章有关该埃式筛方法的介绍图片如下所示：</p>
+<p><img src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/primes.png" alt></p>
+<p>该算法的个人感觉十分精妙，以下是基本流程：</p>
+<ol>
+<li>进程 0（主进程）发出一系列从 2 开始的整数序列。</li>
+<li>进程 1 首先接收来自进程 0 发出的第一个整数 prime，prime 一定是一个质数，将其打印出来。然后继续按顺序接收来自进程 0 发出的其它整数，若接收到的某个整数能够被 prime 整除，则丢弃它（不做处理），否则将该整数发送给下一个进程。</li>
+<li>后续进程的操作与进程 1 类似，直到没有任何整数发送给下一个进程，程序终止。</li>
+</ol>
+<p>算法的思路并不复杂，主要问题在于如何使用管道实现上述流程中进程 i 与进程 i + 1 之间的通信。我这里只使用了一个 <code>int[2]</code> 来轮换地存放管道的文件描述符，并使用一个缓冲区来暂存每次要发送给下一个进程的数，在一个进程完成它所做的工作后，再将缓冲区中的数据批量写入管道，并创建子进程来完成接下来的工作。这里要千万注意管道完成读取或写入后及时关闭，否则可能会出现子进程读取管道时阻塞的情况。</p>
+<p>我在写下这篇博客的过程中发现，虽然我使用的这个方法能够达到预期的效果，并成功通过测试用例，但是其实是有一定问题的：本方法的处理过程是串行的。事实上，每个进程都是在将本进程的所有工作全部完成之后，再调用 <code>fork</code> 来创建子进程，完成后续的工作，本质上与放在一个进程中完成所有工作并没有区别，与文章中提到的 “<em>Concurrent</em>” 完全相悖。理想的做法应该是创建一个 <code>int[2]</code> 数组来存放管道的文件描述符，并及时 <code>fork</code> 子进程来工作，以此来实现并发，具体的代码实现有待后续改进。</p>
+<h2 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// user/primes.c</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/types.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"user/user.h"</span></span>
+
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> p<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token function">pipe</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">int</span> buf<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> plist<span class="token punctuation">[</span><span class="token number">35</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> <span class="token number">35</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">write</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>i<span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token function">close</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">read</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>buf<span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">int</span> prime <span class="token operator">=</span> buf<span class="token punctuation">;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"prime %d\n"</span><span class="token punctuation">,</span> prime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">int</span> pcnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">read</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>buf<span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>buf <span class="token operator">%</span> prime<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				plist<span class="token punctuation">[</span>pcnt<span class="token operator">++</span><span class="token punctuation">]</span> <span class="token operator">=</span> buf<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token function">pipe</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// rotating pipe</span>
+
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> pcnt<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">write</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>plist <span class="token operator">+</span> i<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>p<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">int</span> pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">continue</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">wait</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"primes: fork error\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="find"><a href="#find" class="headerlink" title="find"></a>find</h1><h2 id="思路-3"><a href="#思路-3" class="headerlink" title="思路"></a>思路</h2><p>本题是这个 Lab 中我花费时间最长的，代码思路虽然不算很复杂，但是有很多的细节问题我在写的时候没有考虑到，感觉 debug 时间差不多是 coding 的几倍了。。。</p>
+<p>题目要求实现一个简易的 <code>find</code> 命令，根据提示可以参考 <code>user/ls.c</code> 对目录的读取操作，并使用递归来实现对子目录的查找。基本思路就是打开一个指定路径的文件（目录也算是特殊的文件），并根据文件的类型做不同处理：</p>
+<ol>
+<li>如果文件是常规文件，则判断改文件名是否是目标文件名（<code>find</code> 的第二个参数），如果是，则将其完整路径打印至标准输出。</li>
+<li>如果文件是目录文件，则读取该目录下的所有文件名，并在该目录路径尾部加上 <code>/st.name</code>，依次构造一个新的文件名继续递归调用 <code>find</code>。注意不要递归进入 <code>.</code> 和 <code>..</code>，否则将导致无限递归。 </li>
+</ol>
+<p>以上便是基本思路，具体实现可以阅读完整代码，下面讲一下我遇到的一些问题（bug）：</p>
+<ol>
+<li>使用 <code>fstat</code> 获取文件信息时 <code>st.type</code> 始终为 3（<code>T_DEVICE</code> 类型）。</li>
+</ol>
+<p>这个问题其实挺难绷的，原因是我把 <code>if ((fd = open(path, 0)) &lt; 0)</code> 写成了 <code>if ((fd = open(path, 0) &lt; 0))</code>，因为 <code>&lt;</code> 的优先级大于 <code>=</code>，所以导致 <code>fd</code> 的值始终为 0 或 1（逻辑表达式的值只能为真或假），那么后续产生意想不到的结果也就不意外了。。。</p>
+<ol>
+<li>出现 <code>find: cannot open file ./sh</code> ，之后所有文件均打开失败</li>
+</ol>
+<p>在打印出文件描述符的值后，问题的起因比较明显了。</p>
+<p><img src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/fd.png" alt></p>
+<p>文件描述符一直在增大，最终文件打开失败，<code>open</code> 返回 -1。很明显，是因为文件在打开后没有及时关闭，并释放文件描述符，最终文件描述符被全部占用，新的文件无法再被打开。这也解释了既然程序退出后，所有打开的文件会自动关闭，为什么还要建议手动关闭文件的问题。</p>
+<ol>
+<li>读取到空文件名</li>
+</ol>
+<p>前面的问题解决之后，我发现程序仍然会出现无限递归搜索的情况（如下图所示），按理说我已经对文件名进行了判断，如果是 <code>.</code> 或者 <code>..</code> 则不做处理。</p>
+<p><img src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/recur.png" alt></p>
+<p>尝试打印文件名之后，我发现目录的最后一个文件名为空，这样的空文件名将导致程序不断往其末尾追加斜杠 <code>/</code> 而并没有递归进入该目录中。</p>
+<p><img src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/bfg.png" alt></p>
+<p>事实上，使用 <code>read</code> 读取目录时，在读取目录的所有条目之后，会返回一个空的 <code>dirent</code> 结构体，此时 <code>de.name</code> 为空，作为循环结束的标志。其实 <code>user/ls.c</code> 有针对这个特性的判断，不过当时 coding 的时候没有细看。所以正如 Lab guidance 中所说：</p>
+<blockquote>
+<p>Only when you have a firm grasp of the assignment and solution, then start coding.</p>
+</blockquote>
+<h2 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// user/find.c</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/types.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/stat.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/fs.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"user/user.h"</span></span>
+
+
+<span class="token keyword">char</span><span class="token operator">*</span> <span class="token function">file_name</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span> path<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">char</span><span class="token operator">*</span> p<span class="token punctuation">;</span>
+
+	<span class="token keyword">for</span> <span class="token punctuation">(</span>p <span class="token operator">=</span> path <span class="token operator">+</span> <span class="token function">strlen</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span> p <span class="token operator">>=</span> path <span class="token operator">&amp;&amp;</span> <span class="token operator">*</span>p <span class="token operator">!=</span> <span class="token string">'/'</span><span class="token punctuation">;</span> <span class="token operator">--</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token operator">++</span>p<span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> p<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token function">find</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span> path<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> target<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> fd<span class="token punctuation">;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">dirent</span> de<span class="token punctuation">;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">stat</span> st<span class="token punctuation">;</span>
+	<span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span><span class="token operator">*</span> name<span class="token punctuation">,</span> <span class="token operator">*</span> p<span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>fd <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span>path<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"find: cannot open file %s\n"</span><span class="token punctuation">,</span> path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">fstat</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>st<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"find: cannot stat file %s\n"</span><span class="token punctuation">,</span> path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">close</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token keyword">switch</span> <span class="token punctuation">(</span>st<span class="token punctuation">.</span>type<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">case</span> T_FILE<span class="token operator">:</span>
+		name <span class="token operator">=</span> <span class="token function">file_name</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">strcmp</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s\n"</span><span class="token punctuation">,</span> path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">break</span><span class="token punctuation">;</span>
+	<span class="token keyword">case</span> T_DIR<span class="token operator">:</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">read</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>de<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>de<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>de<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token comment">// prevent infinite recursion</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>de<span class="token punctuation">.</span>inum <span class="token operator">||</span> <span class="token operator">!</span><span class="token function">strcmp</span><span class="token punctuation">(</span>de<span class="token punctuation">.</span>name<span class="token punctuation">,</span> <span class="token string">"."</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token operator">!</span><span class="token function">strcmp</span><span class="token punctuation">(</span>de<span class="token punctuation">.</span>name<span class="token punctuation">,</span> <span class="token string">".."</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">continue</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+
+			<span class="token comment">// generate path of sub directory</span>
+			<span class="token function">strcpy</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			p <span class="token operator">=</span> buf <span class="token operator">+</span> <span class="token function">strlen</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token operator">*</span>p<span class="token operator">++</span> <span class="token operator">=</span> <span class="token string">'/'</span><span class="token punctuation">;</span>
+			<span class="token function">memmove</span><span class="token punctuation">(</span>p<span class="token punctuation">,</span> de<span class="token punctuation">.</span>name<span class="token punctuation">,</span> DIRSIZ<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			p<span class="token punctuation">[</span>DIRSIZ<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+			<span class="token function">find</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">break</span><span class="token punctuation">;</span>
+	<span class="token keyword">default</span><span class="token operator">:</span>
+		<span class="token keyword">break</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">close</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">!=</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"find: argument count error\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">find</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="xargs"><a href="#xargs" class="headerlink" title="xargs"></a>xargs</h1><h2 id="思路-4"><a href="#思路-4" class="headerlink" title="思路"></a>思路</h2><p>相较于 <code>find</code>，<code>xargs</code> 的实现就简单很多了。由于之前自己实现过一个简单的 shell，因此对于 <code>exec</code> 系统调用还算比较熟悉，本题的主要内容就是根据 <code>argv</code> 和标准输入构造一个新的参数列表，作为指定命令行程序的参数，并使用 <code>exec</code> 来进行调用。</p>
+<p>程序的流程比较简单，这里不过多介绍，直接查看完整代码即可。</p>
+<h2 id="代码-4"><a href="#代码-4" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// user/xargs.c</span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/types.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"user/user.h"</span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">"kernel/param.h"</span></span>
+
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> i<span class="token punctuation">;</span>
+	<span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">512</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span><span class="token operator">*</span> nargv<span class="token punctuation">[</span>MAXARG<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">gets</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> MAXARG<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		buf<span class="token punctuation">[</span><span class="token function">strlen</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token comment">// remove last '\n'</span>
+
+		<span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			nargv<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+
+		nargv<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">=</span> buf<span class="token punctuation">;</span>
+		nargv<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">int</span> pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">exec</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> nargv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">wait</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">fprintf</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"xargs: fork error\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/">http://lordaeronesz.github.io/2024/06/24/MIT6.s081-2021-Lab%20Utilities/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post_share"><div class="social-share" data-image="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/"><img class="prev-cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">MIT6.s081 2021 Lab System calls</div></div></a></div><div class="next-post pull-right"><a href="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/"><img class="next-cover" src="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/img.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">OSTEP Projects：KV</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Multithreading/" title="MIT6.s081 2021 Lab Multithreading"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Multithreading</div></div></a></div><div><a href="/2024/07/01/MIT6.s081-2021-Lab Page tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="title">MIT6.s081 2021 Lab Page tables</div></div></a></div><div><a href="/2024/06/27/MIT6.s081-2021-Lab System calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="title">MIT6.s081 2021 Lab System calls</div></div></a></div><div><a href="/2024/07/06/MIT6.s081-2021-Lab Traps/" title="MIT6.s081 2021 Lab Traps"><img class="cover" src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-06</div><div class="title">MIT6.s081 2021 Lab Traps</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-xv6"><span class="toc-number">1.</span> <span class="toc-text">Boot xv6</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#sleep"><span class="toc-number">2.</span> <span class="toc-text">sleep</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">2.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">2.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#pingpong"><span class="toc-number">3.</span> <span class="toc-text">pingpong</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#primes"><span class="toc-number">4.</span> <span class="toc-text">primes</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-2"><span class="toc-number">4.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-2"><span class="toc-number">4.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#find"><span class="toc-number">5.</span> <span class="toc-text">find</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-3"><span class="toc-number">5.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-3"><span class="toc-number">5.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#xargs"><span class="toc-number">6.</span> <span class="toc-text">xargs</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-4"><span class="toc-number">6.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-4"><span class="toc-number">6.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习"><img src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter5练习"/></a><div class="content"><a class="title" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习">2024开源操作系统训练营 rCore Chapter5练习</a><time datetime="2024-11-02T15:30:11.000Z" title="发表于 2024-11-02 23:30:11">2024-11-02</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2024 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

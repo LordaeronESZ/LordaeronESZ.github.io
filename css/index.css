@@ -5178,9 +5178,6 @@ blockquote footer cite:before {
 .katex-wrap {
   overflow: auto;
 }
-.katex-wrap::-webkit-scrollbar {
-  display: none;
-}
 mjx-container[display],
 .has-jax {
   overflow-x: auto;

@@ -1,0 +1,594 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIT6.s081 2021 Lab File system | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,经验,xv6"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Large files思路xv6 文件系统的 inode 中地址域 addrs[] 由 12 个直接地址和 1 个一级间接地址组成，本实验要求将地址域更改为 11 个直接地址、1 个一级间接地址和 1 个二级间接地址组成，以支持更大文件的存储。 代码的实现有了直接地址和一级间接地址做参考，就很简单了，直接查看代码部分即可。 代码diff --git a&#x2F;kernel&#x2F;file.h b&#x2F;kernel">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.s081 2021 Lab File system">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="Large files思路xv6 文件系统的 inode 中地址域 addrs[] 由 12 个直接地址和 1 个一级间接地址组成，本实验要求将地址域更改为 11 个直接地址、1 个一级间接地址和 1 个二级间接地址组成，以支持更大文件的存储。 代码的实现有了直接地址和一级间接地址做参考，就很简单了，直接查看代码部分即可。 代码diff --git a&#x2F;kernel&#x2F;file.h b&#x2F;kernel">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png">
+<meta property="article:published_time" content="2024-08-16T03:45:11.000Z">
+<meta property="article:modified_time" content="2024-08-16T10:21:40.483Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="xv6">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MIT6.s081 2021 Lab File system',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-08-16 18:21:40'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MIT6.s081 2021 Lab File system</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-08-16T03:45:11.000Z" title="发表于 2024-08-16 11:45:11">2024-08-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-08-16T10:21:40.483Z" title="更新于 2024-08-16 18:21:40">2024-08-16</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MIT6.s081 2021 Lab File system"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="Large-files"><a href="#Large-files" class="headerlink" title="Large files"></a>Large files</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>xv6 文件系统的 inode 中地址域 <code>addrs[]</code> 由 12 个直接地址和 1 个一级间接地址组成，本实验要求将地址域更改为 11 个直接地址、1 个一级间接地址和 1 个二级间接地址组成，以支持更大文件的存储。</p>
+<p>代码的实现有了直接地址和一级间接地址做参考，就很简单了，直接查看代码部分即可。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/kernel/file.h b/kernel/file.h
+index b076d1d..5c4eb3a 100644
+<span class="token coord">--- a/kernel/file.h</span>
+<span class="token coord">+++ b/kernel/file.h</span>
+@@ -26,7 +26,7 @@ struct inode &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  short minor;
+</span><span class="token prefix unchanged"> </span><span class="token line">  short nlink;
+</span><span class="token prefix unchanged"> </span><span class="token line">  uint size;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">  uint addrs[NDIRECT+1];
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  uint addrs[NDIRECT+2];
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// map major device number to device functions.
+</span></span>diff --git a/kernel/fs.c b/kernel/fs.c
+index 40c9bd4..4c00ab5 100644
+<span class="token coord">--- a/kernel/fs.c</span>
+<span class="token coord">+++ b/kernel/fs.c</span>
+@@ -400,6 +400,33 @@ bmap(struct inode *ip, uint bn)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    brelse(bp);
+</span><span class="token prefix unchanged"> </span><span class="token line">    return addr;
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  bn -= NINDIRECT;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  if (bn &lt; NINDIRECT2) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    if ((addr = ip->addrs[NDIRECT + 1]) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    uint i = bn / NINDIRECT, j = bn % NINDIRECT;
+</span><span class="token prefix inserted">+</span><span class="token line">    
+</span><span class="token prefix inserted">+</span><span class="token line">    bp = bread(ip->dev, addr);
+</span><span class="token prefix inserted">+</span><span class="token line">    a = (uint *)bp->data;
+</span><span class="token prefix inserted">+</span><span class="token line">    if ((addr = a[i]) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      a[i] = addr = balloc(ip->dev);
+</span><span class="token prefix inserted">+</span><span class="token line">      log_write(bp);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    brelse(bp);
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    bp = bread(ip->dev, addr);
+</span><span class="token prefix inserted">+</span><span class="token line">    a = (uint *)bp->data;
+</span><span class="token prefix inserted">+</span><span class="token line">    if ((addr = a[j]) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      a[j] = addr = balloc(ip->dev);
+</span><span class="token prefix inserted">+</span><span class="token line">      log_write(bp);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    brelse(bp);
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    return addr;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">  panic("bmap: out of range");
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>@@ -432,6 +459,29 @@ itrunc(struct inode *ip)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    ip->addrs[NDIRECT] = 0;
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  struct buf *bp2;
+</span><span class="token prefix inserted">+</span><span class="token line">  uint *a2;
+</span><span class="token prefix inserted">+</span><span class="token line">  if (ip->addrs[NDIRECT + 1]) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+</span><span class="token prefix inserted">+</span><span class="token line">    a = (uint *)bp->data;
+</span><span class="token prefix inserted">+</span><span class="token line">    for (i = 0; i &lt; NINDIRECT; ++i) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      if (a[i]) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        bp2 = bread(ip->dev, a[i]);
+</span><span class="token prefix inserted">+</span><span class="token line">        a2 = (uint *)bp2->data;
+</span><span class="token prefix inserted">+</span><span class="token line">        for (j = 0; j &lt; NINDIRECT; ++j) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">          if (a2[j]) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            bfree(ip->dev, a2[j]);
+</span><span class="token prefix inserted">+</span><span class="token line">          &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        brelse(bp2);
+</span><span class="token prefix inserted">+</span><span class="token line">        bfree(ip->dev, a[i]);
+</span><span class="token prefix inserted">+</span><span class="token line">      &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    brelse(bp);
+</span><span class="token prefix inserted">+</span><span class="token line">    bfree(ip->dev, ip->addrs[NDIRECT + 1]);
+</span><span class="token prefix inserted">+</span><span class="token line">    ip->addrs[NDIRECT + 1] = 0;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  ip->size = 0;
+</span><span class="token prefix unchanged"> </span><span class="token line">  iupdate(ip);
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>diff --git a/kernel/fs.h b/kernel/fs.h
+index 139dcc9..cd5de8a 100644
+<span class="token coord">--- a/kernel/fs.h</span>
+<span class="token coord">+++ b/kernel/fs.h</span>
+@@ -24,9 +24,10 @@ struct superblock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">#define FSMAGIC 0x10203040
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">#define NDIRECT 12
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define NDIRECT 11
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#define NINDIRECT (BSIZE / sizeof(uint))
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">#define MAXFILE (NDIRECT + NINDIRECT)
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define NINDIRECT2 (NINDIRECT * NINDIRECT)
+</span><span class="token prefix inserted">+</span><span class="token line">#define MAXFILE (NDIRECT + NINDIRECT + NINDIRECT2)
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// On-disk inode structure
+</span><span class="token prefix unchanged"> </span><span class="token line">struct dinode &#123;
+</span></span>@@ -35,7 +36,7 @@ struct dinode &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  short minor;          // Minor device number (T_DEVICE only)
+</span><span class="token prefix unchanged"> </span><span class="token line">  short nlink;          // Number of links to inode in file system
+</span><span class="token prefix unchanged"> </span><span class="token line">  uint size;            // Size of file (bytes)
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">  uint addrs[NDIRECT+1];   // Data block addresses
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  uint addrs[NDIRECT+2];   // Data block addresses
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// Inodes per block.</span></span></code></pre>
+<h1 id="Symbolic-links"><a href="#Symbolic-links" class="headerlink" title="Symbolic links"></a>Symbolic links</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>本实验要求为 xv6 实现符号链接（软链接）机制，符号链接本质上也是一个文件，只不过它的数据内容为该链接指向的文件路径，这其实与 Windows 系统的快捷方式十分类似。实现方案如下：</p>
+<p>首先依照 Lab System call 中的方法，添加系统调用 <code>symlink</code>：添加 <code>symlink()</code> 声明，添加系统调用号，添加系统调用 entry，添加 <code>sys_symlink()</code> 声明。</p>
+<p>在理解了符号链接的本质后，就可以着手实现 <code>sys_symlink</code> 了。首先明确一下 <code>symlink</code> 的作用，它包含两个参数：target 和 path，作用是创建一个目录为 path 的符号链接，该符号链接指向目录为 target 的文件。实现思路应该比较清晰：使用 <code>create()</code> 创建一个文件类型为符号链接（需要自行定义）的文件，再使用 <code>writei()</code> 将字符串 path 写入该文件中。</p>
+<pre class="language-c" data-language="c"><code class="language-c">uint64 <span class="token function">sys_symlink</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> n1<span class="token punctuation">,</span> n2<span class="token punctuation">;</span>
+    <span class="token keyword">char</span> target<span class="token punctuation">[</span>MAXPATH<span class="token punctuation">]</span><span class="token punctuation">,</span> path<span class="token punctuation">[</span>MAXPATH<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">inode</span> <span class="token operator">*</span>ip<span class="token punctuation">;</span>
+
+    <span class="token comment">// get arguments of symlink</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>n1 <span class="token operator">=</span> <span class="token function">argstr</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> target<span class="token punctuation">,</span> MAXPATH<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token operator">||</span> <span class="token punctuation">(</span>n2 <span class="token operator">=</span> <span class="token function">argstr</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> path<span class="token punctuation">,</span> MAXPATH<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token function">begin_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// create symbol link in the path</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>ip <span class="token operator">=</span> <span class="token function">create</span><span class="token punctuation">(</span>path<span class="token punctuation">,</span> T_SYMLINK<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// write target to file that ip points to</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">writei</span><span class="token punctuation">(</span>ip<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>uint64<span class="token punctuation">)</span>target<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> n1<span class="token punctuation">)</span> <span class="token operator">&lt;</span> n1<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">iunlockput</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>实现了符号链接的创建之后，还需要修改 <code>sys_open()</code>，实现对符号链接的特殊处理：当该文件是一个符号链接并且需要以跟随（follow）的方式打开时，就不断向下递归，将当前的 inode 指针指向符号链接指向文件的 inode，直到 inode 指针对应的文件类型不是符号链接，此时该 inode 指针指向的文件才是本次 <code>sys_open()</code> 系统调用实际需要打开的文件。</p>
+<p>这里要用到两个关键函数 <code>readi()</code> 和 <code>namei()</code>。其中 <code>readi()</code> 能够根据 inode 指针，从该 inode 指针对应的文件中读取数据；而 <code>namei()</code> 能够根据指定的路径，返回该路径对应文件的 inode 指针。“跟随”的基本流程就是先使用读取当前 inode 中的数据，即目标文件路径 path，再将当前 inode 指针指向 path 目录对应的文件，以此往复。</p>
+<p>最后还有一个小细节，就是当多个符号链接形成一个环时，这样的“跟随”过程就可能会导致死循环，因此必须加以限制，这里为了实现的方便，只是设定了一个最大递归深度，当递归深度超过该设定最大值时，文件打开就会失败。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>omode <span class="token operator">&amp;</span> O_NOFOLLOW<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> depth <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>     <span class="token comment">// max recursive depth</span>
+    <span class="token keyword">struct</span> <span class="token class-name">inode</span> <span class="token operator">*</span>next<span class="token punctuation">;</span> <span class="token comment">// next inode</span>
+
+    <span class="token keyword">while</span> <span class="token punctuation">(</span>depth <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> ip<span class="token operator">-></span>type <span class="token operator">==</span> T_SYMLINK<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// read data from file that ip points to to path</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">readi</span><span class="token punctuation">(</span>ip<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>uint64<span class="token punctuation">)</span>path<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> MAXPATH<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">iunlockput</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// get inode of file in the path</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>next <span class="token operator">=</span> <span class="token function">namei</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">iunlockput</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">iunlockput</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ip <span class="token operator">=</span> next<span class="token punctuation">;</span>
+        <span class="token operator">--</span>depth<span class="token punctuation">;</span>
+        <span class="token function">ilock</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>depth <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">iunlockput</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">end_op</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/Makefile b/Makefile
+index 7a7e380..37a202c 100644
+<span class="token coord">--- a/Makefile</span>
+<span class="token coord">+++ b/Makefile</span>
+@@ -188,6 +188,7 @@ UPROGS=\
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">	$U/_grind\
+</span><span class="token prefix unchanged"> </span><span class="token line">	$U/_wc\
+</span><span class="token prefix unchanged"> </span><span class="token line">	$U/_zombie\
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">	$U/_symlinktest\
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span>diff --git a/kernel/fcntl.h b/kernel/fcntl.h
+index 44861b9..b42df18 100644
+<span class="token coord">--- a/kernel/fcntl.h</span>
+<span class="token coord">+++ b/kernel/fcntl.h</span>
+<span class="token coord">@@ -3,3 +3,4 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#define O_RDWR    0x002
+</span><span class="token prefix unchanged"> </span><span class="token line">#define O_CREATE  0x200
+</span><span class="token prefix unchanged"> </span><span class="token line">#define O_TRUNC   0x400
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define O_NOFOLLOW 0x800
+</span></span>\ No newline at end of file
+diff --git a/kernel/stat.h b/kernel/stat.h
+index 19543af..46ba47f 100644
+<span class="token coord">--- a/kernel/stat.h</span>
+<span class="token coord">+++ b/kernel/stat.h</span>
+<span class="token coord">@@ -1,6 +1,7 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#define T_DIR     1   // Directory
+</span><span class="token prefix unchanged"> </span><span class="token line">#define T_FILE    2   // File
+</span><span class="token prefix unchanged"> </span><span class="token line">#define T_DEVICE  3   // Device
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define T_SYMLINK 4   // Symbol link
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">struct stat &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">  int dev;     // File system's disk device
+</span></span>diff --git a/kernel/syscall.c b/kernel/syscall.c
+index c1b3670..1697b62 100644
+<span class="token coord">--- a/kernel/syscall.c</span>
+<span class="token coord">+++ b/kernel/syscall.c</span>
+@@ -104,6 +104,7 @@ extern uint64 sys_unlink(void);
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_wait(void);
+</span><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_write(void);
+</span><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_uptime(void);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">extern uint64 sys_symlink(void);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">static uint64 (*syscalls[])(void) = &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_fork]    sys_fork,
+</span></span>@@ -127,6 +128,7 @@ static uint64 (*syscalls[])(void) = &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">[SYS_link]    sys_link,
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_mkdir]   sys_mkdir,
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_close]   sys_close,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">[SYS_symlink] sys_symlink,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">void
+</span></span>diff --git a/kernel/syscall.h b/kernel/syscall.h
+index bc5f356..0fbf6ed 100644
+<span class="token coord">--- a/kernel/syscall.h</span>
+<span class="token coord">+++ b/kernel/syscall.h</span>
+<span class="token coord">@@ -20,3 +20,4 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#define SYS_link   19
+</span><span class="token prefix unchanged"> </span><span class="token line">#define SYS_mkdir  20
+</span><span class="token prefix unchanged"> </span><span class="token line">#define SYS_close  21
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define SYS_symlink 22
+</span></span>\ No newline at end of file
+diff --git a/kernel/sysfile.c b/kernel/sysfile.c
+index 5dc453b..ae342c8 100644
+<span class="token coord">--- a/kernel/sysfile.c</span>
+<span class="token coord">+++ b/kernel/sysfile.c</span>
+<span class="token coord">@@ -15,6 +15,7 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#include "sleeplock.h"
+</span><span class="token prefix unchanged"> </span><span class="token line">#include "file.h"
+</span><span class="token prefix unchanged"> </span><span class="token line">#include "fcntl.h"
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#include "buf.h"
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// Fetch the nth word-sized system call argument as a file descriptor
+</span><span class="token prefix unchanged"> </span><span class="token line">// and return both the descriptor and the corresponding struct file.
+</span></span>@@ -316,6 +317,35 @@ sys_open(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  if (!(omode &amp; O_NOFOLLOW)) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    int depth = 10;
+</span><span class="token prefix inserted">+</span><span class="token line">    struct inode *next;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    while (depth > 0 &amp;&amp; ip->type == T_SYMLINK) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      if (readi(ip, 0, (uint64)path, 0, MAXPATH) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        iunlockput(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">        end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">      &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">      if ((next = namei(path)) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        iunlockput(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">        end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">        return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">      &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">      iunlockput(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">      ip = next;
+</span><span class="token prefix inserted">+</span><span class="token line">      --depth;
+</span><span class="token prefix inserted">+</span><span class="token line">      ilock(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    if (depth &lt;= 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">      iunlockput(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">      end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">      return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  if(ip->type == T_DEVICE &amp;&amp; (ip->major &lt; 0 || ip->major >= NDEV))&#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    iunlockput(ip);
+</span><span class="token prefix unchanged"> </span><span class="token line">    end_op();
+</span></span>@@ -484,3 +514,28 @@ sys_pipe(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">  return 0;
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">uint64 sys_symlink(void) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">  int n1, n2;
+</span><span class="token prefix inserted">+</span><span class="token line">  char target[MAXPATH], path[MAXPATH];
+</span><span class="token prefix inserted">+</span><span class="token line">  struct inode *ip;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  if ((n1 = argstr(0, target, MAXPATH)) &lt; 0 || (n2 = argstr(1, path, MAXPATH)) &lt; 1) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  
+</span><span class="token prefix inserted">+</span><span class="token line">  // create symbol link in the path
+</span><span class="token prefix inserted">+</span><span class="token line">  begin_op();
+</span><span class="token prefix inserted">+</span><span class="token line">  if ((ip = create(path, T_SYMLINK, 0, 0)) == 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">    return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  if (writei(ip, 0, (uint64)target, 0, n1) &lt; n1) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">    return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  iunlockput(ip);
+</span><span class="token prefix inserted">+</span><span class="token line">  end_op();
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  return 0;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span></span>\ No newline at end of file
+diff --git a/user/user.h b/user/user.h
+index b71ecda..883ef48 100644
+<span class="token coord">--- a/user/user.h</span>
+<span class="token coord">+++ b/user/user.h</span>
+@@ -23,6 +23,7 @@ int getpid(void);
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">char* sbrk(int);
+</span><span class="token prefix unchanged"> </span><span class="token line">int sleep(int);
+</span><span class="token prefix unchanged"> </span><span class="token line">int uptime(void);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">int symlink(char *, char *);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// ulib.c
+</span><span class="token prefix unchanged"> </span><span class="token line">int stat(const char*, struct stat*);
+</span></span>diff --git a/user/usys.pl b/user/usys.pl
+index 01e426e..65a8d6b 100755
+<span class="token coord">--- a/user/usys.pl</span>
+<span class="token coord">+++ b/user/usys.pl</span>
+@@ -36,3 +36,4 @@ entry("getpid");
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">entry("sbrk");
+</span><span class="token prefix unchanged"> </span><span class="token line">entry("sleep");
+</span><span class="token prefix unchanged"> </span><span class="token line">entry("uptime");
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">entry("symlink");
+</span></span>\ No newline at end of file</code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/">http://lordaeronesz.github.io/2024/08/16/MIT6.s081-2021-Lab%20File%20system/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post_share"><div class="social-share" data-image="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/08/31/CSAPP-Data-Lab/"><img class="prev-cover" src="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">CSAPP Data Lab</div></div></a></div><div class="next-post pull-right"><a href="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/"><img class="next-cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">MIT6.s081 2021 Lab Multithreading</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Multithreading/" title="MIT6.s081 2021 Lab Multithreading"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Multithreading</div></div></a></div><div><a href="/2024/07/01/MIT6.s081-2021-Lab Page tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="title">MIT6.s081 2021 Lab Page tables</div></div></a></div><div><a href="/2024/06/27/MIT6.s081-2021-Lab System calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="title">MIT6.s081 2021 Lab System calls</div></div></a></div><div><a href="/2024/06/24/MIT6.s081-2021-Lab Utilities/" title="MIT6.s081 2021 Lab Utilities"><img class="cover" src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-24</div><div class="title">MIT6.s081 2021 Lab Utilities</div></div></a></div><div><a href="/2024/07/06/MIT6.s081-2021-Lab Traps/" title="MIT6.s081 2021 Lab Traps"><img class="cover" src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-06</div><div class="title">MIT6.s081 2021 Lab Traps</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Large-files"><span class="toc-number">1.</span> <span class="toc-text">Large files</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Symbolic-links"><span class="toc-number">2.</span> <span class="toc-text">Symbolic links</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">2.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">2.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习"><img src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter5练习"/></a><div class="content"><a class="title" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习">2024开源操作系统训练营 rCore Chapter5练习</a><time datetime="2024-11-02T15:30:11.000Z" title="发表于 2024-11-02 23:30:11">2024-11-02</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2024 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

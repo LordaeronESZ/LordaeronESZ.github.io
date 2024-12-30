@@ -1,0 +1,461 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIT6.s081 2021 Lab Multithreading | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,经验,xv6"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Uthread: switching between threads思路xv6 已经实现了进程的切换机制，本实验要求参考进程的切换，实现一个用户态线程的切换。 要实现线程切换，必然涉及上下文，即寄存器的保存和恢复，那么需要保存哪些寄存器？实际上，只需要保存被调用者保存寄存器（callee-saved registers），而实现调用者保存寄存器（caller-saved registers）的保存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.s081 2021 Lab Multithreading">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="Uthread: switching between threads思路xv6 已经实现了进程的切换机制，本实验要求参考进程的切换，实现一个用户态线程的切换。 要实现线程切换，必然涉及上下文，即寄存器的保存和恢复，那么需要保存哪些寄存器？实际上，只需要保存被调用者保存寄存器（callee-saved registers），而实现调用者保存寄存器（caller-saved registers）的保存">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png">
+<meta property="article:published_time" content="2024-08-13T10:03:11.000Z">
+<meta property="article:modified_time" content="2024-08-14T08:16:25.833Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="xv6">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MIT6.s081 2021 Lab Multithreading',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-08-14 16:16:25'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MIT6.s081 2021 Lab Multithreading</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-08-13T10:03:11.000Z" title="发表于 2024-08-13 18:03:11">2024-08-13</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-08-14T08:16:25.833Z" title="更新于 2024-08-14 16:16:25">2024-08-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MIT6.s081 2021 Lab Multithreading"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="Uthread-switching-between-threads"><a href="#Uthread-switching-between-threads" class="headerlink" title="Uthread: switching between threads"></a>Uthread: switching between threads</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>xv6 已经实现了进程的切换机制，本实验要求参考进程的切换，实现一个用户态线程的切换。</p>
+<p>要实现线程切换，必然涉及上下文，即寄存器的保存和恢复，那么需要保存哪些寄存器？实际上，只需要保存被调用者保存寄存器（callee-saved registers），而实现调用者保存寄存器（caller-saved registers）的保存与恢复的代码由编译器自动生成。关于调用者保存与被调用者保存寄存器有哪些可以参照下述 RISC-V 的 calling convention：</p>
+<p><img src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/call.png" alt></p>
+<p>另外，根据 <code>user/uthread_switch.S</code> 的注释，<code>thread_switch</code> 最后通过 <code>ret</code> 指令将当前程序计数器的值切换为 ra 寄存器中存储的地址，实现进程的“切换”，因此 <code>struct thread</code> 中还需要保存每个线程对应程序的起始地址（即函数指针）。</p>
+<p>在了解需要保存哪些寄存器之后以及如何进行线程切换之后，还有一个细节需要考虑，即栈指针寄存器（sp）的初始化。线程栈的存储位置为 <code>struct thread</code> 中的 <code>stack</code> 数组，那么 sp 应该指向 <code>stack</code> 的位置，但由于栈的地址从大到小增长，因此 <code>sp</code> 应该初始化为 <code>(uint64)t-&gt;stack + STACK_SIZE</code>.</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/user/uthread.c b/user/uthread.c
+index 06349f5..74b7f20 100644
+<span class="token coord">--- a/user/uthread.c</span>
+<span class="token coord">+++ b/user/uthread.c</span>
+<span class="token coord">@@ -12,6 +12,20 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">struct thread &#123;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  /* 0 */  uint64 ra;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 8 */  uint64 sp;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 16 */  uint64 s0;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 24 */ uint64 s1;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 32 */ uint64 s2;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 40 */ uint64 s3;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 48 */ uint64 s4;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 56 */ uint64 s5;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 64 */ uint64 s6;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 72 */ uint64 s7;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 80 */ uint64 s8;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 88 */ uint64 s9;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 96 */ uint64 s10;
+</span><span class="token prefix inserted">+</span><span class="token line">  /* 104 */ uint64 s11;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  char       stack[STACK_SIZE]; /* the thread's stack */
+</span><span class="token prefix unchanged"> </span><span class="token line">  int        state;             /* FREE, RUNNING, RUNNABLE */
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span></span>@@ -62,6 +76,7 @@ thread_schedule(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">     * Invoke thread_switch to switch from t to next_thread:
+</span><span class="token prefix unchanged"> </span><span class="token line">     * thread_switch(??, ??);
+</span><span class="token prefix unchanged"> </span><span class="token line">     */
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">	thread_switch((uint64)t, (uint64)current_thread);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  &#125; else
+</span><span class="token prefix unchanged"> </span><span class="token line">    next_thread = 0;
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>@@ -76,6 +91,8 @@ thread_create(void (*func)())
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">  t->state = RUNNABLE;
+</span><span class="token prefix unchanged"> </span><span class="token line">  // YOUR CODE HERE
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  t->ra = (uint64)func;
+</span><span class="token prefix inserted">+</span><span class="token line">  t->sp = (uint64)t->stack + STACK_SIZE;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">void 
+</span></span>diff --git a/user/uthread_switch.S b/user/uthread_switch.S
+index 5defb12..0eb0a2c 100644
+<span class="token coord">--- a/user/uthread_switch.S</span>
+<span class="token coord">+++ b/user/uthread_switch.S</span>
+<span class="token coord">@@ -7,5 +7,34 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">	.globl thread_switch
+</span><span class="token prefix unchanged"> </span><span class="token line">thread_switch:
+</span></span>	/* YOUR CODE HERE */
+<span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">	sd ra, 0(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd sp, 8(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s0, 16(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s1, 24(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s2, 32(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s3, 40(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s4, 48(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s5, 56(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s6, 64(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s7, 72(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s8, 80(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s9, 88(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s10, 96(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">	sd s11, 104(a0)
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	ld ra, 0(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld sp, 8(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s0, 16(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s1, 24(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s2, 32(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s3, 40(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s4, 48(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s5, 56(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s6, 64(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s7, 72(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s8, 80(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s9, 88(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s10, 96(a1)
+</span><span class="token prefix inserted">+</span><span class="token line">	ld s11, 104(a1)
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">	ret    /* return to ra */</span></span></code></pre>
+<h1 id="Using-threads"><a href="#Using-threads" class="headerlink" title="Using threads"></a>Using threads</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>后两个实验与 xv6 无关，而是练习使用 POSIX 线程库在实际的 Linux 平台进行并发编程。</p>
+<p>本实验要求使用锁机制，实现一个支持并发的哈希表。首先需要确定的是：哪部分的操作会出现竞态（race condition）？根据观察不难得知 <code>put()</code> 操作可能存在下面这种情况：</p>
+<blockquote>
+<p>线程 1 和线程 2 本次 <code>put()</code> 映射到一个桶中（i 相同），都执行完 line 46 ~ 49 的循环之后，e 都为 0，随后先后执行 <code>insert()</code>，都创建一个新的 entry，并先后更新 <code>table[i]</code> 的值，导致先插入的键被覆盖。<br>像这样，在一次插入操作未完成的情况下，另一次插入也开始进行且映射到一个桶中，就会导致丢键（keys missing）的情况发生。</p>
+</blockquote>
+<p>首先最简单无脑的办法就是给整个 <code>put()</code> 函数加一把大锁：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token function">pthread_mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// lock</span>
+<span class="token keyword">for</span> <span class="token punctuation">(</span>e <span class="token operator">=</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span> e <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">;</span> e <span class="token operator">=</span> e<span class="token operator">-></span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>e<span class="token operator">-></span>key <span class="token operator">==</span> key<span class="token punctuation">)</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">if</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// update the existing key.</span>
+    e<span class="token operator">-></span>value <span class="token operator">=</span> value<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// the new is new.</span>
+    <span class="token function">insert</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> <span class="token operator">&amp;</span>table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pthread_mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// unlock</span></code></pre>
+<p><img src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/lock1.png" alt></p>
+<p>可以看到，keys missing 的问题已经被解决，但是大锁带来的就是更低的性能，实际上根据上图可知，该实现在双核情况下的运行速度甚至慢于单核。</p>
+<p>实际上，对 <code>table</code> 数组的遍历并不会导致竞态，因此将加锁的操作延迟到遍历结束后：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">for</span> <span class="token punctuation">(</span>e <span class="token operator">=</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span> e <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">;</span> e <span class="token operator">=</span> e<span class="token operator">-></span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>e<span class="token operator">-></span>key <span class="token operator">==</span> key<span class="token punctuation">)</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pthread_mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// lock</span>
+<span class="token keyword">if</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// update the existing key.</span>
+    e<span class="token operator">-></span>value <span class="token operator">=</span> value<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// the new is new.</span>
+    <span class="token function">insert</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> <span class="token operator">&amp;</span>table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pthread_mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// unlock</span></code></pre>
+<p><img src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/lock2.png" alt></p>
+<p>做了上述修改后，仍然没有出现 key missing 的情况，同时效率提升了一倍以上。</p>
+<p>最后，更细化一些，只有当两个 <code>put()</code> 映射到同一个桶时才会发生竞态，因此可以为每个桶分别设置一把锁，以进一步提高并发性：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">for</span> <span class="token punctuation">(</span>e <span class="token operator">=</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span> e <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">;</span> e <span class="token operator">=</span> e<span class="token operator">-></span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>e<span class="token operator">-></span>key <span class="token operator">==</span> key<span class="token punctuation">)</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pthread_mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>locks<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// lock</span>
+<span class="token keyword">if</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// update the existing key.</span>
+    e<span class="token operator">-></span>value <span class="token operator">=</span> value<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// the new is new.</span>
+    <span class="token function">insert</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> <span class="token operator">&amp;</span>table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> table<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pthread_mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>locks<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// unlock</span></code></pre>
+<p><img src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/lock3.png" alt></p>
+<p>可见，效率又有进一步提升。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/notxv6/ph.c b/notxv6/ph.c
+index 82afe76..321e269 100644
+<span class="token coord">--- a/notxv6/ph.c</span>
+<span class="token coord">+++ b/notxv6/ph.c</span>
+@@ -17,6 +17,7 @@ struct entry *table[NBUCKET];
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">int keys[NKEYS];
+</span><span class="token prefix unchanged"> </span><span class="token line">int nthread = 1;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">pthread_mutex_t locks[NBUCKET];
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">double
+</span><span class="token prefix unchanged"> </span><span class="token line">now()
+</span></span>@@ -47,6 +48,7 @@ void put(int key, int value)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    if (e->key == key)
+</span><span class="token prefix unchanged"> </span><span class="token line">      break;
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  pthread_mutex_lock(&amp;locks[i]);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  if(e)&#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    // update the existing key.
+</span><span class="token prefix unchanged"> </span><span class="token line">    e->value = value;
+</span></span>@@ -54,7 +56,7 @@ void put(int key, int value)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    // the new is new.
+</span><span class="token prefix unchanged"> </span><span class="token line">    insert(key, value, &amp;table[i], table[i]);
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  pthread_mutex_unlock(&amp;locks[i]);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">static struct entry*
+</span></span>@@ -118,6 +120,10 @@ main(int argc, char *argv[])
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    keys[i] = random();
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  for (int i = 0; i &lt; NBUCKET; ++i) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    pthread_mutex_init(&amp;locks[i], NULL);
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  //
+</span><span class="token prefix unchanged"> </span><span class="token line">  // first the puts
+</span><span class="token prefix unchanged"> </span><span class="token line">  //
+</span></span></code></pre>
+<h1 id="Barrier"><a href="#Barrier" class="headerlink" title="Barrier"></a>Barrier</h1><h2 id="思路-2"><a href="#思路-2" class="headerlink" title="思路"></a>思路</h2><p>最后一个实验主要是熟悉 POSIX 线程库中条件变量（conditional variable）的使用，实现的思路比较简单：前 nthread - 1 个线程在条件变量上休眠，最后一个线程将休眠的所有进程进行唤醒。有关条件变量的用法可以参考 OSTEP：<a target="_blank" rel="noopener" href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf">OSTEP: Condition Variables</a>.</p>
+<h2 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/notxv6/barrier.c b/notxv6/barrier.c
+index 12793e8..e4fd03e 100644
+<span class="token coord">--- a/notxv6/barrier.c</span>
+<span class="token coord">+++ b/notxv6/barrier.c</span>
+@@ -30,7 +30,18 @@ barrier()
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  // Block until all threads have called barrier() and
+</span><span class="token prefix unchanged"> </span><span class="token line">  // then increment bstate.round.
+</span><span class="token prefix unchanged"> </span><span class="token line">  //  
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  pthread_mutex_lock(&amp;bstate.barrier_mutex);
+</span><span class="token prefix inserted">+</span><span class="token line">  ++bstate.nthread;
+</span><span class="token prefix inserted">+</span><span class="token line">  if (bstate.nthread == nthread) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    pthread_cond_broadcast(&amp;bstate.barrier_cond);
+</span><span class="token prefix inserted">+</span><span class="token line">	++bstate.round;
+</span><span class="token prefix inserted">+</span><span class="token line">	bstate.nthread = 0;
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  else &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    pthread_cond_wait(&amp;bstate.barrier_cond, &amp;bstate.barrier_mutex);
+</span><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">  pthread_mutex_unlock(&amp;bstate.barrier_mutex);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;</span></span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/">http://lordaeronesz.github.io/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post_share"><div class="social-share" data-image="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/"><img class="prev-cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">MIT6.s081 2021 Lab File system</div></div></a></div><div class="next-post pull-right"><a href="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/"><img class="next-cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">MIT6.s081 2021 Lab Copy on-write</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/07/01/MIT6.s081-2021-Lab Page tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="title">MIT6.s081 2021 Lab Page tables</div></div></a></div><div><a href="/2024/06/27/MIT6.s081-2021-Lab System calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="title">MIT6.s081 2021 Lab System calls</div></div></a></div><div><a href="/2024/06/24/MIT6.s081-2021-Lab Utilities/" title="MIT6.s081 2021 Lab Utilities"><img class="cover" src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-24</div><div class="title">MIT6.s081 2021 Lab Utilities</div></div></a></div><div><a href="/2024/07/06/MIT6.s081-2021-Lab Traps/" title="MIT6.s081 2021 Lab Traps"><img class="cover" src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-06</div><div class="title">MIT6.s081 2021 Lab Traps</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">74</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Uthread-switching-between-threads"><span class="toc-number">1.</span> <span class="toc-text">Uthread: switching between threads</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Using-threads"><span class="toc-number">2.</span> <span class="toc-text">Using threads</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">2.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">2.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Barrier"><span class="toc-number">3.</span> <span class="toc-text">Barrier</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-2"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-2"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习"><img src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter5练习"/></a><div class="content"><a class="title" href="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter5练习">2024开源操作系统训练营 rCore Chapter5练习</a><time datetime="2024-11-02T15:30:11.000Z" title="发表于 2024-11-02 23:30:11">2024-11-02</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2024 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
