@@ -1,0 +1,430 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OSTEP Projects：Unix Utilities | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,C,Linux"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 Unix Utilities 部分，包含个人的代码实现和设计思路。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OSTEP Projects：Unix Utilities">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 Unix Utilities 部分，包含个人的代码实现和设计思路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/img.jpeg">
+<meta property="article:published_time" content="2024-05-04T01:03:08.000Z">
+<meta property="article:modified_time" content="2024-05-04T10:24:21.316Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/img.jpeg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'OSTEP Projects：Unix Utilities',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-04 18:24:21'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">75</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">OSTEP Projects：Unix Utilities</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-05-04T01:03:08.000Z" title="发表于 2024-05-04 09:03:08">2024-05-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-04T10:24:21.316Z" title="更新于 2024-05-04 18:24:21">2024-05-04</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="OSTEP Projects：Unix Utilities"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><p>本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关<a target="_blank" rel="noopener" href="https://github.com/remzi-arpacidusseau/ostep-projects">课程项目</a> 的 Unix Utilities 部分，包含个人的代码实现和设计思路。</p>
+<span id="more"></span>
+<h1 id="wcat"><a href="#wcat" class="headerlink" title="wcat"></a>wcat</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>要实现一个 <code>wcat</code> 命令，打印从文件中读取到的所有字符。</p>
+<p>编写一个 for 循环遍历所有的参数（需要读取的文件的路径），打开该文件，依照 README 中的提示使用 <code>fgets()</code> 每次读取一行，并将读取到的字符串打印到标准输出即可。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">BUF_SIZE</span> <span class="token expression"><span class="token number">1024</span></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">char</span> buffer<span class="token punctuation">[</span>BUF_SIZE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> argc<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		FILE<span class="token operator">*</span> fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wcat: cannot open file\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">fgets</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">,</span> fp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">fclose</span><span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="wgrep"><a href="#wgrep" class="headerlink" title="wgrep"></a>wgrep</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>要实现一个 <code>wgrep</code> 命令，进行字符串匹配。</p>
+<p>根据 README 中的提示，本题测试样例中一行的字符可能会很长，因此建议使用 <code>getline()</code> 这类动态分配内存的函数（无需预先指定缓冲区大小）。这里要求当只有一个参数 <code>term</code> 时，从标准输入中读取字符串，读取方式与从文件中读取一致，区别在于文件流参数的不同：从文件中读取为调用 <code>fopen()</code> 返回的指针，而从标准输入读取为 <code>stdin</code>。</p>
+<p>每次读取一行字符串后，需要判断该字符串中是否存在指定的子串 <code>term</code>，这就回到了经典的字符串匹配的问题上。为了代码编写的方便，这里我使用的是最简单的朴素字符串匹配算法，当然也可以使用有限自动机、KMP 算法、Boyer-Moore 算法等更为高效的算法，值得注意的是，Unix 系统的 <code>grep</code> 命令使用的正是 Boyer-Moore 算法。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token comment">// 朴素字符串匹配算法</span>
+<span class="token keyword">int</span> <span class="token function">match</span><span class="token punctuation">(</span><span class="token keyword">char</span> term<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token class-name">size_t</span> m<span class="token punctuation">,</span> <span class="token keyword">char</span> buffer<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token class-name">size_t</span> n<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>n <span class="token operator">&lt;</span> m<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> n <span class="token operator">-</span> m<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">int</span> flag <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> m<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>term<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">!=</span> buffer<span class="token punctuation">[</span>i <span class="token operator">+</span> j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				flag <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+				<span class="token keyword">break</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>flag<span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">&lt;=</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wgrep: searchterm [file ...]\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	
+	<span class="token keyword">char</span><span class="token operator">*</span> term <span class="token operator">=</span> argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token class-name">size_t</span> m <span class="token operator">=</span> <span class="token function">strlen</span><span class="token punctuation">(</span>term<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span><span class="token operator">*</span> buffer <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+	<span class="token class-name">size_t</span> sz <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token class-name">ssize_t</span> n <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token comment">// 从标准输入中读取</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>n <span class="token operator">=</span> <span class="token function">getline</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>buffer<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sz<span class="token punctuation">,</span> <span class="token constant">stdin</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">match</span><span class="token punctuation">(</span>term<span class="token punctuation">,</span> m<span class="token punctuation">,</span> buffer<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">)</span>n<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> argc<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			FILE<span class="token operator">*</span> fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wgrep: cannot open file\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>n <span class="token operator">=</span> <span class="token function">getline</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>buffer<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sz<span class="token punctuation">,</span> fp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token comment">// 判断字符串是否匹配</span>
+				<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">match</span><span class="token punctuation">(</span>term<span class="token punctuation">,</span> m<span class="token punctuation">,</span> buffer<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token class-name">size_t</span><span class="token punctuation">)</span>n<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+					<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s"</span><span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token function">fclose</span><span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>	
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="wzip"><a href="#wzip" class="headerlink" title="wzip"></a>wzip</h1><h2 id="思路-2"><a href="#思路-2" class="headerlink" title="思路"></a>思路</h2><p>实现一个简单的压缩命令，将连续重复的字符压缩为 <code>cnt + ch</code>。</p>
+<p>算法的逻辑如下：</p>
+<ol>
+<li>先将 ch 初始化为一个文件中不会出现的字符（例如 <code>&#39;\0&#39;</code>），cnt 初始化为 0. </li>
+<li>遍历读取到的每次字符，若与 ch 相同，则将 cnt 加 1；若不同，则使用 <code>fwrite()</code> 写入标准输出，并把 ch 更新为当前字符，cnt 置为 1. 最后，在所有文件遍历完成后，再判断 cnt 是否大于 0，若大于 0，则写入。</li>
+</ol>
+<p>注意，这里的所有字符均要按照规则进行压缩，包括换行符（<code>&#39;\n&#39;</code>），我最开始写的时候还对换行符进行特判，以此来忽略对其进行处理，属实是多此一举了。</p>
+<h2 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">&lt;=</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wzip: file1 [file2 ...]\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	
+	<span class="token keyword">char</span><span class="token operator">*</span> buffer <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+	<span class="token class-name">size_t</span> sz <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token class-name">ssize_t</span> n <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> ch <span class="token operator">=</span> <span class="token string">'\0'</span><span class="token punctuation">;</span>
+	<span class="token keyword">int</span> cnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> argc<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		FILE<span class="token operator">*</span> fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wzip: cannot open file\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>n <span class="token operator">=</span> <span class="token function">getline</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>buffer<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sz<span class="token punctuation">,</span> fp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">if</span> <span class="token punctuation">(</span>buffer<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">==</span> ch<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+					<span class="token operator">++</span>cnt<span class="token punctuation">;</span>
+				<span class="token punctuation">&#125;</span>
+				<span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+					<span class="token keyword">if</span> <span class="token punctuation">(</span>cnt <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+						<span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>cnt<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+						<span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ch<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+					<span class="token punctuation">&#125;</span>
+					ch <span class="token operator">=</span> buffer<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">;</span>
+					cnt <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+				<span class="token punctuation">&#125;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">fclose</span><span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>cnt <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>cnt<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">fwrite</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ch<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token constant">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="wunzip"><a href="#wunzip" class="headerlink" title="wunzip"></a>wunzip</h1><h2 id="思路-3"><a href="#思路-3" class="headerlink" title="思路"></a>思路</h2><p>相较于编码，解码就简单很多了。使用 <code>fread()</code> 每次读取一个整数 cnt 和一个字符 ch，并使用 for 循环打印 cnt 个 ch 到标准输出即可。</p>
+<h2 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdlib.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span> argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">&lt;=</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wunzip: file1 [file2 ...]\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	
+	<span class="token keyword">int</span> cnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">char</span> ch <span class="token operator">=</span> <span class="token string">'\0'</span><span class="token punctuation">;</span>
+	<span class="token class-name">size_t</span> rc <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> argc<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		FILE<span class="token operator">*</span> fp <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"rb"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>fp <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"wunzip: cannot open file\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>rc <span class="token operator">=</span> <span class="token function">fread</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>cnt<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> fp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">break</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>rc <span class="token operator">=</span> <span class="token function">fread</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ch<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> fp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token keyword">break</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+			<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> cnt<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%c"</span><span class="token punctuation">,</span> ch<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token function">fclose</span><span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/">http://lordaeronesz.github.io/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/C/">C</a><a class="post-meta__tags" href="/tags/Linux/">Linux</a></div><div class="post_share"><div class="social-share" data-image="/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/img.jpeg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/"><img class="prev-cover" src="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/img.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">OSTEP Projects：Reverse</div></div></a></div><div class="next-post pull-right"><a href="/2024/03/18/%E9%AB%98%E6%95%88%E7%9A%84%E5%8C%BA%E9%97%B4%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%EF%BC%9A%E7%BA%BF%E6%AE%B5%E6%A0%91/"><img class="next-cover" src="/2024/03/18/%E9%AB%98%E6%95%88%E7%9A%84%E5%8C%BA%E9%97%B4%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%EF%BC%9A%E7%BA%BF%E6%AE%B5%E6%A0%91/img.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">高效的区间二叉搜索树：线段树</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/05/08/OSTEP Projects：KV/" title="OSTEP Projects：KV"><img class="cover" src="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/img.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-05-08</div><div class="title">OSTEP Projects：KV</div></div></a></div><div><a href="/2024/05/06/OSTEP Projects：Reverse/" title="OSTEP Projects：Reverse"><img class="cover" src="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/img.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-05-06</div><div class="title">OSTEP Projects：Reverse</div></div></a></div><div><a href="/2024/10/28/2024开源操作系统训练营-rCore-Chapter3练习/" title="2024开源操作系统训练营 rCore Chapter3练习"><img class="cover" src="/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-10-28</div><div class="title">2024开源操作系统训练营 rCore Chapter3练习</div></div></a></div><div><a href="/2024/11/01/2024开源操作系统训练营-rCore-Chapter4练习/" title="2024开源操作系统训练营 rCore Chapter4练习"><img class="cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-01</div><div class="title">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div><div><a href="/2024/11/02/2024开源操作系统训练营-rCore-Chapter5练习/" title="2024开源操作系统训练营 rCore Chapter5练习"><img class="cover" src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-02</div><div class="title">2024开源操作系统训练营 rCore Chapter5练习</div></div></a></div><div><a href="/2024/11/04/2024开源操作系统训练营-rCore-Chapter8练习/" title="2024开源操作系统训练营 rCore Chapter8练习"><img class="cover" src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-04</div><div class="title">2024开源操作系统训练营 rCore Chapter8练习</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">75</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#wcat"><span class="toc-number">1.</span> <span class="toc-text">wcat</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#wgrep"><span class="toc-number">2.</span> <span class="toc-text">wgrep</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">2.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">2.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#wzip"><span class="toc-number">3.</span> <span class="toc-text">wzip</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-2"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-2"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#wunzip"><span class="toc-number">4.</span> <span class="toc-text">wunzip</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-3"><span class="toc-number">4.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-3"><span class="toc-number">4.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Malloc Lab"/></a><div class="content"><a class="title" href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab">CSAPP Malloc Lab</a><time datetime="2025-01-10T03:45:11.000Z" title="发表于 2025-01-10 11:45:11">2025-01-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

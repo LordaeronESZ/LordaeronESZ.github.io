@@ -1,0 +1,559 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSAPP Shell Lab | Lordaeron_ESZ's blog</title><meta name="keywords" content="经验,计算机基础,C"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本 Lab 需要实现一个简易的 shell，主要考察对进程和信号的理解，以及对与其相关的 POSIX API 的使用，对应知识点为书中的第 8 章内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSAPP Shell Lab">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="本 Lab 需要实现一个简易的 shell，主要考察对进程和信号的理解，以及对与其相关的 POSIX API 的使用，对应知识点为书中的第 8 章内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/csapp.jpg">
+<meta property="article:published_time" content="2024-12-29T03:45:11.000Z">
+<meta property="article:modified_time" content="2024-12-30T07:17:26.094Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="计算机基础">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/csapp.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'CSAPP Shell Lab',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-12-30 15:17:26'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">75</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">CSAPP Shell Lab</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-12-30T07:17:26.094Z" title="更新于 2024-12-30 15:17:26">2024-12-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>11分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="CSAPP Shell Lab"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><p>本 Lab 需要实现一个简易的 shell，主要考察对进程和信号的理解，以及对与其相关的 POSIX API 的使用，对应知识点为书中的第 8 章内容。</p>
+<span id="more"></span>
+<h1 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h1><h2 id="实验要求"><a href="#实验要求" class="headerlink" title="实验要求"></a>实验要求</h2><p>实现一个简单的 shell，要求支持如下特性：</p>
+<ol>
+<li>输入 ctrl-c 触发 SIGINT 信号，输入 ctrl-z 触发 SIGTSTP 信号，发送给给前台运行的任务和依赖于这些任务的子任务（子进程）。</li>
+<li>如果命令行以 <code>&amp;</code> 结尾，那么本次作业将被置于后台运行，否则置于前台运行。</li>
+<li>每个作业可以通过 PID（process id）或 JID（job id）来指定，其中 JID 需要加上前缀 <code>%</code>。</li>
+<li>支持下列内建命令：<ol>
+<li><code>quit</code>：终止 shell 的运行。</li>
+<li><code>jobs</code>：列出所有的后台作业。</li>
+<li><code>bg &lt;job&gt;</code>：重启 <code>&lt;job&gt;</code>（PID 或者 JID），通过发出 SIGCONT 信号，然后将其运行在后台。</li>
+<li><code>fg &lt;job&gt;</code>：重启 <code>&lt;job&gt;</code>（PID 或者 JID），通过发出 SIGCONT 信号，然后将其运行在前台。</li>
+</ol>
+</li>
+<li>回收所有的僵尸进程。</li>
+</ol>
+<h2 id="命令行解释执行"><a href="#命令行解释执行" class="headerlink" title="命令行解释执行"></a>命令行解释执行</h2><p><code>eval</code> 函数的作用是解析并执行 shell 输入的命令行。对于内建命令（builtin command）而言，应该立即在 shell 中进行处理；而对于非内建命令而言，应该使用 <code>fork + execve</code> 的组合，创建一个指定的进程来进行处理。</p>
+<blockquote>
+<p>tsh 不需要支持管道功能，因此一个作业只对应一个进程。</p>
+</blockquote>
+<p><code>fork</code> 的功能是创建一个子进程，该子进程的虚拟地址空间完全拷贝自其父进程，且程序计数器的位置同样位于该 <code>fork</code> 函数处。区别在于，父进程的返回值为子进程的 pid，子进程的 pid 为 0，因此可以根据这一特性来对父进程和子进程进行分别处理：</p>
+<ul>
+<li>子进程需要先使用 <code>setpgid(0, 0)</code> 将进程组 id 设置为自己的 pid，将自己与 tsh “脱离”，确保此时前台进程组只有 tsh 本身，防止被 tsh 接收到的信号所影响。然后再使用 <code>execve</code>，用指定的可执行程序替换拷贝自父进程的虚拟地址空间，并开始从头执行。</li>
+<li>父进程则需要根据本次输入的命令行，创建其对应的作业数据结构 <code>struct job_t</code>，并加入作业队列 <code>jobs</code> 中。同时，由于前台作业（命令行末尾不带 <code>&amp;</code> 符号）需要一直占用终端，因此当本次作业为前台作业时，需要调用 <code>waitfg</code> 进行等待，直到作业的类型不再是前台运行（<code>FG</code>）。</li>
+</ul>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">setpgid</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 将进程组设置为自己的 pid</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">execve</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argv<span class="token punctuation">,</span> environ<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"execve %s error\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bg<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> BG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"[%d] (%d) %s"</span><span class="token punctuation">,</span> <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token operator">-></span>jid<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> FG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">waitfg</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>根据书中 8.5.6 节的描述，可能会出现一种情况：父进程 <code>fork</code> 子进程后，子进程一直被调度执行，直到运行结束称为一个僵尸进程（zombie）并向父进程发送 SIGCHLD 信号。等到父进程被调度时，他先响应 SIGCHLD 信号并将成为僵尸进程的子进程收割（reap），同时尝试将作业从作业队列中移除，此时事实上不会做任何事情，因为作业还没有加入到作业队列中。再接下来父进程继续执行 <code>fork</code> 后的代码，才将作业加入到作业队列中，这明显不对！</p>
+<p>针对这类恼人的同步问题，可以采用 <code>sigprocmask</code> （如下所示是 <code>sigprocmask</code> 的使用说明）在适当的位置设置信号屏蔽字来解决。对于本问题，可以在父进程中先屏蔽对 SIGCHLD 信号的处理，等到使用 <code>addjob</code> 将作业加入作业队列后才开始响应 SIGCHLD 信号，这样即便是子进程先执行完毕并向父进程发送 SIGCHLD 信号，父进程也能确保在 <code>addjob</code> 执行完后才处理这一信号。</p>
+<blockquote>
+<ul>
+<li>generated by GPT4o</li>
+</ul>
+<h3 id="sigprocmask-介绍"><a href="#sigprocmask-介绍" class="headerlink" title="sigprocmask 介绍"></a><strong><code>sigprocmask</code> 介绍</strong></h3><p><code>sigprocmask</code> 是一个用于操作信号屏蔽字（signal mask）的系统调用。它允许程序暂时屏蔽或取消屏蔽某些信号的接收，进而控制信号的处理行为。通过它，程序可以避免在特定代码段中处理中断信号，从而进行更细粒度的控制。</p>
+<h4 id="sigprocmask-的原型："><a href="#sigprocmask-的原型：" class="headerlink" title="sigprocmask 的原型："></a><strong><code>sigprocmask</code> 的原型：</strong></h4><pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;signal.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">sigprocmask</span><span class="token punctuation">(</span><span class="token keyword">int</span> how<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token class-name">sigset_t</span> <span class="token operator">*</span>set<span class="token punctuation">,</span> <span class="token class-name">sigset_t</span> <span class="token operator">*</span>oldset<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<ul>
+<li><strong><code>how</code></strong>：<ul>
+<li><code>SIG_BLOCK</code>：将 <code>set</code> 中的信号加入到当前信号屏蔽字中（即阻塞这些信号）。</li>
+<li><code>SIG_UNBLOCK</code>：从当前信号屏蔽字中移除 <code>set</code> 中的信号（即解除屏蔽这些信号）。</li>
+<li><code>SIG_SETMASK</code>：将当前信号屏蔽字设置为 <code>set</code> 中的信号集（即完全替换当前的信号屏蔽字）。</li>
+</ul>
+</li>
+<li><strong><code>set</code></strong>：指向包含信号集的 <code>sigset_t</code> 类型变量，该变量指定要阻塞或解除阻塞的信号。</li>
+<li><strong><code>oldset</code></strong>：指向 <code>sigset_t</code> 类型的变量，用来保存当前的信号屏蔽字，以便稍后恢复。</li>
+</ul>
+<h4 id="信号集-sigset-t-的操作："><a href="#信号集-sigset-t-的操作：" class="headerlink" title="信号集 sigset_t 的操作："></a><strong>信号集 <code>sigset_t</code> 的操作：</strong></h4><ul>
+<li>初始化信号集：<ul>
+<li><code>sigemptyset(sigset_t *set)</code>：清空信号集。</li>
+<li><code>sigfillset(sigset_t *set)</code>：将所有信号加入信号集。</li>
+<li><code>sigaddset(sigset_t *set, int signum)</code>：将特定信号加入信号集。</li>
+<li><code>sigdelset(sigset_t *set, int signum)</code>：从信号集中移除特定信号。</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<p>此外，为了防止其他可能的并发错误出现，可以在对全局变量的修改前先屏蔽所有信号。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token class-name">sigset_t</span> mask_all<span class="token punctuation">,</span> mask_one<span class="token punctuation">,</span> prev_one<span class="token punctuation">;</span>
+
+<span class="token function">sigfillset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_all<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">sigemptyset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">sigaddset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_one<span class="token punctuation">,</span> SIGCHLD<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_one<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">setpgid</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 将进程组设置为自己的 pid</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">execve</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argv<span class="token punctuation">,</span> environ<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"execve %s error\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_all<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bg<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> BG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"[%d] (%d) %s"</span><span class="token punctuation">,</span> <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token operator">-></span>jid<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> FG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">waitfg</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="bg-fg-已停止作业恢复执行"><a href="#bg-fg-已停止作业恢复执行" class="headerlink" title="bg/fg: 已停止作业恢复执行"></a>bg/fg: 已停止作业恢复执行</h2><p>在内建命令中，<code>quit</code> 直接让程序正常退出即可，<code>jobs</code> 只需调用已实现的函数 <code>listjobs</code>，真正需要实现的是 <code>bg</code> 和 <code>fg</code>，它们的作用是将处于停止状态的作业恢复到后台（前台）执行。</p>
+<p>实现方式无非分两步：</p>
+<ol>
+<li>参数解析，提取出作业 ID（分为 PID 和 JID）。</li>
+<li>根据 <code>bg</code> 和 <code>fg</code> 的不同，分别进行处理，将作业运行在前台或是后台。</li>
+</ol>
+<p>参数解析其实也就是字符串处理，这部分与本章的异常控制流关系不大，在此不过多赘述。</p>
+<p>根据参数得到对应的作业 <code>job</code> 后，首先需要它的运行状态更改为指定的状态（<code>BG</code> 或 <code>FG</code>），然后向 <code>job</code> 对应的进程组（<code>kill</code> 的 pid 参数为 <code>-job-&gt;pid</code>）发送 SIGCONT 信号，将内核在响应此信号后会重新调度该进程组内的所有进程执行。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_all<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+job<span class="token operator">-></span>state <span class="token operator">=</span> state<span class="token punctuation">;</span>
+<span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">kill</span><span class="token punctuation">(</span><span class="token operator">-</span>job<span class="token operator">-></span>pid<span class="token punctuation">,</span> SIGCONT<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>最后，对于前台运行而言，父进程需要调用 <code>waitfg</code> 进行等待；对于后台运行而言，打印作业信息（具体格式见 <code>tshref.out</code> 的内容）。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">if</span> <span class="token punctuation">(</span>state <span class="token operator">==</span> FG<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">waitfg</span><span class="token punctuation">(</span>job<span class="token operator">-></span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"[%d] (%d)"</span><span class="token punctuation">,</span> job<span class="token operator">-></span>jid<span class="token punctuation">,</span> job<span class="token operator">-></span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">" %s"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="信号处理函数"><a href="#信号处理函数" class="headerlink" title="信号处理函数"></a>信号处理函数</h2><p>这部分看似简单，实则很容易出错，值得仔细说说。</p>
+<p>最开始，我在 <code>sigint_handler</code> 和 <code>sigtstp_handler</code> 中进行了对作业队列的操作，在 <code>sigint_handler</code> 中使用 <code>deletejob</code> 删除作业，在 <code>sigtstp_handler</code> 中将作业状态修改为 <code>ST</code>。</p>
+<p>这在前面的测试用例中工作一切正常，但在最后的 trace16 中，程序却阻塞在了 <code>mystop.c</code> 的 <code>if (kill(-pid, SIGTSTP) &lt; 0)</code> 位置，而如果按下键盘的 ctrl-c 或 ctrl-z 却能够响应信号，程序也正常终止或暂停。</p>
+<p>通过查阅网上资料，在 <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/593070389">实验四：Shell-Lab（下） - 知乎</a> 找到了问题的原因。</p>
+<p>程序 <code>mystop</code> 使用 <code>kill</code> 发送信号时，信号是直接发送到内核进行处理的，而不会经过 shell，shell 也就不会调用 <code>sigtstp_handler</code> 将作业状态更改为 <code>ST</code>，shell 因此认为 <code>mystop</code> 程序一直处于前台运行状态，也就保持阻塞。</p>
+<p>既然 <code>sigint_handler</code> 和 <code>sigtstp_handler</code> 在这种情况下无法被调用，那么就需要在其他信号处理函数中进行处理，答案便是 <code>sigchld_handler</code>。事实上，子进程并非只有在终止时才向父进程发送 SIGCHLD 信号，而是在状态发生改变后就会。我们可以利用这一点，将所有对作业队列的操作都放到 <code>sigchld_handler</code> 中，而 <code>sigint_handler</code> 和 <code>sigtstp_handler</code> 只作一个转发作用。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">sigchld_handler</span><span class="token punctuation">(</span><span class="token keyword">int</span> sig<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pid <span class="token operator">=</span> <span class="token function">waitpid</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>status<span class="token punctuation">,</span> WNOHANG <span class="token operator">|</span> WUNTRACED<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFEXITED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>             <span class="token comment">// 子进程正常退出</span>
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFSTOPPED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>     <span class="token comment">// 子进程暂停</span>
+            <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFSIGNALED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>    <span class="token comment">// 子进程终止</span>
+			<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h1><h2 id="eval"><a href="#eval" class="headerlink" title="eval"></a>eval</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">eval</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span>cmdline<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> bg<span class="token punctuation">;</span>
+    <span class="token class-name">pid_t</span> pid<span class="token punctuation">;</span>
+    <span class="token keyword">char</span> <span class="token operator">*</span>argv<span class="token punctuation">[</span>MAXARGS<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token class-name">sigset_t</span> mask_all<span class="token punctuation">,</span> mask_one<span class="token punctuation">,</span> prev_one<span class="token punctuation">;</span>  <span class="token comment">// 用于父-子进程同步</span>
+    
+    <span class="token function">sigfillset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_all<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sigemptyset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sigaddset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_one<span class="token punctuation">,</span> SIGCHLD<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    bg <span class="token operator">=</span> <span class="token function">parseline</span><span class="token punctuation">(</span>cmdline<span class="token punctuation">,</span> argv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">builtin_cmd</span><span class="token punctuation">(</span>argv<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">access</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> X_OK<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s: Command not found\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_one<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">setpgid</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 将进程组设置为自己的 pid</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">execve</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argv<span class="token punctuation">,</span> environ<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"execve %s error\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_all<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>bg<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> BG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"[%d] (%d) %s"</span><span class="token punctuation">,</span> <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token operator">-></span>jid<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">addjob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">,</span> FG<span class="token punctuation">,</span> cmdline<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">waitfg</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="built-cmd"><a href="#built-cmd" class="headerlink" title="built_cmd"></a>built_cmd</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">builtin_cmd</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>argv<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"quit"</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"jobs"</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">listjobs</span><span class="token punctuation">(</span>jobs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"bg"</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">do_bgfg</span><span class="token punctuation">(</span>argv<span class="token punctuation">,</span> BG<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">strcmp</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"fg"</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">do_bgfg</span><span class="token punctuation">(</span>argv<span class="token punctuation">,</span> FG<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="do-bgfg"><a href="#do-bgfg" class="headerlink" title="do_bgfg"></a>do_bgfg</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// 根据字符串 arg（格式为 %jid 或 pid）获取对应的 job</span>
+<span class="token comment">// 成功返回 job 指针，失败返回 NULL</span>
+<span class="token keyword">struct</span> <span class="token class-name">job_t</span> <span class="token operator">*</span><span class="token function">getjob_arg</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>arg<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> isjid<span class="token punctuation">,</span> id<span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>parg<span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">job_t</span> <span class="token operator">*</span>job<span class="token punctuation">;</span>
+
+    isjid <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>arg<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token string">'%'</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        isjid <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token operator">++</span>arg<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    parg <span class="token operator">=</span> arg<span class="token punctuation">;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">*</span>parg <span class="token operator">!=</span> <span class="token string">'\0'</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isdigit</span><span class="token punctuation">(</span><span class="token operator">*</span>parg<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"bg/fg: argument must be a PID or %%jobid\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token operator">++</span>parg<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    id <span class="token operator">=</span> <span class="token function">atoi</span><span class="token punctuation">(</span>arg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>isjid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        job <span class="token operator">=</span> <span class="token function">getjobjid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>job <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"(%s): No such process\n"</span><span class="token punctuation">,</span> arg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        job <span class="token operator">=</span> <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>job <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s: No such job\n"</span><span class="token punctuation">,</span> arg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> job<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">// 与题目提供的接口有些不同（加了个 state 参数），感觉这样更好处理一些...</span>
+<span class="token keyword">void</span> <span class="token function">do_bgfg</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token operator">*</span>argv<span class="token punctuation">,</span> <span class="token keyword">int</span> state<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">sigset_t</span> mask_all<span class="token punctuation">,</span> prev_one<span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">job_t</span> <span class="token operator">*</span>job<span class="token punctuation">;</span>
+
+    <span class="token function">sigfillset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_all<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"fg command requires PID or %%jobid argument\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    job <span class="token operator">=</span> <span class="token function">getjob_arg</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>job <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_all<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    job<span class="token operator">-></span>state <span class="token operator">=</span> state<span class="token punctuation">;</span>
+    <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">kill</span><span class="token punctuation">(</span><span class="token operator">-</span>job<span class="token operator">-></span>pid<span class="token punctuation">,</span> SIGCONT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>state <span class="token operator">==</span> FG<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">waitfg</span><span class="token punctuation">(</span>job<span class="token operator">-></span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"[%d] (%d)"</span><span class="token punctuation">,</span> job<span class="token operator">-></span>jid<span class="token punctuation">,</span> job<span class="token operator">-></span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">" %s"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="waitfg"><a href="#waitfg" class="headerlink" title="waitfg"></a>waitfg</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">waitfg</span><span class="token punctuation">(</span><span class="token class-name">pid_t</span> pid<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">struct</span> <span class="token class-name">job_t</span> <span class="token operator">*</span>job <span class="token operator">=</span> <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>job <span class="token operator">==</span> <span class="token constant">NULL</span> <span class="token operator">||</span> job<span class="token operator">-></span>state <span class="token operator">!=</span> FG<span class="token punctuation">)</span> <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="sigchld-handler"><a href="#sigchld-handler" class="headerlink" title="sigchld_handler"></a>sigchld_handler</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">sigchld_handler</span><span class="token punctuation">(</span><span class="token keyword">int</span> sig<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">pid_t</span> pid<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> status<span class="token punctuation">;</span>
+    <span class="token class-name">sigset_t</span> mask_all<span class="token punctuation">,</span> prev_one<span class="token punctuation">;</span>
+    
+    <span class="token function">sigfillset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>mask_all<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>pid <span class="token operator">=</span> <span class="token function">waitpid</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>status<span class="token punctuation">,</span> WNOHANG <span class="token operator">|</span> WUNTRACED<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_BLOCK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>mask_all<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFEXITED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">deletejob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFSTOPPED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Job [%d] (%d) stopped by signal 20\n"</span><span class="token punctuation">,</span> <span class="token function">pid2jid</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span><span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">getjobpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span> <span class="token operator">-></span> state <span class="token operator">=</span> ST<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">WIFSIGNALED</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Job [%d] (%d) terminated by signal 2\n"</span><span class="token punctuation">,</span> <span class="token function">pid2jid</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span><span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">deletejob</span><span class="token punctuation">(</span>jobs<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">sigprocmask</span><span class="token punctuation">(</span>SIG_SETMASK<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prev_one<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="sigint-handler"><a href="#sigint-handler" class="headerlink" title="sigint_handler"></a>sigint_handler</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">sigint_handler</span><span class="token punctuation">(</span><span class="token keyword">int</span> sig<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">pid_t</span> pid <span class="token operator">=</span> <span class="token function">fgpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">kill</span><span class="token punctuation">(</span><span class="token operator">-</span>pid<span class="token punctuation">,</span> sig<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="sigtstp-handler"><a href="#sigtstp-handler" class="headerlink" title="sigtstp_handler"></a>sigtstp_handler</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">sigtstp_handler</span><span class="token punctuation">(</span><span class="token keyword">int</span> sig<span class="token punctuation">)</span> 
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">pid_t</span> pid <span class="token operator">=</span> <span class="token function">fgpid</span><span class="token punctuation">(</span>jobs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">kill</span><span class="token punctuation">(</span><span class="token operator">-</span>pid<span class="token punctuation">,</span> sig<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/">http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a><a class="post-meta__tags" href="/tags/C/">C</a></div><div class="post_share"><div class="social-share" data-image="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2025/01/10/CSAPP-Malloc-Lab/"><img class="prev-cover" src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">CSAPP Malloc Lab</div></div></a></div><div class="next-post pull-right"><a href="/2024/12/17/CSAPP-Cache-Lab/"><img class="next-cover" src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">CSAPP Cache Lab</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img class="cover" src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-17</div><div class="title">CSAPP Cache Lab</div></div></a></div><div><a href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img class="cover" src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-10</div><div class="title">CSAPP Malloc Lab</div></div></a></div><div><a href="/2024/09/25/CSAPP-Attack-Lab/" title="CSAPP Attack Lab"><img class="cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-25</div><div class="title">CSAPP Attack Lab</div></div></a></div><div><a href="/2024/09/17/CSAPP-Bomb-Lab/" title="CSAPP Bomb Lab"><img class="cover" src="/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-17</div><div class="title">CSAPP Bomb Lab</div></div></a></div><div><a href="/2024/08/31/CSAPP-Data-Lab/" title="CSAPP Data Lab"><img class="cover" src="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-31</div><div class="title">CSAPP Data Lab</div></div></a></div><div><a href="/2023/03/11/计算机基础面试题总结/" title="计算机基础面试题总结"><img class="cover" src="/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-03-11</div><div class="title">计算机基础面试题总结</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">75</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">40</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E8%A6%81%E6%B1%82"><span class="toc-number">1.1.</span> <span class="toc-text">实验要求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%A7%A3%E9%87%8A%E6%89%A7%E8%A1%8C"><span class="toc-number">1.2.</span> <span class="toc-text">命令行解释执行</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#sigprocmask-%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.2.1.</span> <span class="toc-text">sigprocmask 介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#sigprocmask-%E7%9A%84%E5%8E%9F%E5%9E%8B%EF%BC%9A"><span class="toc-number">1.2.1.1.</span> <span class="toc-text">sigprocmask 的原型：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%A1%E5%8F%B7%E9%9B%86-sigset-t-%E7%9A%84%E6%93%8D%E4%BD%9C%EF%BC%9A"><span class="toc-number">1.2.1.2.</span> <span class="toc-text">信号集 sigset_t 的操作：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bg-fg-%E5%B7%B2%E5%81%9C%E6%AD%A2%E4%BD%9C%E4%B8%9A%E6%81%A2%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">1.3.</span> <span class="toc-text">bg&#x2F;fg: 已停止作业恢复执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0"><span class="toc-number">1.4.</span> <span class="toc-text">信号处理函数</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">2.</span> <span class="toc-text">代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#eval"><span class="toc-number">2.1.</span> <span class="toc-text">eval</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#built-cmd"><span class="toc-number">2.2.</span> <span class="toc-text">built_cmd</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#do-bgfg"><span class="toc-number">2.3.</span> <span class="toc-text">do_bgfg</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#waitfg"><span class="toc-number">2.4.</span> <span class="toc-text">waitfg</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sigchld-handler"><span class="toc-number">2.5.</span> <span class="toc-text">sigchld_handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sigint-handler"><span class="toc-number">2.6.</span> <span class="toc-text">sigint_handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sigtstp-handler"><span class="toc-number">2.7.</span> <span class="toc-text">sigtstp_handler</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Malloc Lab"/></a><div class="content"><a class="title" href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab">CSAPP Malloc Lab</a><time datetime="2025-01-10T03:45:11.000Z" title="发表于 2025-01-10 11:45:11">2025-01-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Shell Lab"/></a><div class="content"><a class="title" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab">CSAPP Shell Lab</a><time datetime="2024-12-29T03:45:11.000Z" title="发表于 2024-12-29 11:45:11">2024-12-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CSAPP Cache Lab"/></a><div class="content"><a class="title" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab">CSAPP Cache Lab</a><time datetime="2024-12-17T03:45:11.000Z" title="发表于 2024-12-17 11:45:11">2024-12-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习"><img src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter8练习"/></a><div class="content"><a class="title" href="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter8练习">2024开源操作系统训练营 rCore Chapter8练习</a><time datetime="2024-11-04T15:30:11.000Z" title="发表于 2024-11-04 23:30:11">2024-11-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习"><img src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2024开源操作系统训练营 rCore Chapter6练习"/></a><div class="content"><a class="title" href="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/" title="2024开源操作系统训练营 rCore Chapter6练习">2024开源操作系统训练营 rCore Chapter6练习</a><time datetime="2024-11-03T15:30:11.000Z" title="发表于 2024-11-03 23:30:11">2024-11-03</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
