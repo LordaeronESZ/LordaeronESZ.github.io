@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://lordaeronesz.github.io/2025/01/10/CSAPP-Malloc-Lab/</loc>
+    <lastmod>2025-01-11</lastmod>
+  </url>
+  <url>
     <loc>http://lordaeronesz.github.io/2024/12/29/CSAPP-Shell-Lab/</loc>
     <lastmod>2024-12-30</lastmod>
   </url>
