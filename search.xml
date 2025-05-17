@@ -15486,4 +15486,38 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>数据结构</tag>
       </tags>
   </entry>
+  <entry>
+    <title>MMIO和mmap文件映射的区别</title>
+    <url>/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
+    <content><![CDATA[<p>MMIO 和 mmap 文件映射都涉及将外部资源（除 CPU 寄存器和内存以外）映射到进程的地址空间中，但它们并非等同。本文将对二者进行分别介绍，并对比它们之间的区别和联系。</p>
+<span id="more"></span>
+<h1 id="MMIO"><a href="#MMIO" class="headerlink" title="MMIO"></a>MMIO</h1><p>计算机系统中的设备种类繁多，不同设备它们的物理结构、电气特性可能完全不同。因此为了屏蔽其中的差异，让 CPU 更好的与不同的设备进行交互，各种不同的设备都被抽象成了一系列的外部接口，也就是 <strong>设备寄存器</strong> 。CPU 与设备交互的方式，就是对这些寄存器进行读写。</p>
+<p>那么问题自然应运而生，以什么样的方式，或者更具体地说，执行什么样的指令对设备寄存器进行读写？通常来说有两种：一种是 CPU 采用特殊的 I/O 指令（如 x86 架构下的 <code>in/out</code> 指令），指令中对应的设备寄存器地址位于一片专门的 I/O 地址空间中，这种方式成为端口映射 I/O（Port-Mapped I/O, PMIO）；而另一种则是将设备寄存器的地址映射到进程的虚拟地址空间中，进而直接使用普通的内存读写指令（如 x86 架构下的 <code>mov</code>）对其进行读写，这种方式称为内存映射 I/O（Memory-Mapped I/O），也就是本文要介绍的 MMIO。</p>
+<p>在 Linux 内核驱动代码中，通常使用 <code>ioremap</code> 来进行 MMIO 的映射：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> __iomem <span class="token operator">*</span>regs <span class="token operator">=</span> <span class="token function">ioremap</span><span class="token punctuation">(</span>phys_addr<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 写入硬件寄存器</span>
+<span class="token function">writel</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> regs <span class="token operator">+</span> offset<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h1 id="mmap-文件映射"><a href="#mmap-文件映射" class="headerlink" title="mmap 文件映射"></a>mmap 文件映射</h1><blockquote>
+<p>属于 MMIO 的一种？《UNIX 环境高级编程 p422》</p>
+</blockquote>
+<p><code>mmap</code> 是一个类 UNIX 系统中常见的系统调用接口，用于向进程的地址空间中新增一段虚拟内存段，其声明如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">mmap</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>addr<span class="token punctuation">,</span> <span class="token class-name">size_t</span> len<span class="token punctuation">,</span> <span class="token keyword">int</span> prot<span class="token punctuation">,</span> <span class="token keyword">int</span> flag<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token class-name">off_t</span> off<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>如果指定了 <code>fd</code> 参数（<code>fd</code> 不为 -1），那么 <code>fd</code> 所指向的文件将会从 <code>off</code> 偏移量的位置开始映射一段长度为 <code>len</code> 的数据内容到地址空间中，对文件的读写可以直接转换为对被映射内存地址的读写。当然这个过程通常带有 lazy 的策略，即只有实际读取时才进行加载。示例代码如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> fd <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span><span class="token string">"data.txt"</span><span class="token punctuation">,</span> O_RDWR<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">void</span> <span class="token operator">*</span>addr <span class="token operator">=</span> <span class="token function">mmap</span><span class="token punctuation">(</span><span class="token constant">NULL</span><span class="token punctuation">,</span> length<span class="token punctuation">,</span> PROT_READ <span class="token operator">|</span> PROT_WRITE<span class="token punctuation">,</span> MAP_SHARED<span class="token punctuation">,</span> fd<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 直接通过指针读写文件内容</span>
+<span class="token function">memcpy</span><span class="token punctuation">(</span>addr<span class="token punctuation">,</span> buffer<span class="token punctuation">,</span> length<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h1 id="二者的区别和联系"><a href="#二者的区别和联系" class="headerlink" title="二者的区别和联系"></a>二者的区别和联系</h1><p>可以看到，二者在使用上的区别还是很显著的。<code>mmap</code> 操作的是持久化的存储（文件），目的是方便对文件数据的读写；<code>MMIO</code> 操作的是硬件行为，目的是控制设备的状态。</p>
+<p>但是我在阅读《UNIX 环境高级编程：第 3 版》（下面简称 APUE）第 14.8 节——存储映射 I/O 时，其中介绍的内容正是 <code>mmap</code> 接口。实际上，APUE 中所描述的 MMIO，指的应该是 <strong>广义上</strong> 的 MMIO —— 即通过内存地址实现 I/O 操作。将存储在磁盘中的文件映射到地址空间中，其实也是在将磁盘的某些扇区映射到地址空间中，那么对这些地址的写入，最终也会转换为对文件的写入（如果使用 <code>MAP_SHARED</code> 映射类型），对文件的写入，需要通过调用磁盘驱动程序来对更改磁盘上指定的比特位，借此实现持久化，这其实也是在更改设备的状态。从这个角度来看，<code>mmap</code> 文件映射也是 MMIO 的一种。</p>
+<p>最后总结，MMIO 更多是一种理念，是 UNIX 哲学 —— “将复杂操作统一到通用抽象”的延续。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>虚拟内存</tag>
+        <tag>I/O</tag>
+      </tags>
+  </entry>
 </search>
