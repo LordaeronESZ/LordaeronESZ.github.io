@@ -13632,7 +13632,27 @@ ListNode<span class="token operator">*</span> <span class="token function">rever
 <p>对于虚拟机内存的机密性，AMD 在最早的 SEV 技术（2016 年）中已经解决。解决方法是为每个虚拟机引入一个 AES 加密密钥，虚拟机指定为私有的页面在被读写时将会自动地进行加解密，这一过程对于虚拟机而言完全无感。当 Hypervisor 尝试读取虚拟机的私有内存数据时，只会读取到被加密过的密文数据，保障了数据的机密性。</p>
 <p><img src="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/threat_1.png" alt></p>
 <h2 id="虚拟机寄存器状态"><a href="#虚拟机寄存器状态" class="headerlink" title="虚拟机寄存器状态"></a>虚拟机寄存器状态</h2><p>虚拟机在 VM Exit 到 Hypervisor 时，需要将此时的 CPU 状态，即寄存器状态进行保存（通常保存在一个数据结构中，AMD-V 虚拟机为 VMCB）。而 Hypervisor 就能在重新 VM Entry 到虚拟机前，很轻松地读取其中的内容。</p>
-<p>AMD 在 2017 年引入了 SEV-ES（Encrypted State）特性，在发生 VM Exit 时，虚拟机寄存器内容会被自动加密，并存入加密的 VMSA（Virtual Machine Save Area）中，原有的 VMCB 中的被加密字段存储着指向被加密数据区域的指针 <code>VMSA_POINTER</code>，Hypervisor 无法读取到具体内容。</p>
+<p>AMD 在 2017 年引入了 SEV-ES（Encrypted State）特性，在发生 VM Exit 时，虚拟机寄存器内容会被自动加密，并存入加密的 VMSA（Virtual Machine Save Area）中，原有的 VMCB 的控制字段（非加密）存储着指向 VMSA 的指针。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token keyword">__attribute__</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>__packed__<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token class-name">vmcb_control_area</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	u64 vmsa_pa<span class="token punctuation">;</span>		<span class="token comment">/* Used for an SEV-ES guest */</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token class-name">vmcb</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">vmcb_control_area</span> control<span class="token punctuation">;</span>
+	<span class="token keyword">union</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">struct</span> <span class="token class-name">vmcb_save_area</span> save<span class="token punctuation">;</span>
+
+		<span class="token comment">/*
+		 * For SEV-ES VMs, the save area in the VMCB is used only to
+		 * save/load host state.  Guest state resides in a separate
+		 * page, the aptly named VM Save Area (VMSA), that is encrypted
+		 * with the guest's private key.
+		 */</span>
+		<span class="token keyword">struct</span> <span class="token class-name">sev_es_save_area</span> host_sev_es_save<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> __packed<span class="token punctuation">;</span></code></pre>
 <h1 id="完整性"><a href="#完整性" class="headerlink" title="完整性"></a>完整性</h1><p>内存加密只解决了 Hypervisor 恶意读取虚拟机数据的问题，Hypervisor 仍然可以在不知道数据具体内容的情况下，恶意地对虚拟机内存进行写入，从而破坏虚拟机内存数据，造成预料之外的结果。</p>
 <p>AMD 在 2020 年引入了 SEV-SNP 扩展，引入了对虚拟机完整性保护的支持。核心机制是 <strong>只有内存页面的拥有者才能够写入该页面</strong> 。具体实现方式是引入了新的数据结构 RMP（Reverse Map Table），RMP 是一个在整个系统中共享的单一数据结构，它包含了每个虚拟机可能使用的 HPA 页面的条目。RMP 的作用是为了跟踪每个内存页面的拥有者。</p>
 <blockquote>
