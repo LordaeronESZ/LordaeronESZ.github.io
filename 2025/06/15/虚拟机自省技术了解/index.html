@@ -1,0 +1,279 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>虚拟机自省技术 | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,虚拟化"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="虚拟机自省技术">
+<meta property="og:url" content="http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg">
+<meta property="article:published_time" content="2025-06-15T15:30:11.000Z">
+<meta property="article:modified_time" content="2025-06-15T15:09:11.299Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="虚拟化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '虚拟机自省技术',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: false,
+  postUpdate: '2025-06-15 23:09:11'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">82</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">虚拟机自省技术</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-06-15T15:30:11.000Z" title="发表于 2025-06-15 23:30:11">2025-06-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-06-15T15:09:11.299Z" title="更新于 2025-06-15 23:09:11">2025-06-15</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">748</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>2分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="虚拟机自省技术"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><p>虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。</p>
+<span id="more"></span>
+<p>以下是维基百科中对虚拟机自省技术的描述，我对其进行了中文翻译：</p>
+<blockquote>
+<p><strong>原文链接：</strong> <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Virtual_machine_introspection">Virtual machine introspection - Wikipedia</a></p>
+<p>在计算机领域，虚拟机自省（Virtual Machine Introspection, VMI）是一种监控虚拟机运行状态的技术，这有助于调试和取证分析（forensic analysis）。</p>
+<p><em>introspection</em> 这个术语由 Garfinkel 和 Rosenblum 引入虚拟机领域。他们发明了一种“保护安全应用程序免受恶意软件攻击”的方法，并将其称为 VMI。如今 VMI 是不同的虚拟机取证和分析方法的通用术语。基于 VMI 的方法广泛用于安全应用程序、软件调试和系统管理。</p>
+<p>VMI 工具可以位于虚拟机内部或外部，并通过跟踪事件（中断、内存写入等）或向虚拟机发送请求来工作。虚拟机监视器通常提供底层信息，如内存的原始字节。将这种底层视图转换为对用户有意义的内容也就是所谓的“语义鸿沟”问题。解决这个问题需要分析和理解被监视的系统。</p>
+<p><strong>虚拟机内的 VMI</strong></p>
+<p>运行在虚拟机内部的程序可以提供其他进程的信息。这些信息可以通过网络接口或一些虚拟设备（如串口）发送。虚拟机内自省程序比如 WinDbg 或者与远程调试器交互的 GDB 服务器。</p>
+<p>这种方法的缺点是它需要在虚拟机内中运行一个正常的 OS。如果 OS 挂起或尚未加载，那么自省代理（agent）也无法工作。</p>
+<p><strong>虚拟机外的 VMI</strong></p>
+<p>VMI 工具可以在虚拟机监视器内实现，也可以作为从虚拟机监视器捕获信息（例如内存数据）的单独程序实现。然后，必须对这些数据进行解释，以了解系统实际执行的过程。解释工具中一个比较流行的是 Volatility framwork。该框架能够支持很多主流的操作系统，并从中提取不同的信息，比如进程树和内核对象列表。</p>
+</blockquote>
+<p>主流的 VMI 工具如下：</p>
+<ul>
+<li>LibVMI：开源库（支持主流的虚拟化方案：Xen/KVM/VMware），提供统一的 API 读取虚拟机内存、寄存器，并支持符号解析（如从内存中提取 Windows 的 <code>EPROCESS</code> 结构）。</li>
+<li>Volatility：内存取证框架，可与 VMI 结合分析虚拟机内存快照（如检测恶意进程）。</li>
+<li>DRAKVUF：动态分析工具，通过注入恶意代码并监控虚拟机行为，用于沙箱检测。</li>
+<li>GRR（Google Rapid Response）：结合 VMI 实现远程取证和响应。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/">http://lordaeronesz.github.io/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a></div><div class="post_share"><div class="social-share" data-image="/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/"><img class="prev-cover" src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</div></div></a></div><div class="next-post pull-right"><a href="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/"><img class="next-cover" src="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/unix.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">MMIO和mmap文件映射的区别</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2025/02/10/《General overview of AMD SEV-SNP and Intel TDX》中文翻译/" title="《General overview of AMD SEV-SNP and Intel TDX》中文翻译"><img class="cover" src="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-02-10</div><div class="title">《General overview of AMD SEV-SNP and Intel TDX》中文翻译</div></div></a></div><div><a href="/2025/05/06/机密虚拟机的威胁模型/" title="机密虚拟机的威胁模型"><img class="cover" src="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/kvm.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-06</div><div class="title">机密虚拟机的威胁模型</div></div></a></div><div><a href="/2025/06/28/论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结/" title="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结"><img class="cover" src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-28</div><div class="title">论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</div></div></a></div><div><a href="/2024/11/01/2024开源操作系统训练营-rCore-Chapter4练习/" title="2024开源操作系统训练营 rCore Chapter4练习"><img class="cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-01</div><div class="title">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div><div><a href="/2024/11/02/2024开源操作系统训练营-rCore-Chapter5练习/" title="2024开源操作系统训练营 rCore Chapter5练习"><img class="cover" src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-02</div><div class="title">2024开源操作系统训练营 rCore Chapter5练习</div></div></a></div><div><a href="/2024/11/03/2024开源操作系统训练营-rCore-Chapter6练习/" title="2024开源操作系统训练营 rCore Chapter6练习"><img class="cover" src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-03</div><div class="title">2024开源操作系统训练营 rCore Chapter6练习</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">82</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结"><img src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结"/></a><div class="content"><a class="title" href="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结">论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</a><time datetime="2025-06-28T15:30:11.000Z" title="发表于 2025-06-28 23:30:11">2025-06-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/" title="虚拟机自省技术"><img src="/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="虚拟机自省技术"/></a><div class="content"><a class="title" href="/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/" title="虚拟机自省技术">虚拟机自省技术</a><time datetime="2025-06-15T15:30:11.000Z" title="发表于 2025-06-15 23:30:11">2025-06-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/" title="MMIO和mmap文件映射的区别"><img src="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/unix.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MMIO和mmap文件映射的区别"/></a><div class="content"><a class="title" href="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/" title="MMIO和mmap文件映射的区别">MMIO和mmap文件映射的区别</a><time datetime="2025-05-16T15:30:11.000Z" title="发表于 2025-05-16 23:30:11">2025-05-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/" title="机密虚拟机的威胁模型"><img src="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/kvm.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="机密虚拟机的威胁模型"/></a><div class="content"><a class="title" href="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/" title="机密虚拟机的威胁模型">机密虚拟机的威胁模型</a><time datetime="2025-05-06T15:30:11.000Z" title="发表于 2025-05-06 23:30:11">2025-05-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/" title="《General overview of AMD SEV-SNP and Intel TDX》中文翻译"><img src="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《General overview of AMD SEV-SNP and Intel TDX》中文翻译"/></a><div class="content"><a class="title" href="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/" title="《General overview of AMD SEV-SNP and Intel TDX》中文翻译">《General overview of AMD SEV-SNP and Intel TDX》中文翻译</a><time datetime="2025-02-10T15:30:11.000Z" title="发表于 2025-02-10 23:30:11">2025-02-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

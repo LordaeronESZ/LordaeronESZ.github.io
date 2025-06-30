@@ -15540,4 +15540,75 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>I/O</tag>
       </tags>
   </entry>
+  <entry>
+    <title>虚拟机自省技术</title>
+    <url>/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/</url>
+    <content><![CDATA[<p>虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。</p>
+<span id="more"></span>
+<p>以下是维基百科中对虚拟机自省技术的描述，我对其进行了中文翻译：</p>
+<blockquote>
+<p><strong>原文链接：</strong> <a href="https://en.wikipedia.org/wiki/Virtual_machine_introspection">Virtual machine introspection - Wikipedia</a></p>
+<p>在计算机领域，虚拟机自省（Virtual Machine Introspection, VMI）是一种监控虚拟机运行状态的技术，这有助于调试和取证分析（forensic analysis）。</p>
+<p><em>introspection</em> 这个术语由 Garfinkel 和 Rosenblum 引入虚拟机领域。他们发明了一种“保护安全应用程序免受恶意软件攻击”的方法，并将其称为 VMI。如今 VMI 是不同的虚拟机取证和分析方法的通用术语。基于 VMI 的方法广泛用于安全应用程序、软件调试和系统管理。</p>
+<p>VMI 工具可以位于虚拟机内部或外部，并通过跟踪事件（中断、内存写入等）或向虚拟机发送请求来工作。虚拟机监视器通常提供底层信息，如内存的原始字节。将这种底层视图转换为对用户有意义的内容也就是所谓的“语义鸿沟”问题。解决这个问题需要分析和理解被监视的系统。</p>
+<p><strong>虚拟机内的 VMI</strong></p>
+<p>运行在虚拟机内部的程序可以提供其他进程的信息。这些信息可以通过网络接口或一些虚拟设备（如串口）发送。虚拟机内自省程序比如 WinDbg 或者与远程调试器交互的 GDB 服务器。</p>
+<p>这种方法的缺点是它需要在虚拟机内中运行一个正常的 OS。如果 OS 挂起或尚未加载，那么自省代理（agent）也无法工作。</p>
+<p><strong>虚拟机外的 VMI</strong></p>
+<p>VMI 工具可以在虚拟机监视器内实现，也可以作为从虚拟机监视器捕获信息（例如内存数据）的单独程序实现。然后，必须对这些数据进行解释，以了解系统实际执行的过程。解释工具中一个比较流行的是 Volatility framwork。该框架能够支持很多主流的操作系统，并从中提取不同的信息，比如进程树和内核对象列表。</p>
+</blockquote>
+<p>主流的 VMI 工具如下：</p>
+<ul>
+<li>LibVMI：开源库（支持主流的虚拟化方案：Xen/KVM/VMware），提供统一的 API 读取虚拟机内存、寄存器，并支持符号解析（如从内存中提取 Windows 的 <code>EPROCESS</code> 结构）。</li>
+<li>Volatility：内存取证框架，可与 VMI 结合分析虚拟机内存快照（如检测恶意进程）。</li>
+<li>DRAKVUF：动态分析工具，通过注入恶意代码并监控虚拟机行为，用于沙箱检测。</li>
+<li>GRR（Google Rapid Response）：结合 VMI 实现远程取证和响应。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</title>
+    <url>/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>本文是对 <code>ACSAC &#39;23</code> 论文《Remote attestation of confidential VMs using ephemeral vTPMs》的总结，以及个人的理解和思考。</p>
+<span id="more"></span>
+<h1 id="解决的问题"><a href="#解决的问题" class="headerlink" title="解决的问题"></a>解决的问题</h1><p>机密虚拟机（CVM）技术为虚拟机提供一个隔离环境，防止受到 hypervisor 等高特权软件的干扰。但是这样的隔离机制作用于虚拟机运行时，在虚拟机启动过程中，此时的完整性（intergrity）保护依赖于度量启动（measured boot）和运行时证明（runtime attestation）。运行时证明需要一个硬件信任根，在物理机上，TPM 芯片可以作为这样的信任根。然而在云计算环境中，云服务提供商通过设备模拟的方式给用户提供 vTPM，使用这样的模拟设备需要信任云服务提供商，这与 CVM 的威胁模型不符。</p>
+<p>本文作者提出了一种方法，借助 AMD SEV-SNP 技术，在 CVM 内部模拟一个 vTPM，而无需信任 hypervisor。具备以下安全要求：</p>
+<ul>
+<li>隔离性：既与 guest 隔离又与 host 隔离。</li>
+<li>安全通信：与物理 TPM 的通信是硬件级隔离的，因此 vTPM 的通信也必须是安全的。</li>
+<li>持久化状态：物理 TPM 的状态在设备被制造时确定并受到硬件保护，vTPM 的状态应该应该由云租户来保存，与云服务提供商隔离。</li>
+</ul>
+<h1 id="设计与实现"><a href="#设计与实现" class="headerlink" title="设计与实现"></a>设计与实现</h1><p>SVSM-vTPM 的架构图和组件构成如下：</p>
+<p><img src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" alt></p>
+<h2 id="隔离性"><a href="#隔离性" class="headerlink" title="隔离性"></a>隔离性</h2><p>作者利用了 SEV-SNP 所引入的 VMPL 机制：基于 AMD 官方的 VMPL0 管理程序：SVSM 进行扩展，来同时实现与 guest 与 host 的隔离。其中，由于 vTPM 涉及到一些对时钟、随机数生成和加密库的需求，而 SVSM 又是一个裸金属（bare-metal）程序，需要手动移植一些库函数。</p>
+<h2 id="安全通信"><a href="#安全通信" class="headerlink" title="安全通信"></a>安全通信</h2><p>在 CVM 环境中用一块专门的内存空间（如一个页面）来完成 guest 内核与 vTPM 的通信：每当 guest 内核需要向 vTPM 发送请求时，就向该页面中写入数据，然后将触发虚拟机退出到 hypervisor，hypervisor 调度 VMPL0 的状态执行，VMPL0 中的 SVSM-vTPM 处理程序根据 CVM 的命令进行相应的响应。</p>
+<p>上述通信过程的安全性由 SEV-SNP 特性所保证：guest 内核和 SVSM-vTPM 同属一个 CVM 环境中，内存是共享的，而对于 hypervisor 来说是加密的。因此即便 guest 内核与 SVSM-vTPM 的切换需要经过 hypervisor，这个过程仍然是安全的。而且 SEV-SNP 的硬件特性还确保了 hypervisor 在恢复虚拟机执行时只能恢复到 VMPL0 的上下文，从而防止 hypervisor 抑制 guest 内核发送的 TPM 请求，除非它让整个虚拟机都停止工作。</p>
+<h2 id="持久化状态"><a href="#持久化状态" class="headerlink" title="持久化状态"></a>持久化状态</h2><p>与物理 TPM 将它的状态保存在芯片内部的非易失性存储器不同，vTPM 必须依赖于一个磁盘中的文件（以下称为 NV 文件）来实现这样的持久化，并且与 vTPM 的模拟软件一样，NV 文件也必须位于可信环境中。</p>
+<p>一种实现方式是：对 NV 文件进行加密，并由用户保存密钥，依赖于 CVM 安全启动机制，在 CVM 启动阶段进行注入。但这会带来一定的系统复杂性。</p>
+<p>作者使用了一种更为简单实用的做法：短时 vTPM（Ephemeral vTPM）。该 vTPM 会在每次启动时创建新的种子和密钥，无需存储持久化的状态。</p>
+<blockquote>
+<p>无持久状态的短时 vTPM 应用场景受限，对于那些需要跨重启周期使用相同密钥的应用场景（例如全盘加密、数据密封等），短时 vTPM 可能无法直接满足需求。</p>
+</blockquote>
+<h3 id="全盘加密"><a href="#全盘加密" class="headerlink" title="全盘加密"></a>全盘加密</h3><p>全盘加密（Full disk encryption, FDE）通过加密的方式保护磁盘数据，而加密密钥本身也需要进行加密并持久化保存，对磁盘密钥的加密通常由 TPM 中的存储根密钥（Storage root key, SRK）来完成。</p>
+<p>而在短时 vTPM 中，没有持久化的 SRK，因此不能用传统方法实现 FDE。</p>
+<p><img src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm2.png" alt></p>
+<p>作者实现基于短期的 eSRK 密钥实现对持久化磁盘密钥的保护所提出的方法，个人并没有太理解。疑惑的点在于：K<sub>isk</sub> 是不是依据某种算法稳定生成的（每次都相同）？否则如何利用它来将固定的磁盘密钥 D<sub>k</sub> 进行解密？上次运行时用 eSRK<sub>pub</sub> 进行加密的 K<sub>isk</sub>，如何能在本次运行时用 eSRK<sub>priv</sub> 进行解密？</p>
+<p>这部分内容可能得等对 TPM 有一个更深入的理解后才能解答。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>机密计算</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
 </search>
