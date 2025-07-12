@@ -15739,4 +15739,295 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>虚拟化</tag>
       </tags>
   </entry>
+  <entry>
+    <title>xv6-riscv 上下文切换代码分析</title>
+    <url>/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>由于最近的工作涉及到编写上下文切换跳板代码的需求，因此便想将 xv6 中与此相关的代码读一读，正好之前学习时对这一块也没有看得太仔细。</p>
+<span id="more"></span>
+<h1 id="系统初始化"><a href="#系统初始化" class="headerlink" title="系统初始化"></a>系统初始化</h1><p>xv6 的 qemu 启动参数为 <code>-kernel kernel/kernel -bios none</code>，qemu 模拟器在启动时，pc 将自动跳转到预先设定的地址 <code>0x80000000</code> 处，而链接脚本 <code>kernel.ld</code> 已经将下列代码 <code>entry.S</code> 链接到了该地址，因此下列代码即模拟器启动后 CPU 执行的初始代码。</p>
+<p>这段代码的作用是为每个 CPU 核心开辟属于自己的栈空间，以便后续内核代码的执行。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.section .text
+.global _entry
+_entry:
+        # stack0 在 start.c 中定义
+        # 每个 CPU 固定为 4KB 的内核栈大小
+        # sp &#x3D; stack0 + (hartid * 4096)
+        la sp, stack0
+        li a0, 1024*4
+        csrr a1, mhartid
+        addi a1, a1, 1
+        mul a0, a0, a1
+        add sp, sp, a0
+		# 跳转到 start.c 中的 start() 处进行初始化
+        call start
+spin:
+        j spin</code></pre>
+<p>其中内核栈的基址 stack0 在 <code>start.c</code> 中定义，如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// entry.S needs one stack per CPU.</span>
+<span class="token keyword">__attribute__</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token function">aligned</span> <span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">char</span> stack0<span class="token punctuation">[</span><span class="token number">4096</span> <span class="token operator">*</span> NCPU<span class="token punctuation">]</span><span class="token punctuation">;</span></code></pre>
+<p>如果 <code>make qemu</code> 编译并反汇编内核 ELF 文件，还可以通过 <code>kernel.sym</code> 看到该符号最终被链接的地址位置：</p>
+<pre class="language-none"><code class="language-none">...
+0000000080001988 proc_pagetable
+0000000080007910 stack0
+0000000080002906 sys_sleep
+...</code></pre>
+<h1 id="进程切换"><a href="#进程切换" class="headerlink" title="进程切换"></a>进程切换</h1><p>xv6 进行进程切换的代码如下 <code>swtch</code>：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly"># Context switch
+#
+#   void swtch(struct context *old, struct context *new);
+# 
+# Save current registers in old. Load from new.	
+
+
+.globl swtch
+swtch:
+        sd ra, 0(a0)
+        sd sp, 8(a0)
+        sd s0, 16(a0)
+        sd s1, 24(a0)
+        sd s2, 32(a0)
+        sd s3, 40(a0)
+        sd s4, 48(a0)
+        sd s5, 56(a0)
+        sd s6, 64(a0)
+        sd s7, 72(a0)
+        sd s8, 80(a0)
+        sd s9, 88(a0)
+        sd s10, 96(a0)
+        sd s11, 104(a0)
+
+        ld ra, 0(a1)
+        ld sp, 8(a1)
+        ld s0, 16(a1)
+        ld s1, 24(a1)
+        ld s2, 32(a1)
+        ld s3, 40(a1)
+        ld s4, 48(a1)
+        ld s5, 56(a1)
+        ld s6, 64(a1)
+        ld s7, 72(a1)
+        ld s8, 80(a1)
+        ld s9, 88(a1)
+        ld s10, 96(a1)
+        ld s11, 104(a1)
+        
+        ret</code></pre>
+<p>可以看到逻辑比较简单，只是将当前的 CPU 寄存器状态保存入内核中的 <code>context</code> 结构体内，再从新的 <code>context</code> 结构体中恢复 CPU 寄存器状态。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// Saved registers for kernel context switches.</span>
+<span class="token keyword">struct</span> <span class="token class-name">context</span> <span class="token punctuation">&#123;</span>
+  uint64 ra<span class="token punctuation">;</span>
+  uint64 sp<span class="token punctuation">;</span>
+
+  <span class="token comment">// callee-saved</span>
+  uint64 s0<span class="token punctuation">;</span>
+  uint64 s1<span class="token punctuation">;</span>
+  uint64 s2<span class="token punctuation">;</span>
+  uint64 s3<span class="token punctuation">;</span>
+  uint64 s4<span class="token punctuation">;</span>
+  uint64 s5<span class="token punctuation">;</span>
+  uint64 s6<span class="token punctuation">;</span>
+  uint64 s7<span class="token punctuation">;</span>
+  uint64 s8<span class="token punctuation">;</span>
+  uint64 s9<span class="token punctuation">;</span>
+  uint64 s10<span class="token punctuation">;</span>
+  uint64 s11<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+<p>需要保存和恢复的寄存器状态，首先肯定需要 <code>ra</code>（目标的代码处） 和 <code>sp</code>（栈指针），除此之外，上下文切换函数 <code>swtch</code> 作为一个函数调用，也需要遵循 RISC-V 的调用约定（calling convention），即被调用函数 <code>swtch</code> 需要对被调用者保存（callee-saved）寄存器进行保存。有关 calling convention 的内容，可以参考下面这篇文章：</p>
+<p><a href="https://www.cnblogs.com/sureZ-learning/p/18450722">一起学RISC-V汇编第9讲之RISC-V ABI之寄存器使用约定 - sureZ_ok - 博客园</a></p>
+<h1 id="内核态陷入"><a href="#内核态陷入" class="headerlink" title="内核态陷入"></a>内核态陷入</h1><p>当 xv6 在内核态下触发中断或异常时，将会自动跳转到下列 <code>kernelvec</code> 代码处，进行寄存器保存、跳转到内核陷入处理函数、恢复寄存器状态。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.globl kerneltrap
+.globl kernelvec
+.align 4
+kernelvec:
+        # 开辟栈空间以保存寄存器状态
+        addi sp, sp, -256
+
+        # 保存 caller-saved 寄存器
+        sd ra, 0(sp)
+        sd sp, 8(sp)
+        sd gp, 16(sp)
+        sd tp, 24(sp)
+        sd t0, 32(sp)
+        sd t1, 40(sp)
+        sd t2, 48(sp)
+        sd a0, 72(sp)
+        sd a1, 80(sp)
+        sd a2, 88(sp)
+        sd a3, 96(sp)
+        sd a4, 104(sp)
+        sd a5, 112(sp)
+        sd a6, 120(sp)
+        sd a7, 128(sp)
+        sd t3, 216(sp)
+        sd t4, 224(sp)
+        sd t5, 232(sp)
+        sd t6, 240(sp)
+
+        # 调用 trap.c 中的处理函数 kerneltrap()
+        call kerneltrap
+
+        # 恢复寄存器状态
+        ld ra, 0(sp)
+        ld sp, 8(sp)
+        ld gp, 16(sp)
+        # 不恢复 tp 寄存器，因为可能在 kerneltrap 中被调度到其他的 CPU 核心上运行
+        ld t0, 32(sp)
+        ld t1, 40(sp)
+        ld t2, 48(sp)
+        ld a0, 72(sp)
+        ld a1, 80(sp)
+        ld a2, 88(sp)
+        ld a3, 96(sp)
+        ld a4, 104(sp)
+        ld a5, 112(sp)
+        ld a6, 120(sp)
+        ld a7, 128(sp)
+        ld t3, 216(sp)
+        ld t4, 224(sp)
+        ld t5, 232(sp)
+        ld t6, 240(sp)
+
+        addi sp, sp, 256
+
+        # 返回到内核先前的中断&#x2F;异常的位置
+        sret</code></pre>
+<h1 id="用户态陷入"><a href="#用户态陷入" class="headerlink" title="用户态陷入"></a>用户态陷入</h1><p>当在用户态触发陷入时，会内核态陷入类似，自动跳转到下列 <code>uservec</code> 处。但存在一点区别：由于 xv6 采用了内核页表机制，即用户态和内核态的切换需要进行地址空间的切换，因此用户页表和内核页表都需要将下列代码段映射到地址空间中，xv6 将其放在虚拟地址空间的最高一页，名为 <code>trampoline</code>。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">#include &quot;riscv.h&quot;
+#include &quot;memlayout.h&quot;
+
+.section trampsec
+.globl trampoline
+.globl usertrap
+trampoline:
+.align 4
+.globl uservec
+uservec:    
+        # 从用户态触发陷入跳转到此处，
+        # 此时特权级为 S 模式（内核态），页表仍为用户页表
+
+        # 将 a0 进行暂存
+        csrw sscratch, a0
+
+        li a0, TRAPFRAME
+        
+        # 将用户寄存器保存到 trapframe 中
+        sd ra, 40(a0)
+        sd sp, 48(a0)
+        sd gp, 56(a0)
+        sd tp, 64(a0)
+        sd t0, 72(a0)
+        sd t1, 80(a0)
+        sd t2, 88(a0)
+        sd s0, 96(a0)
+        sd s1, 104(a0)
+        # 没有保存 a0，因为用来暂存了 TRAPFRAME
+        sd a1, 120(a0)
+        sd a2, 128(a0)
+        sd a3, 136(a0)
+        sd a4, 144(a0)
+        sd a5, 152(a0)
+        sd a6, 160(a0)
+        sd a7, 168(a0)
+        sd s2, 176(a0)
+        sd s3, 184(a0)
+        sd s4, 192(a0)
+        sd s5, 200(a0)
+        sd s6, 208(a0)
+        sd s7, 216(a0)
+        sd s8, 224(a0)
+        sd s9, 232(a0)
+        sd s10, 240(a0)
+        sd s11, 248(a0)
+        sd t3, 256(a0)
+        sd t4, 264(a0)
+        sd t5, 272(a0)
+        sd t6, 280(a0)
+
+	    # 将 a0 进行保存
+        csrr t0, sscratch
+        sd t0, 112(a0)
+
+        # 从 trapframe 中恢复内核栈指针
+        ld sp, 8(a0)
+
+        # 从 trapframe 中恢复 tp
+        ld tp, 32(a0)
+
+        # 从 trapframe 中加载内核 usertrap() 地址
+        ld t0, 16(a0)
+
+        # 从 trapframe 中加载内核页表基址
+        ld t1, 0(a0)
+
+        # 充当内存屏障作用？（不确定）
+        sfence.vma zero, zero
+
+        # 切换到内核页表
+        csrw satp, t1
+
+        # 刷新 TLB
+        sfence.vma zero, zero
+
+        # 无条件跳转到 usertrap() 中
+        # 不像 call，jmp 不会自动返回
+        jr t0</code></pre>
+<p>跳转到内核 <code>trap.c</code> 的处理函数 <code>usertrap</code>、<code>usertrapret</code> 并处理完成后，将会调用下列函数 <code>userret</code>：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.globl userret
+userret:
+        # userret(pagetable)
+        # a0: user page table, for satp.
+
+        # 切换回用户页表
+        sfence.vma zero, zero
+        csrw satp, a0
+        sfence.vma zero, zero
+
+        li a0, TRAPFRAME
+
+        # 从 trapframe 中恢复除 a0 外的所有寄存器
+        ld ra, 40(a0)
+        ld sp, 48(a0)
+        ld gp, 56(a0)
+        ld tp, 64(a0)
+        ld t0, 72(a0)
+        ld t1, 80(a0)
+        ld t2, 88(a0)
+        ld s0, 96(a0)
+        ld s1, 104(a0)
+        ld a1, 120(a0)
+        ld a2, 128(a0)
+        ld a3, 136(a0)
+        ld a4, 144(a0)
+        ld a5, 152(a0)
+        ld a6, 160(a0)
+        ld a7, 168(a0)
+        ld s2, 176(a0)
+        ld s3, 184(a0)
+        ld s4, 192(a0)
+        ld s5, 200(a0)
+        ld s6, 208(a0)
+        ld s7, 216(a0)
+        ld s8, 224(a0)
+        ld s9, 232(a0)
+        ld s10, 240(a0)
+        ld s11, 248(a0)
+        ld t3, 256(a0)
+        ld t4, 264(a0)
+        ld t5, 272(a0)
+        ld t6, 280(a0)
+
+	    # 恢复 a0 寄存器
+        ld a0, 112(a0)
+        
+        # 返回到用户态先前中断的位置，并切回用户态
+        sret</code></pre>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>xv6</tag>
+      </tags>
+  </entry>
 </search>
