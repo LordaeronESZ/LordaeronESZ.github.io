@@ -16030,4 +16030,41 @@ userret:
         <tag>xv6</tag>
       </tags>
   </entry>
+  <entry>
+    <title>论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</title>
+    <url>/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>本文将介绍 2024 年发表在 arXiv 上的论文《Cabin: Confining Untrusted Programs within Confidential VMs》。</p>
+<span id="more"></span>
+<h1 id="解决的问题"><a href="#解决的问题" class="headerlink" title="解决的问题"></a>解决的问题</h1><p>特权级划分保证系统稳定运行的最基本机制，然而传统的特权级划分存在一些不足之处：首先，由于内核庞大的代码所带来的庞大的攻击面，用户态和内核态的接口——系统调用可能会被恶意用户程序利用以绕过内核的保护机制；其次，MMU 缺乏细粒度的页面保护，x86 架构下页表项的读写权限仅由一个 R/W 位来指示，只能被配置为只读或可读可写，限制了 XOM（eXecute-Only Memory）的高效实现。</p>
+<p>具体来说，本文工作的威胁模型基本继承自 CVM 的威胁模型，在此基础上加入了对于部分应用程序的不信任，认为其可能包含内存安全错误。贡献如下：</p>
+<ul>
+<li>设计并实现了一个 CVM 内的安全进程执行框架，借助 VPML 机制，保护 guest OS 免受不可信程序的威胁。</li>
+<li>引入系统调用异步转发、自管理内存等机制降低框架带来的性能开销，根据在 Nbench、WolfSSL 等基准测试下的性能表现，表明本框架的性能开销较低。</li>
+</ul>
+<h1 id="设计与实现"><a href="#设计与实现" class="headerlink" title="设计与实现"></a>设计与实现</h1><h2 id="系统设计"><a href="#系统设计" class="headerlink" title="系统设计"></a>系统设计</h2><p>Cabin 的架构如下图所示：</p>
+<p><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" alt></p>
+<p>为了将 guest OS 与不可信应用程序隔离开来，Cabin 将其运行在更低特权的 VMPL 下。同时又为了方便管理这些受限进程（confined process），引入了代理内核（proxy kernel）的概念，扮演受限进程和 guest OS 之间中介的角色，对系统调用、中断等进行管理。</p>
+<p>Cabin 框架主要包含四个组件：受限线程的生命周期管理、上下文切换、系统调用路由、异常模型。</p>
+<h3 id="生命周期管理"><a href="#生命周期管理" class="headerlink" title="生命周期管理"></a>生命周期管理</h3><p>Cabin 对运行在低 VMPL 的线程管理分为三个阶段：创建、进入和退出。首先为低 VMPL 准备运行时环境，并分别为每个线程分配 VMPL 并将状态同步到相应的 VMSA 中。然后，通过请求 hypervisor 在特定 VMPL 下执行，当前 CPU 直接切换到相应 VMPL 的执行流中。首先是代理内核，代理内核完成一些系统调用处理、中断处理等的初始化之后，便将执行流切换到应用程序，等待来自用户态的系统调用或中断，代理内核根据其类别，选择自己处理或者转发到 guest OS 来处理。guest OS 一直处于等待请求的循环中，直到收到 <code>exit</code> 或 <code>exit_group</code> 系统调用，此时结束对该低 VMPL 的调度，并回收其资源。</p>
+<h3 id="上下文切换"><a href="#上下文切换" class="headerlink" title="上下文切换"></a>上下文切换</h3><p>受限进程的上下文切换工作仍然由 guest OS 来完成，只是多了一个状态同步的过程：在进行上下文切换时，将低 VMPL 的 VMSA 结构数据与 guest OS 所管理的 TCB（Linux 下为 <code>task_struct</code>）状态进行同步。</p>
+<h3 id="系统调用路由"><a href="#系统调用路由" class="headerlink" title="系统调用路由"></a>系统调用路由</h3><p>对于受限进程，发起系统调用时，首先陷入到代理内核的处理函数中，对于一些系统调用，可以直接在代理内核中处理并返回。对于代理内核无法处理的系统调用，将会通过切换 VMPL 的方式进行转发。具体的转发处理方式是：在切换 VMPL 时，低 VMPL 的系统调用参数会自动被保存到其 VMSA 结构中，guest OS 可以直接对其进行访问，并在处理完成后将结果直接存放在 VMSA 中。</p>
+<blockquote>
+<p> 这一过程所依赖的核心机制是：在 CVM 内，高 VMPL 可以直接访问低 VMPL 的 VMSA 状态，反之则不行。</p>
+</blockquote>
+<h3 id="异常模型"><a href="#异常模型" class="headerlink" title="异常模型"></a>异常模型</h3><p>异常处理与系统调用类似，代理内核能自行处理便直接处理，否则转发到 guest OS 中来处理。</p>
+<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><h3 id="异步转发"><a href="#异步转发" class="headerlink" title="异步转发"></a>异步转发</h3><p>基于共享内存和自旋锁的线程间通信。初始化阶段，Cabin 初始化一个服务线程一直等待请求，代理内核可以利用共享内存将系统调用和中断请求转发给服务线程，由服务线程再进行转发，代理内核继续执行其他操作？</p>
+<blockquote>
+<p>原文：<em>During the initialization stage, Cabin initiates a service thread that waits for requests using a spinlock. Upon entering the lower VMPL, the proxy-kernel of the lower VMPL can utilize this interface to forward syscalls and interrupts to the service thread. Once the request is completed, the proxykernel returns the result to the confined process, which then resumes execution until the next syscall or interrupt occurs.</em></p>
+</blockquote>
+<h3 id="自管理内存"><a href="#自管理内存" class="headerlink" title="自管理内存"></a>自管理内存</h3><p>guest OS 直接将一部分物理页面授权给代理内核，直接由其处理一些与虚拟内存相关的系统调用和异常等。当需要时，代理内核从 guest OS 请求额外的内存页面。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>机密计算</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
 </search>
