@@ -1,0 +1,415 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSAPP Data Lab | Lordaeron_ESZ's blog</title><meta name="keywords" content="位运算,经验,计算机基础"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="CSAPP 的第一个 Lab，对应知识点为书中的第 2 章（信息的表示与处理），要求使用受限制的运算符和表达式实现一些位操作。主要分为两个部分：整数部分和浮点数部分。其中整数部分限制较多，比较偏重技巧性，部分题个人认为很有难度。而浮点数部分则比较基础，主要考察对 IEEE 754 标准的熟悉程度，代码较长，但思路相对简单。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSAPP Data Lab">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="CSAPP 的第一个 Lab，对应知识点为书中的第 2 章（信息的表示与处理），要求使用受限制的运算符和表达式实现一些位操作。主要分为两个部分：整数部分和浮点数部分。其中整数部分限制较多，比较偏重技巧性，部分题个人认为很有难度。而浮点数部分则比较基础，主要考察对 IEEE 754 标准的熟悉程度，代码较长，但思路相对简单。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/csapp.jpg">
+<meta property="article:published_time" content="2024-08-31T03:45:11.000Z">
+<meta property="article:modified_time" content="2024-09-01T07:30:08.529Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="位运算">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="计算机基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/csapp.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'CSAPP Data Lab',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-09-01 15:30:08'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">CSAPP Data Lab</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-08-31T03:45:11.000Z" title="发表于 2024-08-31 11:45:11">2024-08-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-09-01T07:30:08.529Z" title="更新于 2024-09-01 15:30:08">2024-09-01</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="CSAPP Data Lab"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><p>CSAPP 的第一个 Lab，对应知识点为书中的第 2 章（信息的表示与处理），要求使用受限制的运算符和表达式实现一些位操作。主要分为两个部分：整数部分和浮点数部分。其中整数部分限制较多，比较偏重技巧性，部分题个人认为很有难度。而浮点数部分则比较基础，主要考察对 IEEE 754 标准的熟悉程度，代码较长，但思路相对简单。<br><span id="more"></span></p>
+<h1 id="bitXor"><a href="#bitXor" class="headerlink" title="bitXor"></a>bitXor</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>使用德-摩根定律进行推导，推导过程如下：</p>
+<p><img src="/2024/08/31/CSAPP-Data-Lab/formu.png" alt></p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">bitXor</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">,</span> <span class="token keyword">int</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 德-摩根定律</span>
+    <span class="token keyword">return</span> <span class="token operator">~</span><span class="token punctuation">(</span><span class="token operator">~</span><span class="token punctuation">(</span>x <span class="token operator">&amp;</span> <span class="token operator">~</span>y<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token operator">~</span><span class="token punctuation">(</span><span class="token operator">~</span>x <span class="token operator">&amp;</span> y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="tmin"><a href="#tmin" class="headerlink" title="tmin"></a>tmin</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>最小整数即最高位（负数权重）为 1，其余（正数权重）为 0。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">tmin</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token number">31</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="isTmax"><a href="#isTmax" class="headerlink" title="isTmax"></a>isTmax</h1><h2 id="思路-2"><a href="#思路-2" class="headerlink" title="思路"></a>思路</h2><p>由于不能使用左移运算符，因此没办法直接构造出 tmax，需要仔细考虑 tmax 的性质：<code>tmax = 0x7fffffff</code> ，而 <code>tmax + 1 = 0x80000000</code> ，这两个数的二进制位完全互补，因此满足：<code>tmax + tmax + 1 = 0xffffffff</code>，结果全为 1，对该结果取反即可得到 0，取非得到 1。</p>
+<p>但这里还要考虑一个特殊情况：当 <code>x = 0xffffffff</code> 时，<code>x + 1 + x</code> 也满足等于 <code>0xffffffff</code>，因此需要借助异或运算进行特判。</p>
+<h2 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">isTmax</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> case1 <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// case = x == 0xffffffff ? 1 : 0;</span>
+    <span class="token keyword">return</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token operator">~</span><span class="token punctuation">(</span>x <span class="token operator">+</span> <span class="token number">1</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token operator">!</span>case1<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="allOddBits"><a href="#allOddBits" class="headerlink" title="allOddBits"></a>allOddBits</h1><h2 id="思路-3"><a href="#思路-3" class="headerlink" title="思路"></a>思路</h2><p>首先构造一个掩码 mask，奇数位全为 1，偶数位全为 0。将 mask 与 x 进行按位与，如果 x 的奇数位全为 1，那么按位与的结果仍然为 mask。然后便可以借助异或和非的组合，将结果转换为 0 或 1。</p>
+<h2 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">allOddBits</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> mask <span class="token operator">=</span> <span class="token number">0xaa</span><span class="token punctuation">;</span>            <span class="token comment">// mask = 0x000000aa</span>
+    mask <span class="token operator">=</span> <span class="token punctuation">(</span>mask <span class="token operator">&lt;&lt;</span> <span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">0xaa</span><span class="token punctuation">;</span>  <span class="token comment">// mask = 0x0000aaaa</span>
+    mask <span class="token operator">=</span> <span class="token punctuation">(</span>mask <span class="token operator">&lt;&lt;</span> <span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">0xaa</span><span class="token punctuation">;</span>  <span class="token comment">// mask = 0x00aaaaaa</span>
+    mask <span class="token operator">=</span> <span class="token punctuation">(</span>mask <span class="token operator">&lt;&lt;</span> <span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">0xaa</span><span class="token punctuation">;</span>  <span class="token comment">// mask = 0xaaaaaaaa</span>
+    <span class="token keyword">return</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">&amp;</span> mask<span class="token punctuation">)</span> <span class="token operator">^</span> mask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="negate"><a href="#negate" class="headerlink" title="negate"></a>negate</h1><h2 id="思路-4"><a href="#思路-4" class="headerlink" title="思路"></a>思路</h2><p>补码表示法的重要特性，取反加一即可。</p>
+<h2 id="代码-4"><a href="#代码-4" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">negate</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token operator">~</span>x <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="isAsciiDigit"><a href="#isAsciiDigit" class="headerlink" title="isAsciiDigit"></a>isAsciiDigit</h1><h2 id="思路-5"><a href="#思路-5" class="headerlink" title="思路"></a>思路</h2><p>这里我用了比较笨的逐位判断的方法。首先判断第 4 到第 31 位是否为 0x3，然后只需要关注低 4 位的二进制表示了：若第 3 位为 0，则一定位于指定范围之内，再加上两个特例（1000 和 1001）即可。</p>
+<p>最后将运算符的个数刚好卡在 15 个，勉强过关。</p>
+<h2 id="代码-5"><a href="#代码-5" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">isAsciiDigit</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 0011 0000 &lt;= x &lt;= 0011 1001</span>
+    <span class="token keyword">int</span> high <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">>></span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">0x3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>         <span class="token comment">// 4 ~ 31 位是否为 0x3</span>
+    <span class="token keyword">int</span> case1 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">&amp;</span> <span class="token number">0xf</span><span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">0x1</span><span class="token punctuation">;</span>   <span class="token comment">// bit3 = 0</span>
+    <span class="token keyword">int</span> case2 <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">&amp;</span> <span class="token number">0xf</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">0x8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>       <span class="token comment">// bit0~3 = 1000</span>
+    <span class="token keyword">int</span> case3 <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">&amp;</span> <span class="token number">0xf</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">0x9</span><span class="token punctuation">)</span><span class="token punctuation">;</span>       <span class="token comment">// bit0~3 = 1001</span>
+    <span class="token keyword">return</span> high <span class="token operator">&amp;</span> <span class="token punctuation">(</span>case1 <span class="token operator">|</span> case2 <span class="token operator">|</span> case3<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="conditional"><a href="#conditional" class="headerlink" title="conditional"></a>conditional</h1><h2 id="思路-6"><a href="#思路-6" class="headerlink" title="思路"></a>思路</h2><p>很容易想到根据 x 的值是否非 0 构造出全 0 或者全 1 的数据 flag，然后将 flag 和 flag 取反后的值分别与 y 和 z 进行按位与，这样必然得到两个数：一个为 y 或 z 本身，另一个为 0，再将结果按位或即可。</p>
+<p>构造的方法比较巧妙，需要注意到全 0 和全 1 分别代表整数 0 和 -1，它们分别是 0 和 1 的相反数，而 0 和 1 我们可以根据表达式是否非 0，使用非运算符构造出来，再将构造的结果取反加一即可。</p>
+<h2 id="代码-6"><a href="#代码-6" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">conditional</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">,</span> <span class="token keyword">int</span> y<span class="token punctuation">,</span> <span class="token keyword">int</span> z<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> flag <span class="token operator">=</span> <span class="token operator">~</span><span class="token punctuation">(</span><span class="token operator">!</span>x<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>     <span class="token comment">// flag = x ? 0 : -1;</span>
+    <span class="token keyword">int</span> yp <span class="token operator">=</span> <span class="token operator">~</span>flag <span class="token operator">&amp;</span> y<span class="token punctuation">;</span>       <span class="token comment">// flag = 0, yp = y; flag = -1, yp = 0;</span>
+    <span class="token keyword">int</span> zp <span class="token operator">=</span> flag <span class="token operator">&amp;</span> z<span class="token punctuation">;</span>        <span class="token comment">// flag = 0, zp = 0; flag = -1, zp = z;</span>
+    <span class="token keyword">return</span> yp <span class="token operator">|</span> zp<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="isLessOrEqual"><a href="#isLessOrEqual" class="headerlink" title="isLessOrEqual"></a>isLessOrEqual</h1><h2 id="思路-7"><a href="#思路-7" class="headerlink" title="思路"></a>思路</h2><p>判断两个数的大小关系，很容易想到使用作差的方法，判断 <code>x + ~y + 1</code> 的结果是否小于等于 0，即全为 0 或者最高位为 1。</p>
+<p>不过这里还需要考虑溢出：由于同号相减必定不会导致溢出，因此我们只需要考虑异号的情况。而如果两个数异号，那它们之间的大小关系就显而易见了。</p>
+<h2 id="代码-7"><a href="#代码-7" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">isLessOrEqual</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">,</span> <span class="token keyword">int</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> sign1 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// sign1 = (x &lt; 0 &amp;&amp; y > 0) ? 1 : 0;</span>
+    <span class="token keyword">int</span> sign2 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>y <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// sign2 = (x > 0 &amp;&amp; y &lt; 0) ? 1 : 0;</span>
+    <span class="token keyword">int</span> z <span class="token operator">=</span> x <span class="token operator">+</span> <span class="token operator">~</span>y <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>                             <span class="token comment">// z = x - y</span>
+    <span class="token keyword">int</span> sub <span class="token operator">=</span> <span class="token operator">!</span><span class="token punctuation">(</span>x <span class="token operator">^</span> y<span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>z <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// z &lt;= 0    </span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>sub <span class="token operator">|</span> sign1<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token operator">!</span>sign2<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="logicalNeg"><a href="#logicalNeg" class="headerlink" title="logicalNeg"></a>logicalNeg</h1><h2 id="思路-8"><a href="#思路-8" class="headerlink" title="思路"></a>思路</h2><p>这题从二进制位的角度不好思考，不妨从其表示的十进制数的角度出发：</p>
+<p>当 x = 0 时，<code>-x = x</code> ，即 x 和 -x 的最高位相同，都为 0；当 x != 0 时，x 和 -x 的最高位必定有一个为 1。</p>
+<p>可以利用这一特性将 <code>x | nx</code> 右移 31 位，由于整数进行的是符号右移，因此当最高位为 0 时，右移的结果全为 0，当最高位为 1 时，右移的结果全为 1。再将右移结果加 1，即可构造出 1 或者 0，且刚好与零和非零对应。</p>
+<h2 id="代码-8"><a href="#代码-8" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">logicalNeg</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> nx <span class="token operator">=</span> <span class="token operator">~</span>x <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>x <span class="token operator">|</span> nx<span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="howManyBits"><a href="#howManyBits" class="headerlink" title="howManyBits"></a>howManyBits</h1><h2 id="思路-9"><a href="#思路-9" class="headerlink" title="思路"></a>思路</h2><p>这题看到限制 90 个运算符就给吓着了，实际上也确实很困难，自己想了半天也没有思路，于是在网上参考了别人的解法，感觉相当精妙，在这里介绍一番：</p>
+<p>对于正整数 x 而言，可以使用二分搜索的方式来确定所需的位数。首先判断 x 是否需要 16 位来表示，即 x 右移 16 位是否为 0，如果是，则右移 16 位，否则不做处理，然后再判断是否需要 8 位来处理，以此类推。最后将上述过程中的右移次数累加起来再加一（正整数首位需要为 0），即为总共需要的位数。</p>
+<p>对于负整数 x 而言，它所需的位数与 x 取反得到的整数所需位数相同，证明没整明白。。。</p>
+<h2 id="代码-9"><a href="#代码-9" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">howManyBits</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> absx <span class="token operator">=</span> <span class="token punctuation">(</span>x <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">^</span> x<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> b16<span class="token punctuation">,</span> b8<span class="token punctuation">,</span> b4<span class="token punctuation">,</span> b2<span class="token punctuation">,</span> b1<span class="token punctuation">,</span> b0<span class="token punctuation">;</span>
+
+    <span class="token comment">// 二分搜索</span>
+    b16 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>absx <span class="token operator">>></span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    absx <span class="token operator">=</span> absx <span class="token operator">>></span> b16<span class="token punctuation">;</span>
+    b8 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>absx <span class="token operator">>></span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span>
+    absx <span class="token operator">=</span> absx <span class="token operator">>></span> b8<span class="token punctuation">;</span>
+    b4 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>absx <span class="token operator">>></span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    absx <span class="token operator">=</span> absx <span class="token operator">>></span> b4<span class="token punctuation">;</span>
+    b2 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>absx <span class="token operator">>></span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    absx <span class="token operator">=</span> absx <span class="token operator">>></span> b2<span class="token punctuation">;</span>
+    b1 <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>absx <span class="token operator">>></span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    absx <span class="token operator">=</span> absx <span class="token operator">>></span> b1<span class="token punctuation">;</span>
+    b0 <span class="token operator">=</span> absx<span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> b16 <span class="token operator">+</span> b8 <span class="token operator">+</span> b4 <span class="token operator">+</span> b2 <span class="token operator">+</span> b1 <span class="token operator">+</span> b0 <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="floatScale2"><a href="#floatScale2" class="headerlink" title="floatScale2"></a>floatScale2</h1><h2 id="思路-10"><a href="#思路-10" class="headerlink" title="思路"></a>思路</h2><p>这题主要是要对规格化数和非规格化数进行分类讨论：</p>
+<p>当 uf 为规格化数，即阶码不为 0 时，乘二相当于将阶码位加 1。</p>
+<p>当 uf 为非规格化数，即阶码为 0 时，此时 uf 的值完全由尾数来表示，且不含隐含 0，因此乘二相当于将尾数乘二，即左移 1 位。</p>
+<p>需要注意的是，当 uf 为非规格化数且尾数最高位为 1 时，尾数左移会导致最高位的 1 移动到阶码的最低位。但经过验证，此时的结果仍然符合预期，即非规格化数无缝衔接到了规格化数，不禁感叹 IEEE 754 标准浮点数的设计之精妙。</p>
+<h2 id="代码-10"><a href="#代码-10" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token function">floatScale2</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> uf<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">unsigned</span> t <span class="token operator">=</span> <span class="token punctuation">(</span>uf <span class="token operator">>></span> <span class="token number">23</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">;</span>  <span class="token comment">// 阶码</span>
+    <span class="token keyword">unsigned</span> m <span class="token operator">=</span> uf <span class="token operator">&amp;</span> <span class="token number">0x7fffff</span><span class="token punctuation">;</span>      <span class="token comment">// 尾数</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>t <span class="token operator">==</span> <span class="token number">0xff</span><span class="token punctuation">)</span> <span class="token keyword">return</span> uf<span class="token punctuation">;</span>        <span class="token comment">// 无穷大或者 NaN</span>
+    <span class="token comment">// 非规格化数</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>t <span class="token operator">==</span> <span class="token number">0x00</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        m <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        uf <span class="token operator">&amp;=</span> <span class="token number">0xff800000</span><span class="token punctuation">;</span>
+        uf <span class="token operator">|=</span> m<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 规格化数</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        t <span class="token operator">+=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        uf <span class="token operator">&amp;=</span> <span class="token number">0x807fffff</span><span class="token punctuation">;</span>
+        uf <span class="token operator">|=</span> <span class="token punctuation">(</span>t <span class="token operator">&lt;&lt;</span> <span class="token number">23</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> uf<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="floatFloat2Int"><a href="#floatFloat2Int" class="headerlink" title="floatFloat2Int"></a>floatFloat2Int</h1><h2 id="思路-11"><a href="#思路-11" class="headerlink" title="思路"></a>思路</h2><p>首先确定整数所能表示的上下界的值：当阶码小于 127，即指数位小于 0 时，此时浮点数 uf 小于 1，对应的整数为 0；当阶码大于 150，即指数位大于 23 时，此时单精度浮点数的精度（尾数长度）不足以正确表示对应的整数，返回 0x80000000。</p>
+<p>对于在合理范围内的 uf，将其转换为对应的整数，首先需要尾数最高位的高一位加上规格化数隐含的 1，再根据阶码的大小将尾数进行右移，阶码越大，右移位数越少。最后根据符号位的值选择是否将结果取反加一。</p>
+<h2 id="代码-11"><a href="#代码-11" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">floatFloat2Int</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> uf<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">unsigned</span> s <span class="token operator">=</span> <span class="token punctuation">(</span>uf <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0x1</span><span class="token punctuation">;</span>   <span class="token comment">// 符号</span>
+    <span class="token keyword">unsigned</span> t <span class="token operator">=</span> <span class="token punctuation">(</span>uf <span class="token operator">>></span> <span class="token number">23</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">;</span>  <span class="token comment">// 阶码</span>
+    <span class="token keyword">unsigned</span> m <span class="token operator">=</span> uf <span class="token operator">&amp;</span> <span class="token number">0x7fffff</span><span class="token punctuation">;</span>      <span class="token comment">// 尾数</span>
+    <span class="token keyword">int</span> val<span class="token punctuation">;</span>
+    <span class="token comment">// 小于 1</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>t <span class="token operator">&lt;</span> <span class="token number">127</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 大于 1 且不溢出</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>t <span class="token operator">&lt;=</span> <span class="token number">150</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> m <span class="token operator">|</span> <span class="token number">0x800000</span><span class="token punctuation">;</span>
+        val <span class="token operator">>>=</span> <span class="token punctuation">(</span><span class="token number">23</span> <span class="token operator">-</span> <span class="token punctuation">(</span>t <span class="token operator">-</span> <span class="token number">127</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>s <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            val <span class="token operator">=</span> <span class="token operator">~</span>val <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 溢出</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> <span class="token number">0x80000000</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> val<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="floatPower2"><a href="#floatPower2" class="headerlink" title="floatPower2"></a>floatPower2</h1><h2 id="思路-12"><a href="#思路-12" class="headerlink" title="思路"></a>思路</h2><p>同样是对规格化数和非规格化数的分类讨论：</p>
+<p>当 <code>x &gt;= -150 &amp;&amp; x &lt; -127</code> 时，结果为非规格化数，此时浮点数表示只有一个位为 1，其余全为 0。直接根据指数 x 的值确定该位的位置即可。</p>
+<p>当 <code>x &gt;= -127 &amp;&amp; x &lt; 128</code> 时，结果为规格化数，此时浮点数表示的尾数全为 0，只有阶码用来表示指数的值。根据指数 x 的值确定阶码的值，然后构造出浮点数即可。</p>
+<h2 id="代码-12"><a href="#代码-12" class="headerlink" title="代码"></a>代码</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token function">floatPower2</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">unsigned</span> val<span class="token punctuation">;</span>
+    <span class="token comment">// 太小</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>x <span class="token operator">&lt;</span> <span class="token operator">-</span><span class="token number">150</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 非规格化数</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>x <span class="token operator">&lt;</span> <span class="token operator">-</span><span class="token number">127</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token punctuation">(</span><span class="token number">150</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 规格化数</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>x <span class="token operator">&lt;</span> <span class="token number">128</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">unsigned</span> t <span class="token operator">=</span> x <span class="token operator">+</span> <span class="token number">127</span><span class="token punctuation">;</span>
+        val <span class="token operator">|=</span> <span class="token punctuation">(</span>t <span class="token operator">&lt;&lt;</span> <span class="token number">23</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token comment">// 太大</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        val <span class="token operator">=</span> <span class="token number">0x7f800000</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> val<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/">http://lordaeronesz.github.io/2024/08/31/CSAPP-Data-Lab/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/">位运算</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></div><div class="post_share"><div class="social-share" data-image="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/09/17/CSAPP-Bomb-Lab/"><img class="prev-cover" src="/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">CSAPP Bomb Lab</div></div></a></div><div class="next-post pull-right"><a href="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/"><img class="next-cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">MIT6.s081 2021 Lab File system</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/09/25/CSAPP-Attack-Lab/" title="CSAPP Attack Lab"><img class="cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-25</div><div class="title">CSAPP Attack Lab</div></div></a></div><div><a href="/2024/09/17/CSAPP-Bomb-Lab/" title="CSAPP Bomb Lab"><img class="cover" src="/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-17</div><div class="title">CSAPP Bomb Lab</div></div></a></div><div><a href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img class="cover" src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-17</div><div class="title">CSAPP Cache Lab</div></div></a></div><div><a href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img class="cover" src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-10</div><div class="title">CSAPP Malloc Lab</div></div></a></div><div><a href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img class="cover" src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-29</div><div class="title">CSAPP Shell Lab</div></div></a></div><div><a href="/2023/03/11/计算机基础面试题总结/" title="计算机基础面试题总结"><img class="cover" src="/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-03-11</div><div class="title">计算机基础面试题总结</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bitXor"><span class="toc-number">1.</span> <span class="toc-text">bitXor</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#tmin"><span class="toc-number">2.</span> <span class="toc-text">tmin</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">2.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">2.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#isTmax"><span class="toc-number">3.</span> <span class="toc-text">isTmax</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-2"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-2"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#allOddBits"><span class="toc-number">4.</span> <span class="toc-text">allOddBits</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-3"><span class="toc-number">4.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-3"><span class="toc-number">4.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#negate"><span class="toc-number">5.</span> <span class="toc-text">negate</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-4"><span class="toc-number">5.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-4"><span class="toc-number">5.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#isAsciiDigit"><span class="toc-number">6.</span> <span class="toc-text">isAsciiDigit</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-5"><span class="toc-number">6.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-5"><span class="toc-number">6.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#conditional"><span class="toc-number">7.</span> <span class="toc-text">conditional</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-6"><span class="toc-number">7.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-6"><span class="toc-number">7.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#isLessOrEqual"><span class="toc-number">8.</span> <span class="toc-text">isLessOrEqual</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-7"><span class="toc-number">8.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-7"><span class="toc-number">8.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#logicalNeg"><span class="toc-number">9.</span> <span class="toc-text">logicalNeg</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-8"><span class="toc-number">9.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-8"><span class="toc-number">9.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#howManyBits"><span class="toc-number">10.</span> <span class="toc-text">howManyBits</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-9"><span class="toc-number">10.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-9"><span class="toc-number">10.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#floatScale2"><span class="toc-number">11.</span> <span class="toc-text">floatScale2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-10"><span class="toc-number">11.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-10"><span class="toc-number">11.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#floatFloat2Int"><span class="toc-number">12.</span> <span class="toc-text">floatFloat2Int</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-11"><span class="toc-number">12.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-11"><span class="toc-number">12.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#floatPower2"><span class="toc-number">13.</span> <span class="toc-text">floatPower2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-12"><span class="toc-number">13.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-12"><span class="toc-number">13.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"/></a><div class="content"><a class="title" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</a><time datetime="2025-07-26T15:30:11.000Z" title="发表于 2025-07-26 23:30:11">2025-07-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序"><img src="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/rv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RISC-V 架构下的裸金属程序"/></a><div class="content"><a class="title" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序">RISC-V 架构下的裸金属程序</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"/></a><div class="content"><a class="title" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析"><img src="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="xv6-riscv 上下文切换代码分析"/></a><div class="content"><a class="title" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析">xv6-riscv 上下文切换代码分析</a><time datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"/></a><div class="content"><a class="title" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</a><time datetime="2025-07-10T15:30:11.000Z" title="发表于 2025-07-10 23:30:11">2025-07-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

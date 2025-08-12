@@ -1,0 +1,461 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2024开源操作系统训练营 rCore Chapter3练习 | Lordaeron_ESZ's blog</title><meta name="keywords" content="经验,Rust,操作系统"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="编程作业思路rCore 的第一个实验，主要是为了熟悉如何进行内核编程，实现起来比较简单。 要求实现一个系统调用，填充传入的 TaskInfo 结构体已获取当前任务的一些信息，包含三个字段：任务状态、任务使用的系统调用及调用次数、系统调用时刻距离任务第一次被调度时刻的时长（单位 ms）。 首先是任务状态，这个比较简单，直接查看当前任务的任务控制块的字段值即可。 对于系统调用次数，可以在任务控制块中添">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2024开源操作系统训练营 rCore Chapter3练习">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="编程作业思路rCore 的第一个实验，主要是为了熟悉如何进行内核编程，实现起来比较简单。 要求实现一个系统调用，填充传入的 TaskInfo 结构体已获取当前任务的一些信息，包含三个字段：任务状态、任务使用的系统调用及调用次数、系统调用时刻距离任务第一次被调度时刻的时长（单位 ms）。 首先是任务状态，这个比较简单，直接查看当前任务的任务控制块的字段值即可。 对于系统调用次数，可以在任务控制块中添">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/rust.jpg">
+<meta property="article:published_time" content="2024-10-28T15:30:11.000Z">
+<meta property="article:modified_time" content="2024-11-04T11:42:46.125Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/rust.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2024开源操作系统训练营 rCore Chapter3练习',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-11-04 19:42:46'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">2024开源操作系统训练营 rCore Chapter3练习</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-10-28T15:30:11.000Z" title="发表于 2024-10-28 23:30:11">2024-10-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-11-04T11:42:46.125Z" title="更新于 2024-11-04 19:42:46">2024-11-04</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="2024开源操作系统训练营 rCore Chapter3练习"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="编程作业"><a href="#编程作业" class="headerlink" title="编程作业"></a>编程作业</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>rCore 的第一个实验，主要是为了熟悉如何进行内核编程，实现起来比较简单。</p>
+<p>要求实现一个系统调用，填充传入的 <code>TaskInfo</code> 结构体已获取当前任务的一些信息，包含三个字段：任务状态、任务使用的系统调用及调用次数、系统调用时刻距离任务第一次被调度时刻的时长（单位 ms）。</p>
+<p>首先是任务状态，这个比较简单，直接查看当前任务的任务控制块的字段值即可。</p>
+<p>对于系统调用次数，可以在任务控制块中添加新的字段来存储相关信息，例如按提示所说，一个长度为 <code>MAX_SYSCALL_NUM</code> 的整型数组。在函数 <code>syscall/mod.rs:syscall</code> 中，在内核对用户态传入的系统调用号进行分发处理前，增加对应的系统调用桶的计数。注意，由于本次系统调用 <code>sys_task_info</code> 也要进行计数，因此不能在执行了特定的系统调用后再来增加计数，否则本次 <code>sys_task_info</code> 系统调用次数将无法被统计。</p>
+<p>最后是距离任务第一次被调度时刻的时长，一种实现方式是：为任务控制块添加新的字段：<code>time</code>，表示任务第一次被调度的时间。先为 <code>time</code> 设定一个初始值（例如 0），表示该值未被更改过，每当一个任务即将被调度时（如 <code>TASK_MANAGER.run_next_task()</code> 进行任务切换时），查看 <code>time</code> 值，判断是否未被更改：如果是，则赋予当前时间；否则，不做任何操作。这样，就成功保存了任务初次被调度的时刻。在调用 <code>sys_task_info</code> 时，将当前时间减去保存的初次被调度时间，即为时长，注意单位为毫秒。</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>由于代码是直接在原项目代码的基础上进行修改，因此为了查看方便，本次及之后实验的代码将以 <code>git diff</code> 的形式展现，加号（绿色）代表添加的代码，减号（红色）代表删除的代码。</p>
+<pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/os/src/syscall/mod.rs b/os/src/syscall/mod.rs
+index e6e8f98..7f63ed6 100644
+<span class="token coord">--- a/os/src/syscall/mod.rs</span>
+<span class="token coord">+++ b/os/src/syscall/mod.rs</span>
+@@ -26,8 +26,13 @@ mod process;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">use fs::*;
+</span><span class="token prefix unchanged"> </span><span class="token line">use process::*;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">use crate::task::inc_syscall_times;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// handle syscall exception with `syscall_id` and other arguments
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize &#123;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    // increase syscall times before handle specific syscall
+</span><span class="token prefix inserted">+</span><span class="token line">    inc_syscall_times(syscall_id);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    match syscall_id &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">        SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
+</span><span class="token prefix unchanged"> </span><span class="token line">        SYSCALL_EXIT => sys_exit(args[0] as i32),
+</span></span>diff --git a/os/src/syscall/process.rs b/os/src/syscall/process.rs
+index f1cd424..8d01cf4 100644
+<span class="token coord">--- a/os/src/syscall/process.rs</span>
+<span class="token coord">+++ b/os/src/syscall/process.rs</span>
+<span class="token coord">@@ -1,8 +1,9 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">//! Process management syscalls
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::&#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    config::MAX_SYSCALL_NUM,
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    task::&#123;exit_current_and_run_next, suspend_current_and_run_next, TaskStatus&#125;,
+</span><span class="token prefix deleted">-</span><span class="token line">    timer::get_time_us,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    task::&#123;exit_current_and_run_next, get_current_tcb, suspend_current_and_run_next, TaskStatus&#125;,
+</span><span class="token prefix inserted">+</span><span class="token line">    timer::&#123;get_time_ms, get_time_us&#125;,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">#[repr(C)]
+</span></span>@@ -53,5 +54,19 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/// YOUR JOB: Finish sys_task_info to pass testcases
+</span><span class="token prefix unchanged"> </span><span class="token line">pub fn sys_task_info(_ti: *mut TaskInfo) -> isize &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">    trace!("kernel: sys_task_info");
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    -1
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    let cur_tcb = get_current_tcb();
+</span><span class="token prefix inserted">+</span><span class="token line">    // labour in vain! The status must be Running
+</span><span class="token prefix inserted">+</span><span class="token line">    let status = cur_tcb.task_status;
+</span><span class="token prefix inserted">+</span><span class="token line">    let syscall_times = cur_tcb.syscall_times;
+</span><span class="token prefix inserted">+</span><span class="token line">    let time = get_time_ms() - cur_tcb.time;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    unsafe &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        *_ti = TaskInfo &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            status,
+</span><span class="token prefix inserted">+</span><span class="token line">            syscall_times,
+</span><span class="token prefix inserted">+</span><span class="token line">            time,
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    0
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>diff --git a/os/src/task/mod.rs b/os/src/task/mod.rs
+index c1636ef..4a14e2f 100644
+<span class="token coord">--- a/os/src/task/mod.rs</span>
+<span class="token coord">+++ b/os/src/task/mod.rs</span>
+@@ -14,9 +14,11 @@ mod switch;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#[allow(clippy::module_inception)]
+</span><span class="token prefix unchanged"> </span><span class="token line">mod task;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">use crate::config::MAX_APP_NUM;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">use crate::config::&#123;MAX_APP_NUM, MAX_SYSCALL_NUM&#125;;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use crate::loader::&#123;get_num_app, init_app_cx&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">use crate::sync::UPSafeCell;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::timer::get_time_ms;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">use lazy_static::*;
+</span><span class="token prefix unchanged"> </span><span class="token line">use switch::__switch;
+</span><span class="token prefix unchanged"> </span><span class="token line">pub use task::&#123;TaskControlBlock, TaskStatus&#125;;
+</span></span>@@ -54,6 +56,8 @@ lazy_static! &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        let mut tasks = [TaskControlBlock &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">            task_cx: TaskContext::zero_init(),
+</span><span class="token prefix unchanged"> </span><span class="token line">            task_status: TaskStatus::UnInit,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">            syscall_times: [0u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">            time: 0usize,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        &#125;; MAX_APP_NUM];
+</span><span class="token prefix unchanged"> </span><span class="token line">        for (i, task) in tasks.iter_mut().enumerate() &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">            task.task_cx = TaskContext::goto_restore(init_app_cx(i));
+</span></span>@@ -122,6 +126,11 @@ impl TaskManager &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            let mut inner = self.inner.exclusive_access();
+</span><span class="token prefix unchanged"> </span><span class="token line">            let current = inner.current_task;
+</span><span class="token prefix unchanged"> </span><span class="token line">            inner.tasks[next].task_status = TaskStatus::Running;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">            // if the task is being called for the first time,
+</span><span class="token prefix inserted">+</span><span class="token line">            if inner.tasks[next].time == 0usize &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">                // then set it to the current time
+</span><span class="token prefix inserted">+</span><span class="token line">                inner.tasks[next].time = get_time_ms();
+</span><span class="token prefix inserted">+</span><span class="token line">            &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            inner.current_task = next;
+</span><span class="token prefix unchanged"> </span><span class="token line">            let current_task_cx_ptr = &amp;mut inner.tasks[current].task_cx as *mut TaskContext;
+</span><span class="token prefix unchanged"> </span><span class="token line">            let next_task_cx_ptr = &amp;inner.tasks[next].task_cx as *const TaskContext;
+</span></span>@@ -135,6 +144,24 @@ impl TaskManager &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">            panic!("All applications completed!");
+</span><span class="token prefix unchanged"> </span><span class="token line">        &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">    &#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// Get task control block
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn get_current_tcb(&amp;self) -> TaskControlBlock &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        let inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        let current = inner.current_task;
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.tasks[current].clone()
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    /// increase syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">    pub fn inc_syscall_times(&amp;self, syscall_id: usize) -> bool &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        if syscall_id >= MAX_SYSCALL_NUM &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            return false;
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">        let mut inner = self.inner.exclusive_access();
+</span><span class="token prefix inserted">+</span><span class="token line">        let current = inner.current_task;
+</span><span class="token prefix inserted">+</span><span class="token line">        inner.tasks[current].syscall_times[syscall_id] += 1;
+</span><span class="token prefix inserted">+</span><span class="token line">        true
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// Run the first task in task list.
+</span></span>@@ -169,3 +196,13 @@ pub fn exit_current_and_run_next() &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    mark_current_exited();
+</span><span class="token prefix unchanged"> </span><span class="token line">    run_next_task();
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">/// Get current task control block
+</span><span class="token prefix inserted">+</span><span class="token line">pub fn get_current_tcb() -> TaskControlBlock &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    TASK_MANAGER.get_current_tcb()
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">/// increase syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">pub fn inc_syscall_times(syscall_id: usize) -> bool &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    TASK_MANAGER.inc_syscall_times(syscall_id)
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span></span>\ No newline at end of file
+diff --git a/os/src/task/task.rs b/os/src/task/task.rs
+index e6580c9..4e4c19b 100644
+<span class="token coord">--- a/os/src/task/task.rs</span>
+<span class="token coord">+++ b/os/src/task/task.rs</span>
+<span class="token coord">@@ -1,6 +1,7 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">//! Types related to task management
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">use super::TaskContext;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">use crate::config::MAX_SYSCALL_NUM;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// The task control block (TCB) of a task.
+</span><span class="token prefix unchanged"> </span><span class="token line">#[derive(Copy, Clone)]
+</span></span>@@ -9,6 +10,10 @@ pub struct TaskControlBlock &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    pub task_status: TaskStatus,
+</span><span class="token prefix unchanged"> </span><span class="token line">    /// The task context
+</span><span class="token prefix unchanged"> </span><span class="token line">    pub task_cx: TaskContext,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    /// The syscall times
+</span><span class="token prefix inserted">+</span><span class="token line">    pub syscall_times: [u32; MAX_SYSCALL_NUM],
+</span><span class="token prefix inserted">+</span><span class="token line">    /// The first time the task was scheduled
+</span><span class="token prefix inserted">+</span><span class="token line">    pub time: usize,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">/// The status of a task</span></span></code></pre>
+<blockquote>
+<p><code>time</code> 的设置有一点小 bug，就是第一个被调度任务的 <code>time</code> 应该在 <code>run_first_task</code> 中设置，否则它的 <code>time</code> 将会晚一个调度周期，testcase 没测出来。。。写博客时才注意到，懒得改了😓</p>
+</blockquote>
+<h1 id="问答作业"><a href="#问答作业" class="headerlink" title="问答作业"></a>问答作业</h1><h2 id="t1"><a href="#t1" class="headerlink" title="t1"></a>t1</h2><p><strong>Q:</strong> 正确进入 U 态后，程序的特征还应有：使用 S 态特权指令，访问 S 态寄存器后会报错。 请同学们可以自行测试这些内容（运行 <a target="_blank" rel="noopener" href="https://github.com/LearningOS/rCore-Tutorial-Test-2024A/tree/master/src/bin">三个 bad 测例 (ch2b<em>bad</em>*.rs)</a> ）， 描述程序出错行为，同时注意注明你使用的 sbi 及其版本。</p>
+<p><strong>A:</strong> 略。</p>
+<h2 id="t2"><a href="#t2" class="headerlink" title="t2"></a>t2</h2><p>深入理解 <a target="_blank" rel="noopener" href="https://github.com/LearningOS/rCore-Tutorial-Code-2024A/blob/ch3/os/src/trap/trap.S">trap.S</a> 中两个函数 <code>__alltraps</code> 和 <code>__restore</code> 的作用，并回答如下问题：</p>
+<p><strong>Q1:</strong> L40：刚进入 <code>__restore</code> 时，<code>a0</code> 代表了什么值。请指出 <code>__restore</code> 的两种使用情景。</p>
+<p><strong>A1:</strong> <code>a0</code> 代表了内核栈的栈指针，即 <code>__alltraps</code> 保存的上下文的首地址。</p>
+<p>情景一：表示内核第一次从内核态切换到用户态（或者说将 CPU 所有权转交给用户程序），在初始化或加载应用程序时，内核通过 <code>__restore</code> 恢复必要的状态。</p>
+<p>情景二：当 <code>call trap_handler</code> 执行结束后，程序计数器指向它的下一条指令，即 <code>__restore</code> 的起始地址，表示 Trap 处理完成，将恢复 Trap 时的上下文状态，返回用户态。</p>
+<p><strong>Q2:</strong> L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">ld t0, 32*8(sp)
+ld t1, 33*8(sp)
+ld t2, 2*8(sp)
+csrw sstatus, t0
+csrw sepc, t1
+csrw sscratch, t2</code></pre>
+<p><strong>A2:</strong> 特殊处理了 <code>t0</code>、<code>t1</code>、<code>t2</code>、<code>sstatus</code>、<code>sepc</code>、<code>sscratch</code> 寄存器。</p>
+<p><code>t0</code>、<code>t1</code>、<code>t2</code> 用来暂存从内核栈中读取的之前保存的 CSR 寄存器的值，再使用 <code>csrw</code> 指令将暂存值写入对应的 CSR 寄存器中。</p>
+<p>其中 <code>sstatus</code> 的 <code>SPP</code> 字段给出 Trap 发生之前 CPU 处在哪个特权级等信息，<code>sepc</code> 当 Trap 是异常时（exception）记录之前执行的最后一条指令地址，<code>sscratch</code> 则存储着用户栈的栈指针，用于在 <code>sret</code> 返回用户态前使用 <code>csrrw</code> 指令将当前栈指针从内核栈切换到用户栈。</p>
+<p><strong>Q3:</strong> L50-L56：为何跳过了 <code>x2</code> 和 <code>x4</code>？</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">ld x1, 1*8(sp)
+ld x3, 3*8(sp)
+.set n, 5
+.rept 27
+   LOAD_GP %n
+   .set n, n+1
+.endr</code></pre>
+<p><strong>A3:</strong> 如下图所示，<code>x2</code> 即 <code>sp</code> 寄存器，保存了内核栈的栈指针。而 <code>x4</code> 寄存器为线程寄存器，在本实验中不会用到。</p>
+<p><img src="/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/reg.png" alt></p>
+<p><strong>Q4:</strong> L60：该指令之后，<code>sp</code> 和 <code>sscratch</code> 中的值分别有什么意义？</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">csrrw sp, sscratch, sp</code></pre>
+<p><strong>A4:</strong> 该指令的作用是先将 <code>sscratch</code> 的值读取到 <code>sp</code> 中，再将 <code>sp</code> 的值写入 <code>sscratch</code> 中，这两个操作是在同一周期内完成的，无需中间寄存器的参与，作用相当于 <code>swap(sp, sscratch)</code>. 在返回用户态之前交换 <code>sp</code> 和 <code>sscratch</code> 的值，即将当前栈指针由用户栈切换到内核栈。</p>
+<p><strong>Q5:</strong> <code>__restore</code>：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？</p>
+<p><strong>A5:</strong> 状态切换发生在 <code>sret</code>，该指令会负责从栈中恢复之前保存的程序计数器值，并更新特权级相关的寄存器（如 <code>mstatus</code>）。</p>
+<p><strong>Q6:</strong> L13：该指令之后，<code>sp</code> 和 <code>sscratch</code> 中的值分别有什么意义？</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">csrrw sp, sscratch, sp</code></pre>
+<p><strong>A6:</strong> 与 L60 相反，作用是将当前栈指针由内核栈切换到用户栈，便于后续的 Trap 处理。</p>
+<p><strong>Q7:</strong> 从 U 态进入 S 态是哪一条指令发生的？</p>
+<p><strong>A7:</strong> 根据 Trap 的类型不同而定。对于系统调用而言，是 <code>ecall</code> 指令，对于其它的异常情况（如非法操作、页面缺失等）则是在硬件检测到后自动触发异常，从而进入内核态。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/">http://lordaeronesz.github.io/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/Rust/">Rust</a><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></div><div class="post_share"><div class="social-share" data-image="/2024/10/28/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter3%E7%BB%83%E4%B9%A0/rust.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/"><img class="prev-cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div><div class="next-post pull-right"><a href="/2024/09/25/CSAPP-Attack-Lab/"><img class="next-cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">CSAPP Attack Lab</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/11/01/2024开源操作系统训练营-rCore-Chapter4练习/" title="2024开源操作系统训练营 rCore Chapter4练习"><img class="cover" src="/2024/11/01/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter4%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-01</div><div class="title">2024开源操作系统训练营 rCore Chapter4练习</div></div></a></div><div><a href="/2024/11/02/2024开源操作系统训练营-rCore-Chapter5练习/" title="2024开源操作系统训练营 rCore Chapter5练习"><img class="cover" src="/2024/11/02/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter5%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-02</div><div class="title">2024开源操作系统训练营 rCore Chapter5练习</div></div></a></div><div><a href="/2024/11/03/2024开源操作系统训练营-rCore-Chapter6练习/" title="2024开源操作系统训练营 rCore Chapter6练习"><img class="cover" src="/2024/11/03/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter6%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-03</div><div class="title">2024开源操作系统训练营 rCore Chapter6练习</div></div></a></div><div><a href="/2024/11/04/2024开源操作系统训练营-rCore-Chapter8练习/" title="2024开源操作系统训练营 rCore Chapter8练习"><img class="cover" src="/2024/11/04/2024%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5-rCore-Chapter8%E7%BB%83%E4%B9%A0/rust.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-11-04</div><div class="title">2024开源操作系统训练营 rCore Chapter8练习</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">1.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">问答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#t1"><span class="toc-number">2.1.</span> <span class="toc-text">t1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#t2"><span class="toc-number">2.2.</span> <span class="toc-text">t2</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"/></a><div class="content"><a class="title" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</a><time datetime="2025-07-26T15:30:11.000Z" title="发表于 2025-07-26 23:30:11">2025-07-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序"><img src="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/rv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RISC-V 架构下的裸金属程序"/></a><div class="content"><a class="title" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序">RISC-V 架构下的裸金属程序</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"/></a><div class="content"><a class="title" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析"><img src="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="xv6-riscv 上下文切换代码分析"/></a><div class="content"><a class="title" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析">xv6-riscv 上下文切换代码分析</a><time datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"/></a><div class="content"><a class="title" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</a><time datetime="2025-07-10T15:30:11.000Z" title="发表于 2025-07-10 23:30:11">2025-07-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

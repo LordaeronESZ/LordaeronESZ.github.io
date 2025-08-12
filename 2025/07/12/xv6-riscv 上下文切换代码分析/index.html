@@ -1,0 +1,537 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>xv6-riscv 上下文切换代码分析 | Lordaeron_ESZ's blog</title><meta name="keywords" content="操作系统,xv6"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="由于最近的工作涉及到编写上下文切换跳板代码的需求，因此便想将 xv6 中与此相关的代码读一读，正好之前学习时对这一块也没有看得太仔细。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="xv6-riscv 上下文切换代码分析">
+<meta property="og:url" content="http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="由于最近的工作涉及到编写上下文切换跳板代码的需求，因此便想将 xv6 中与此相关的代码读一读，正好之前学习时对这一块也没有看得太仔细。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png">
+<meta property="article:published_time" content="2025-07-12T15:30:11.000Z">
+<meta property="article:modified_time" content="2025-07-12T14:22:33.549Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="xv6">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'xv6-riscv 上下文切换代码分析',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2025-07-12 22:22:33'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">xv6-riscv 上下文切换代码分析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-07-12T14:22:33.549Z" title="更新于 2025-07-12 22:22:33">2025-07-12</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="xv6-riscv 上下文切换代码分析"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><p>由于最近的工作涉及到编写上下文切换跳板代码的需求，因此便想将 xv6 中与此相关的代码读一读，正好之前学习时对这一块也没有看得太仔细。</p>
+<span id="more"></span>
+<h1 id="系统初始化"><a href="#系统初始化" class="headerlink" title="系统初始化"></a>系统初始化</h1><p>xv6 的 qemu 启动参数为 <code>-kernel kernel/kernel -bios none</code>，qemu 模拟器在启动时，pc 将自动跳转到预先设定的地址 <code>0x80000000</code> 处，而链接脚本 <code>kernel.ld</code> 已经将下列代码 <code>entry.S</code> 链接到了该地址，因此下列代码即模拟器启动后 CPU 执行的初始代码。</p>
+<p>这段代码的作用是为每个 CPU 核心开辟属于自己的栈空间，以便后续内核代码的执行。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.section .text
+.global _entry
+_entry:
+        # stack0 在 start.c 中定义
+        # 每个 CPU 固定为 4KB 的内核栈大小
+        # sp &#x3D; stack0 + (hartid * 4096)
+        la sp, stack0
+        li a0, 1024*4
+        csrr a1, mhartid
+        addi a1, a1, 1
+        mul a0, a0, a1
+        add sp, sp, a0
+		# 跳转到 start.c 中的 start() 处进行初始化
+        call start
+spin:
+        j spin</code></pre>
+<p>其中内核栈的基址 stack0 在 <code>start.c</code> 中定义，如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// entry.S needs one stack per CPU.</span>
+<span class="token keyword">__attribute__</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token function">aligned</span> <span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">char</span> stack0<span class="token punctuation">[</span><span class="token number">4096</span> <span class="token operator">*</span> NCPU<span class="token punctuation">]</span><span class="token punctuation">;</span></code></pre>
+<p>如果 <code>make qemu</code> 编译并反汇编内核 ELF 文件，还可以通过 <code>kernel.sym</code> 看到该符号最终被链接的地址位置：</p>
+<pre class="language-none"><code class="language-none">...
+0000000080001988 proc_pagetable
+0000000080007910 stack0
+0000000080002906 sys_sleep
+...</code></pre>
+<h1 id="进程切换"><a href="#进程切换" class="headerlink" title="进程切换"></a>进程切换</h1><p>xv6 进行进程切换的代码如下 <code>swtch</code>：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly"># Context switch
+#
+#   void swtch(struct context *old, struct context *new);
+# 
+# Save current registers in old. Load from new.	
+
+
+.globl swtch
+swtch:
+        sd ra, 0(a0)
+        sd sp, 8(a0)
+        sd s0, 16(a0)
+        sd s1, 24(a0)
+        sd s2, 32(a0)
+        sd s3, 40(a0)
+        sd s4, 48(a0)
+        sd s5, 56(a0)
+        sd s6, 64(a0)
+        sd s7, 72(a0)
+        sd s8, 80(a0)
+        sd s9, 88(a0)
+        sd s10, 96(a0)
+        sd s11, 104(a0)
+
+        ld ra, 0(a1)
+        ld sp, 8(a1)
+        ld s0, 16(a1)
+        ld s1, 24(a1)
+        ld s2, 32(a1)
+        ld s3, 40(a1)
+        ld s4, 48(a1)
+        ld s5, 56(a1)
+        ld s6, 64(a1)
+        ld s7, 72(a1)
+        ld s8, 80(a1)
+        ld s9, 88(a1)
+        ld s10, 96(a1)
+        ld s11, 104(a1)
+        
+        ret</code></pre>
+<p>可以看到逻辑比较简单，只是将当前的 CPU 寄存器状态保存入内核中的 <code>context</code> 结构体内，再从新的 <code>context</code> 结构体中恢复 CPU 寄存器状态。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">// Saved registers for kernel context switches.</span>
+<span class="token keyword">struct</span> <span class="token class-name">context</span> <span class="token punctuation">&#123;</span>
+  uint64 ra<span class="token punctuation">;</span>
+  uint64 sp<span class="token punctuation">;</span>
+
+  <span class="token comment">// callee-saved</span>
+  uint64 s0<span class="token punctuation">;</span>
+  uint64 s1<span class="token punctuation">;</span>
+  uint64 s2<span class="token punctuation">;</span>
+  uint64 s3<span class="token punctuation">;</span>
+  uint64 s4<span class="token punctuation">;</span>
+  uint64 s5<span class="token punctuation">;</span>
+  uint64 s6<span class="token punctuation">;</span>
+  uint64 s7<span class="token punctuation">;</span>
+  uint64 s8<span class="token punctuation">;</span>
+  uint64 s9<span class="token punctuation">;</span>
+  uint64 s10<span class="token punctuation">;</span>
+  uint64 s11<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+<p>需要保存和恢复的寄存器状态，首先肯定需要 <code>ra</code>（目标的代码处） 和 <code>sp</code>（栈指针），除此之外，上下文切换函数 <code>swtch</code> 作为一个函数调用，也需要遵循 RISC-V 的调用约定（calling convention），即被调用函数 <code>swtch</code> 需要对被调用者保存（callee-saved）寄存器进行保存。有关 calling convention 的内容，可以参考下面这篇文章：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/sureZ-learning/p/18450722">一起学RISC-V汇编第9讲之RISC-V ABI之寄存器使用约定 - sureZ_ok - 博客园</a></p>
+<h1 id="内核态陷入"><a href="#内核态陷入" class="headerlink" title="内核态陷入"></a>内核态陷入</h1><p>当 xv6 在内核态下触发中断或异常时，将会自动跳转到下列 <code>kernelvec</code> 代码处，进行寄存器保存、跳转到内核陷入处理函数、恢复寄存器状态。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.globl kerneltrap
+.globl kernelvec
+.align 4
+kernelvec:
+        # 开辟栈空间以保存寄存器状态
+        addi sp, sp, -256
+
+        # 保存 caller-saved 寄存器
+        sd ra, 0(sp)
+        sd sp, 8(sp)
+        sd gp, 16(sp)
+        sd tp, 24(sp)
+        sd t0, 32(sp)
+        sd t1, 40(sp)
+        sd t2, 48(sp)
+        sd a0, 72(sp)
+        sd a1, 80(sp)
+        sd a2, 88(sp)
+        sd a3, 96(sp)
+        sd a4, 104(sp)
+        sd a5, 112(sp)
+        sd a6, 120(sp)
+        sd a7, 128(sp)
+        sd t3, 216(sp)
+        sd t4, 224(sp)
+        sd t5, 232(sp)
+        sd t6, 240(sp)
+
+        # 调用 trap.c 中的处理函数 kerneltrap()
+        call kerneltrap
+
+        # 恢复寄存器状态
+        ld ra, 0(sp)
+        ld sp, 8(sp)
+        ld gp, 16(sp)
+        # 不恢复 tp 寄存器，因为可能在 kerneltrap 中被调度到其他的 CPU 核心上运行
+        ld t0, 32(sp)
+        ld t1, 40(sp)
+        ld t2, 48(sp)
+        ld a0, 72(sp)
+        ld a1, 80(sp)
+        ld a2, 88(sp)
+        ld a3, 96(sp)
+        ld a4, 104(sp)
+        ld a5, 112(sp)
+        ld a6, 120(sp)
+        ld a7, 128(sp)
+        ld t3, 216(sp)
+        ld t4, 224(sp)
+        ld t5, 232(sp)
+        ld t6, 240(sp)
+
+        addi sp, sp, 256
+
+        # 返回到内核先前的中断&#x2F;异常的位置
+        sret</code></pre>
+<h1 id="用户态陷入"><a href="#用户态陷入" class="headerlink" title="用户态陷入"></a>用户态陷入</h1><p>当在用户态触发陷入时，会内核态陷入类似，自动跳转到下列 <code>uservec</code> 处。但存在一点区别：由于 xv6 采用了内核页表机制，即用户态和内核态的切换需要进行地址空间的切换，因此用户页表和内核页表都需要将下列代码段映射到地址空间中，xv6 将其放在虚拟地址空间的最高一页，名为 <code>trampoline</code>。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">#include &quot;riscv.h&quot;
+#include &quot;memlayout.h&quot;
+
+.section trampsec
+.globl trampoline
+.globl usertrap
+trampoline:
+.align 4
+.globl uservec
+uservec:    
+        # 从用户态触发陷入跳转到此处，
+        # 此时特权级为 S 模式（内核态），页表仍为用户页表
+
+        # 将 a0 进行暂存
+        csrw sscratch, a0
+
+        li a0, TRAPFRAME
+        
+        # 将用户寄存器保存到 trapframe 中
+        sd ra, 40(a0)
+        sd sp, 48(a0)
+        sd gp, 56(a0)
+        sd tp, 64(a0)
+        sd t0, 72(a0)
+        sd t1, 80(a0)
+        sd t2, 88(a0)
+        sd s0, 96(a0)
+        sd s1, 104(a0)
+        # 没有保存 a0，因为用来暂存了 TRAPFRAME
+        sd a1, 120(a0)
+        sd a2, 128(a0)
+        sd a3, 136(a0)
+        sd a4, 144(a0)
+        sd a5, 152(a0)
+        sd a6, 160(a0)
+        sd a7, 168(a0)
+        sd s2, 176(a0)
+        sd s3, 184(a0)
+        sd s4, 192(a0)
+        sd s5, 200(a0)
+        sd s6, 208(a0)
+        sd s7, 216(a0)
+        sd s8, 224(a0)
+        sd s9, 232(a0)
+        sd s10, 240(a0)
+        sd s11, 248(a0)
+        sd t3, 256(a0)
+        sd t4, 264(a0)
+        sd t5, 272(a0)
+        sd t6, 280(a0)
+
+	    # 将 a0 进行保存
+        csrr t0, sscratch
+        sd t0, 112(a0)
+
+        # 从 trapframe 中恢复内核栈指针
+        ld sp, 8(a0)
+
+        # 从 trapframe 中恢复 tp
+        ld tp, 32(a0)
+
+        # 从 trapframe 中加载内核 usertrap() 地址
+        ld t0, 16(a0)
+
+        # 从 trapframe 中加载内核页表基址
+        ld t1, 0(a0)
+
+        # 充当内存屏障作用？（不确定）
+        sfence.vma zero, zero
+
+        # 切换到内核页表
+        csrw satp, t1
+
+        # 刷新 TLB
+        sfence.vma zero, zero
+
+        # 无条件跳转到 usertrap() 中
+        # 不像 call，jmp 不会自动返回
+        jr t0</code></pre>
+<p>跳转到内核 <code>trap.c</code> 的处理函数 <code>usertrap</code>、<code>usertrapret</code> 并处理完成后，将会调用下列函数 <code>userret</code>：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">.globl userret
+userret:
+        # userret(pagetable)
+        # a0: user page table, for satp.
+
+        # 切换回用户页表
+        sfence.vma zero, zero
+        csrw satp, a0
+        sfence.vma zero, zero
+
+        li a0, TRAPFRAME
+
+        # 从 trapframe 中恢复除 a0 外的所有寄存器
+        ld ra, 40(a0)
+        ld sp, 48(a0)
+        ld gp, 56(a0)
+        ld tp, 64(a0)
+        ld t0, 72(a0)
+        ld t1, 80(a0)
+        ld t2, 88(a0)
+        ld s0, 96(a0)
+        ld s1, 104(a0)
+        ld a1, 120(a0)
+        ld a2, 128(a0)
+        ld a3, 136(a0)
+        ld a4, 144(a0)
+        ld a5, 152(a0)
+        ld a6, 160(a0)
+        ld a7, 168(a0)
+        ld s2, 176(a0)
+        ld s3, 184(a0)
+        ld s4, 192(a0)
+        ld s5, 200(a0)
+        ld s6, 208(a0)
+        ld s7, 216(a0)
+        ld s8, 224(a0)
+        ld s9, 232(a0)
+        ld s10, 240(a0)
+        ld s11, 248(a0)
+        ld t3, 256(a0)
+        ld t4, 264(a0)
+        ld t5, 272(a0)
+        ld t6, 280(a0)
+
+	    # 恢复 a0 寄存器
+        ld a0, 112(a0)
+        
+        # 返回到用户态先前中断的位置，并切回用户态
+        sret</code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/">http://lordaeronesz.github.io/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post_share"><div class="social-share" data-image="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/"><img class="prev-cover" src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</div></div></a></div><div class="next-post pull-right"><a href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/"><img class="next-cover" src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Multithreading/" title="MIT6.s081 2021 Lab Multithreading"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Multithreading</div></div></a></div><div><a href="/2024/07/01/MIT6.s081-2021-Lab Page tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="title">MIT6.s081 2021 Lab Page tables</div></div></a></div><div><a href="/2024/07/06/MIT6.s081-2021-Lab Traps/" title="MIT6.s081 2021 Lab Traps"><img class="cover" src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-06</div><div class="title">MIT6.s081 2021 Lab Traps</div></div></a></div><div><a href="/2024/06/27/MIT6.s081-2021-Lab System calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="title">MIT6.s081 2021 Lab System calls</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">系统初始化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E5%88%87%E6%8D%A2"><span class="toc-number">2.</span> <span class="toc-text">进程切换</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%80%81%E9%99%B7%E5%85%A5"><span class="toc-number">3.</span> <span class="toc-text">内核态陷入</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E6%80%81%E9%99%B7%E5%85%A5"><span class="toc-number">4.</span> <span class="toc-text">用户态陷入</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"/></a><div class="content"><a class="title" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</a><time datetime="2025-07-26T15:30:11.000Z" title="发表于 2025-07-26 23:30:11">2025-07-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序"><img src="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/rv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RISC-V 架构下的裸金属程序"/></a><div class="content"><a class="title" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序">RISC-V 架构下的裸金属程序</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"/></a><div class="content"><a class="title" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析"><img src="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="xv6-riscv 上下文切换代码分析"/></a><div class="content"><a class="title" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析">xv6-riscv 上下文切换代码分析</a><time datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"/></a><div class="content"><a class="title" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</a><time datetime="2025-07-10T15:30:11.000Z" title="发表于 2025-07-10 23:30:11">2025-07-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

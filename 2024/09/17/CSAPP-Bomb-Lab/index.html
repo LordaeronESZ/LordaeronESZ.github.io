@@ -1,0 +1,1049 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSAPP Bomb Lab | Lordaeron_ESZ's blog</title><meta name="keywords" content="经验,计算机基础,汇编语言"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本 Lab 可以说是 CSAPP 的几个 Lab 中最为人津津乐道的一个，对应知识点为书中的第 3 章（程序的机器级表示），要求使用 GDB 调试器，对汇编语言进行调试，从而得出正确的“拆弹密码”。共分为 6 个关卡和一个隐藏关卡，每个关卡都分别考察了一种语法结构或数据结构的汇编表示，部分关卡逻辑比较复杂，要求对 x86 汇编有一定的熟悉度。 bomb.cint main(int argc, c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSAPP Bomb Lab">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="本 Lab 可以说是 CSAPP 的几个 Lab 中最为人津津乐道的一个，对应知识点为书中的第 3 章（程序的机器级表示），要求使用 GDB 调试器，对汇编语言进行调试，从而得出正确的“拆弹密码”。共分为 6 个关卡和一个隐藏关卡，每个关卡都分别考察了一种语法结构或数据结构的汇编表示，部分关卡逻辑比较复杂，要求对 x86 汇编有一定的熟悉度。 bomb.cint main(int argc, c">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg">
+<meta property="article:published_time" content="2024-09-17T03:45:11.000Z">
+<meta property="article:modified_time" content="2024-09-19T06:46:56.785Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="计算机基础">
+<meta property="article:tag" content="汇编语言">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'CSAPP Bomb Lab',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-09-19 14:46:56'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">CSAPP Bomb Lab</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-09-17T03:45:11.000Z" title="发表于 2024-09-17 11:45:11">2024-09-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-09-19T06:46:56.785Z" title="更新于 2024-09-19 14:46:56">2024-09-19</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">8.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>37分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="CSAPP Bomb Lab"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><span id="more"></span>
+<p>本 Lab 可以说是 CSAPP 的几个 Lab 中最为人津津乐道的一个，对应知识点为书中的第 3 章（程序的机器级表示），要求使用 GDB 调试器，对汇编语言进行调试，从而得出正确的“拆弹密码”。共分为 6 个关卡和一个隐藏关卡，每个关卡都分别考察了一种语法结构或数据结构的汇编表示，部分关卡逻辑比较复杂，要求对 x86 汇编有一定的熟悉度。</p>
+<h1 id="bomb-c"><a href="#bomb-c" class="headerlink" title="bomb.c"></a>bomb.c</h1><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">char</span> <span class="token operator">*</span>input<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Note to self: remember to port this bomb to Windows and put a
+     * fantastic GUI on it. */</span>
+
+    <span class="token comment">/* When run with no arguments, the bomb reads its input lines
+     * from standard input. */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        infile <span class="token operator">=</span> <span class="token constant">stdin</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* When run with one argument &lt;file>, the bomb reads from &lt;file>
+     * until EOF, and then switches to standard input. Thus, as you
+     * defuse each phase, you can add its defusing string to &lt;file> and
+     * avoid having to retype it. */</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>argc <span class="token operator">==</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>infile <span class="token operator">=</span> <span class="token function">fopen</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%s: Error: Couldn't open %s\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* You can't call the bomb with more than 1 command line argument. */</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Usage: %s [&lt;input_file>]\n"</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* Do all sorts of secret stuff that makes the bomb harder to defuse. */</span>
+    <span class="token function">initialize_bomb</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Welcome to my fiendish little bomb. You have 6 phases with\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"which to blow yourself up. Have a nice day!\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Hmm...  Six phases must be more secure than one phase! */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>             <span class="token comment">/* Get input                   */</span>
+    <span class="token function">phase_1</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>                  <span class="token comment">/* Run the phase               */</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                 <span class="token comment">/* Drat!  They figured it out!
+                                      * Let me know how they did it. */</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Phase 1 defused. How about the next one?\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* The second phase is harder.  No one will ever figure out
+     * how to defuse this... */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_2</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"That's number 2.  Keep going!\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* I guess this is too easy so far.  Some more complex code will
+     * confuse people. */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_3</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Halfway there!\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Oh yeah?  Well, how good is your math?  Try on this saucy problem! */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_4</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"So you got that one.  Try this one.\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Round and 'round in memory we go, where we stop, the bomb blows! */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_5</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Good work!  On to the next...\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* This phase will never be used, since no one will get past the
+     * earlier ones.  But just in case, make this one extra hard. */</span>
+    input <span class="token operator">=</span> <span class="token function">read_line</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_6</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">phase_defused</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Wow, they got it!  But isn't something... missing?  Perhaps
+     * something they overlooked?  Mua ha ha ha ha! */</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>首先观察 <code>bomb.c</code> 的 main 函数结构，最开始判断 argc 是否为 1，如果为 1，表示运行 bomb 程序时没有指定命令行参数，即从标准输入中读取 “拆弹密码”；否则，从指定的文件中读取。为了后续调试的方便，可以将所有的密码写入一个文件 <code>ans.txt</code> 中，后续在启动 bomb 程序时对其指定：<code>./bomb ans.txt</code>.</p>
+<p>随后便是初始化“炸弹”，每次读取一行密码，利用该密码进行“拆弹”，如果正确，则进入下一关卡，否则，“炸弹”就会爆炸，“拆弹”失败。一次性输对 6 个密码后，“炸弹”就会被“拆除”。</p>
+<p>注意最后的注释：</p>
+<blockquote>
+<p>Wow, they got it!  But isn’t something… missing?  Perhaps something they overlooked?  Mua ha ha ha ha!</p>
+</blockquote>
+<p>一定程度上暗示了隐藏关卡的存在。</p>
+<h1 id="phase-1"><a href="#phase-1" class="headerlink" title="phase_1"></a>phase_1</h1><p>每次拆弹时，可以使用 <code>disas</code> 命令进行反汇编，查看函数对应的汇编代码，以下是 <code>disas phase_1</code> 的结果：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000400ee0 &lt;+0&gt;:     sub    $0x8,%rsp
+0x0000000000400ee4 &lt;+4&gt;:     mov    $0x402400,%esi
+0x0000000000400ee9 &lt;+9&gt;:     call   0x401338 &lt;strings_not_equal&gt;
+0x0000000000400eee &lt;+14&gt;:    test   %eax,%eax
+0x0000000000400ef0 &lt;+16&gt;:    je     0x400ef7 &lt;phase_1+23&gt;
+0x0000000000400ef2 &lt;+18&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400ef7 &lt;+23&gt;:    add    $0x8,%rsp
+0x0000000000400efb &lt;+27&gt;:    ret</code></pre>
+<p>热身关卡，代码的逻辑很简单，读取一行密码，判断该密码与事先指定的字符串是否相同，如果不相同，则“引爆炸弹”。</p>
+<p>这里需要熟悉 x86 寄存器的使用惯例（也可以 GDB 自行调试），寄存器 <code>%rdi</code> 寄存器 <code>%rsi</code> 分别作为函数调用时的参数 1 和参数 2。在这里，<code>%rdi</code> 存储着读取到的密码字符串（准确来说，是字符串首字母的地址），而 <code>%rsi</code> 则被赋值为 <code>0x402400</code>，然后，将这两个地址作为参数 1 和参数 2，调用 <code>string_not_equal</code>，从函数名称上看，该函数用来判定两个字符串是否相同。那么思路就很清晰了，密码就是地址 <code>0x402400</code> 处的字符串值，使用 <code>x/s 0x402400</code> 查看即可。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p1.png" alt></p>
+<h1 id="phase-2"><a href="#phase-2" class="headerlink" title="phase_2"></a>phase_2</h1><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000400efc &lt;+0&gt;:     push   %rbp
+0x0000000000400efd &lt;+1&gt;:     push   %rbx
+0x0000000000400efe &lt;+2&gt;:     sub    $0x28,%rsp
+0x0000000000400f02 &lt;+6&gt;:     mov    %rsp,%rsi
+0x0000000000400f05 &lt;+9&gt;:     call   0x40145c &lt;read_six_numbers&gt;
+0x0000000000400f0a &lt;+14&gt;:    cmpl   $0x1,(%rsp)
+0x0000000000400f0e &lt;+18&gt;:    je     0x400f30 &lt;phase_2+52&gt;
+0x0000000000400f10 &lt;+20&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400f15 &lt;+25&gt;:    jmp    0x400f30 &lt;phase_2+52&gt;
+0x0000000000400f17 &lt;+27&gt;:    mov    -0x4(%rbx),%eax
+0x0000000000400f1a &lt;+30&gt;:    add    %eax,%eax
+0x0000000000400f1c &lt;+32&gt;:    cmp    %eax,(%rbx)
+0x0000000000400f1e &lt;+34&gt;:    je     0x400f25 &lt;phase_2+41&gt;
+0x0000000000400f20 &lt;+36&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400f25 &lt;+41&gt;:    add    $0x4,%rbx
+0x0000000000400f29 &lt;+45&gt;:    cmp    %rbp,%rbx
+0x0000000000400f2c &lt;+48&gt;:    jne    0x400f17 &lt;phase_2+27&gt;
+0x0000000000400f2e &lt;+50&gt;:    jmp    0x400f3c &lt;phase_2+64&gt;
+0x0000000000400f30 &lt;+52&gt;:    lea    0x4(%rsp),%rbx
+0x0000000000400f35 &lt;+57&gt;:    lea    0x18(%rsp),%rbp
+0x0000000000400f3a &lt;+62&gt;:    jmp    0x400f17 &lt;phase_2+27&gt;
+0x0000000000400f3c &lt;+64&gt;:    add    $0x28,%rsp
+0x0000000000400f40 &lt;+68&gt;:    pop    %rbx
+0x0000000000400f41 &lt;+69&gt;:    pop    %rbp
+0x0000000000400f42 &lt;+70&gt;:    ret</code></pre>
+<p>这一关主要是考察 <strong>循环语句</strong> ，可以仔细阅读书中第 3.6.7 节，加强对汇编的循环结构的熟悉程度，如果感觉思路很乱，可以采用与书中类似的方法：先将汇编翻译为等价的带 goto 的高级语言，再参考几种典型的循环形式，将 goto 改写为循环结构，以下便是最终翻译得到的类 C 语言伪代码：</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">read_six_numbers();
+
+if (Mem[%rsp] !&#x3D; 1) &#123;
+    explode_bomb();
+&#125;
+
+for (%rbx &#x3D; %rsp + 4, %rbp &#x3D; %rsp + 24; %rbx !&#x3D; %rbp; %rbx +&#x3D; 4) &#123;
+    %eax &#x3D; Mem[%rbx - 4];  &#x2F;&#x2F; 上一个元素
+    %eax *&#x3D; 2;
+    if (Mem[%rbx] !&#x3D; %eax) &#123;
+        explode_bomb();
+    &#125;
+&#125;</code></pre>
+<p>首先注意到 <code>read_six_numbers()</code> 函数，字面意思是读取 6 个数字，推测密码由 6 个数字组成。</p>
+<p>然后判断 <code>Mem[%rsp]</code> 的值是否为 1，不是则“爆炸”。这里可以善用 GDB，先随便蒙 6 个数字，然后使用 <code>p/x</code> 打印 <code>Mem[%rsp]</code> 的值，发现其值正好等于输入的第一个数字，结合后面的 6 次循环可知，输入的第 i （i 从 0 开始）个数字存储在地址 <code>%rsp + 4 * i</code> 处，且每个数字都必须为它前一个数字的两倍。</p>
+<p>那么代码逻辑便理清楚了：输入的第一个数字为 1，其后每一个数字都为前一个数字的两倍，密码为：<code>1 2 4 8 16 32</code>.</p>
+<h1 id="phase-3"><a href="#phase-3" class="headerlink" title="phase_3"></a>phase_3</h1><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000400f43 &lt;+0&gt;:     sub    $0x18,%rsp
+0x0000000000400f47 &lt;+4&gt;:     lea    0xc(%rsp),%rcx
+0x0000000000400f4c &lt;+9&gt;:     lea    0x8(%rsp),%rdx
+0x0000000000400f51 &lt;+14&gt;:    mov    $0x4025cf,%esi
+0x0000000000400f56 &lt;+19&gt;:    mov    $0x0,%eax
+0x0000000000400f5b &lt;+24&gt;:    call   0x400bf0 &lt;__isoc99_sscanf@plt&gt;
+0x0000000000400f60 &lt;+29&gt;:    cmp    $0x1,%eax
+0x0000000000400f63 &lt;+32&gt;:    jg     0x400f6a &lt;phase_3+39&gt;
+0x0000000000400f65 &lt;+34&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400f6a &lt;+39&gt;:    cmpl   $0x7,0x8(%rsp)
+0x0000000000400f6f &lt;+44&gt;:    ja     0x400fad &lt;phase_3+106&gt;
+0x0000000000400f71 &lt;+46&gt;:    mov    0x8(%rsp),%eax
+0x0000000000400f75 &lt;+50&gt;:    jmp    *0x402470(,%rax,8)
+0x0000000000400f7c &lt;+57&gt;:    mov    $0xcf,%eax
+0x0000000000400f81 &lt;+62&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400f83 &lt;+64&gt;:    mov    $0x2c3,%eax
+0x0000000000400f88 &lt;+69&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400f8a &lt;+71&gt;:    mov    $0x100,%eax
+0x0000000000400f8f &lt;+76&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400f91 &lt;+78&gt;:    mov    $0x185,%eax
+0x0000000000400f96 &lt;+83&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400f98 &lt;+85&gt;:    mov    $0xce,%eax
+0x0000000000400f9d &lt;+90&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400f9f &lt;+92&gt;:    mov    $0x2aa,%eax
+0x0000000000400fa4 &lt;+97&gt;:    jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400fa6 &lt;+99&gt;:    mov    $0x147,%eax
+0x0000000000400fab &lt;+104&gt;:   jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400fad &lt;+106&gt;:   call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400fb2 &lt;+111&gt;:   mov    $0x0,%eax
+0x0000000000400fb7 &lt;+116&gt;:   jmp    0x400fbe &lt;phase_3+123&gt;
+0x0000000000400fb9 &lt;+118&gt;:   mov    $0x137,%eax
+0x0000000000400fbe &lt;+123&gt;:   cmp    0xc(%rsp),%eax
+0x0000000000400fc2 &lt;+127&gt;:   je     0x400fc9 &lt;phase_3+134&gt;
+0x0000000000400fc4 &lt;+129&gt;:   call   0x40143a &lt;explode_bomb&gt;
+0x0000000000400fc9 &lt;+134&gt;:   add    $0x18,%rsp
+0x0000000000400fcd &lt;+138&gt;:   ret</code></pre>
+<p>这一关的代码量比较大，但是中间一段看起来很有规律，尤其注意这一句：<code>jmp  *0x402470(, %rax, 8)</code>，直接根据 <code>%rax</code> 寄存器的值计算偏移量进行跳转，这便是 <strong>switch 语句</strong> 所采用的跳转方式，地址 <code>0x402470</code> 即跳转表的首地址。</p>
+<p>另外，还需要关注的一条指令是 <code>call   0x400bf0 &lt;__isoc99_sscanf@plt&gt;</code>，貌似是一个函数调用指令，以下是我借助大语言模型得到的解释：</p>
+<blockquote>
+<p><code>__isoc99_sscanf@plt</code> 是一个指向 <code>sscanf</code> 函数的 PLT（Procedure Linkage Table）入口点的符号引用。<code>sscanf</code> 函数是 C 语言标准库中的一个函数，用于从输入流中按照指定格式读取数据。<code>@plt</code> 表示这是一个通过动态链接的程序跳转表（Procedure Linkage Table）来调用的函数。</p>
+<h3 id="参数传递"><a href="#参数传递" class="headerlink" title="参数传递"></a>参数传递</h3><p>在 x86-64 架构中，函数参数通常是通过寄存器传递的。对于 <code>sscanf</code> 函数，它的参数如下：</p>
+<ul>
+<li><code>%rdi</code>：第一个参数，通常是文件描述符或指针类型。对于 <code>sscanf</code>，这是指向输入字符串的指针。</li>
+<li><code>%rsi</code>：第二个参数，指向格式化字符串的指针。</li>
+<li><code>%rdx</code>：第三个参数，如果有的话，指向第一个要填充的变量的地址。</li>
+<li>更多的参数会继续使用后续的寄存器 <code>%rcx</code>, <code>%r8</code>, 和 <code>%r9</code>。如果参数超过六个，那么它们将会通过栈传递。</li>
+</ul>
+<h3 id="返回值"><a href="#返回值" class="headerlink" title="返回值"></a>返回值</h3><p>在 x86-64 架构中，返回值会被放在 <code>%rax</code> 寄存器中。<code>sscanf</code> 返回成功匹配和赋值的项数，如果没有任何匹配，则返回零。如果输入结束前格式化字符串就被耗尽了，也返回零。如果遇到任何读取错误（如读取一个整数但输入不是有效的整数），则返回负数。</p>
+</blockquote>
+<p>简而言之，<code>sscanf</code> 类似于 <code>scanf</code>，只是输入从标准输入变成了指定的字符串。在这里，<code>sscanf</code> 指定了 4 个参数，作用为：从 <code>%rdi</code> 寄存器指向的字符串中进行读取，<code>%rsi</code> 指向格式化字符串，<code>%rdx</code> 和 <code>%rcx</code> 分别指向被格式化读取到的变量 1 和变量 2. 若读取成功，则返回成功读取的项数，即为 2，存入 <code>%rax</code> 寄存器中。</p>
+<p>查看 <code>0x4025cf</code> 处的字符串，即格式化字符串，为 <code>%d %d</code>，说明读取的两个值都为十进制整数，即本关密码的形式。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p3.png" alt></p>
+<p>最后查看一下整张跳转表的值，根据最终跳转到的位置确定输入的值。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p3-2.png" alt></p>
+<p>然后将其改写为 switch 语句，下面直接给出完整代码的翻译结果：</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">%rcx &#x3D; %rsp + 12;
+%rdx &#x3D; %rsp + 8;
+%esi &#x3D; 0x4025cf;
+%eax &#x3D; 0;
+sscanf(%rdi, %rsi, %rdx, %rcx);
+if (%eax &lt;&#x3D; 1) &#123;          &#x2F;&#x2F; 读取成功的值个数小于2
+    explode_bomb();
+&#125;
+if (Mem[%rsp + 8] &gt; 7u) &#123; &#x2F;&#x2F; 读取到的（输入的）第一个值大于7或小于0
+    explode_bomb();
+&#125;
+
+%eax &#x3D; Mem[%rsp + 8];
+switch (%rax) &#123;
+    case 0:
+        %eax &#x3D; 0xcf;  break;
+    case 1:
+        %eax &#x3D; 0x137; break;
+    case 2:
+        %eax &#x3D; 0x2c3; break;
+    case 3:
+        %eax &#x3D; 0x100; break;
+    case 4:
+        %eax &#x3D; 0x185; break;
+    case 5:
+        %eax &#x3D; 0xce;  break;
+    case 6:
+        %eax &#x3D; 0x2aa; break;
+    case 7:
+    	%eax &#x3D; 0x147; break;
+&#125;
+
+&#x2F;&#x2F; 输入的第二个值等于%eax寄存器的值
+if (%eax !&#x3D; Mem[%rsp + 12]) &#123;
+    explode_bomb();
+&#125;</code></pre>
+<p>要使得 <code>%eax</code> 的值等于输入的第二个值，只需要保证输入的第一个值经过 switch 语句选择之后，赋值正好等于输入的第二个值。</p>
+<p>因此本关的答案并不是固定的，<code>0 207</code>、 <code>3 256</code> 等等都是正确答案。注意不能写成 <code>0 0xcf</code>、<code>3 0x100</code>，因为输入格式为十进制整数，需要将十六进制进行转换。</p>
+<h1 id="phase-4"><a href="#phase-4" class="headerlink" title="phase_4"></a>phase_4</h1><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x000000000040100c &lt;+0&gt;:     sub    $0x18,%rsp
+0x0000000000401010 &lt;+4&gt;:     lea    0xc(%rsp),%rcx
+0x0000000000401015 &lt;+9&gt;:     lea    0x8(%rsp),%rdx
+0x000000000040101a &lt;+14&gt;:    mov    $0x4025cf,%esi
+0x000000000040101f &lt;+19&gt;:    mov    $0x0,%eax
+0x0000000000401024 &lt;+24&gt;:    call   0x400bf0 &lt;__isoc99_sscanf@plt&gt;
+0x0000000000401029 &lt;+29&gt;:    cmp    $0x2,%eax
+0x000000000040102c &lt;+32&gt;:    jne    0x401035 &lt;phase_4+41&gt;
+0x000000000040102e &lt;+34&gt;:    cmpl   $0xe,0x8(%rsp)
+0x0000000000401033 &lt;+39&gt;:    jbe    0x40103a &lt;phase_4+46&gt;
+0x0000000000401035 &lt;+41&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x000000000040103a &lt;+46&gt;:    mov    $0xe,%edx
+0x000000000040103f &lt;+51&gt;:    mov    $0x0,%esi
+0x0000000000401044 &lt;+56&gt;:    mov    0x8(%rsp),%edi
+0x0000000000401048 &lt;+60&gt;:    call   0x400fce &lt;func4&gt;
+0x000000000040104d &lt;+65&gt;:    test   %eax,%eax
+0x000000000040104f &lt;+67&gt;:    jne    0x401058 &lt;phase_4+76&gt;
+0x0000000000401051 &lt;+69&gt;:    cmpl   $0x0,0xc(%rsp)
+0x0000000000401056 &lt;+74&gt;:    je     0x40105d &lt;phase_4+81&gt;
+0x0000000000401058 &lt;+76&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x000000000040105d &lt;+81&gt;:    add    $0x18,%rsp
+0x0000000000401061 &lt;+85&gt;:    ret</code></pre>
+<p>这一关主要分成两个函数：phase_4 和 func_4，首先查看 phase_4，代码前一段和 phase_3 非常类似：读取两个整数，且保证输入的第一个值位于区间 <code>[0, 15)</code> 内。</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">%rcx &#x3D; %rsp + 12;
+%rdx &#x3D; %rsp + 8;
+%esi &#x3D; 0x4025cf;
+%eax &#x3D; 0;
+sscanf(%rdi, %rsi, %rdx, %rcx);
+if (%eax !&#x3D; 2) &#123;
+    explode_bomb();
+&#125;
+if (Mem[%rsp + 8] &gt;&#x3D; 15u) &#123;
+	explode_bomb();
+&#125;
+
+%edx &#x3D; 0xe;
+%esi &#x3D; 0;
+%edi &#x3D; Mem[%rsp + 8];
+func4(%rdi, %rsi, %rdx); &#x2F;&#x2F; func4(Mem[%rsp+8], 0, 14)
+if (%eax !&#x3D; 0) &#123;
+    explode_bomb();
+&#125;
+if (Mem[%rsp + 12] !&#x3D; 0) &#123;
+    explode_bomb();
+&#125;</code></pre>
+<p>后一段便是传递 3 个参数给函数 func_4 进行调用，需要保证返回值和输入的第二个数为 0，因此密码的第二个数为 0。可以看到，phase_4 的代码结构还是很简单易懂的，关键是对 func_4 函数的分析。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000400fce &lt;+0&gt;:     sub    $0x8,%rsp
+0x0000000000400fd2 &lt;+4&gt;:     mov    %edx,%eax
+0x0000000000400fd4 &lt;+6&gt;:     sub    %esi,%eax
+0x0000000000400fd6 &lt;+8&gt;:     mov    %eax,%ecx
+0x0000000000400fd8 &lt;+10&gt;:    shr    $0x1f,%ecx
+0x0000000000400fdb &lt;+13&gt;:    add    %ecx,%eax
+0x0000000000400fdd &lt;+15&gt;:    sar    %eax
+0x0000000000400fdf &lt;+17&gt;:    lea    (%rax,%rsi,1),%ecx
+0x0000000000400fe2 &lt;+20&gt;:    cmp    %edi,%ecx
+0x0000000000400fe4 &lt;+22&gt;:    jle    0x400ff2 &lt;func4+36&gt;
+0x0000000000400fe6 &lt;+24&gt;:    lea    -0x1(%rcx),%edx
+0x0000000000400fe9 &lt;+27&gt;:    call   0x400fce &lt;func4&gt;
+0x0000000000400fee &lt;+32&gt;:    add    %eax,%eax
+0x0000000000400ff0 &lt;+34&gt;:    jmp    0x401007 &lt;func4+57&gt;
+0x0000000000400ff2 &lt;+36&gt;:    mov    $0x0,%eax
+0x0000000000400ff7 &lt;+41&gt;:    cmp    %edi,%ecx
+0x0000000000400ff9 &lt;+43&gt;:    jge    0x401007 &lt;func4+57&gt;
+0x0000000000400ffb &lt;+45&gt;:    lea    0x1(%rcx),%esi
+0x0000000000400ffe &lt;+48&gt;:    call   0x400fce &lt;func4&gt;
+0x0000000000401003 &lt;+53&gt;:    lea    0x1(%rax,%rax,1),%eax
+0x0000000000401007 &lt;+57&gt;:    add    $0x8,%rsp
+0x000000000040100b &lt;+61&gt;:    ret</code></pre>
+<p>仔细观察 func_4 的代码，发现含有对 func_4 的调用，因此 func_4 是一个 <strong>递归</strong> 函数。在对递归函数进行翻译时，本质上与普通的函数并没有区别，结果如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> <span class="token function">func4</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">,</span> <span class="token keyword">int</span> c<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> res <span class="token operator">=</span> c <span class="token operator">-</span> b<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> temp <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">unsigned</span><span class="token punctuation">)</span>res <span class="token operator">>></span> <span class="token number">31</span><span class="token punctuation">;</span>
+    res <span class="token operator">+=</span> temp<span class="token punctuation">;</span>
+    res <span class="token operator">>>=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    temp <span class="token operator">=</span> b <span class="token operator">+</span> res<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>temp <span class="token operator">></span> a<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        c <span class="token operator">=</span> temp <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        res <span class="token operator">=</span> <span class="token function">func4</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">,</span> c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        res <span class="token operator">*=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>temp <span class="token operator">&lt;</span> a<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            b <span class="token operator">=</span> temp <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+            res <span class="token operator">=</span> <span class="token function">func4</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">,</span> c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            res <span class="token operator">=</span> <span class="token number">2</span> <span class="token operator">*</span> res <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>可以看到，程序的逻辑还是比较复杂的，但是注意到参数 b 和 c 的值都是确定的，真正的变量只有参数 a。因此这里有一个偷懒的办法：将程序翻译为一个语法严格正确的高级语言程序（而不是之前的伪代码），然后枚举所有可能的 a（只有 15 中情况），运行测试即可，结果为 0 的即为满足要求的值，也就是密码的第一个数。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p4.png" alt></p>
+<p>可见，本关的正解同样不止一个，<code>1 0</code>、<code>3 0</code>、<code>7 0</code> 都是正确答案。</p>
+<h1 id="phase-5"><a href="#phase-5" class="headerlink" title="phase_5"></a>phase_5</h1><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000401062 &lt;+0&gt;:     push   %rbx
+0x0000000000401063 &lt;+1&gt;:     sub    $0x20,%rsp
+0x0000000000401067 &lt;+5&gt;:     mov    %rdi,%rbx
+0x000000000040106a &lt;+8&gt;:     mov    %fs:0x28,%rax
+0x0000000000401073 &lt;+17&gt;:    mov    %rax,0x18(%rsp)
+0x0000000000401078 &lt;+22&gt;:    xor    %eax,%eax
+0x000000000040107a &lt;+24&gt;:    call   0x40131b &lt;string_length&gt;
+0x000000000040107f &lt;+29&gt;:    cmp    $0x6,%eax
+0x0000000000401082 &lt;+32&gt;:    je     0x4010d2 &lt;phase_5+112&gt;
+0x0000000000401084 &lt;+34&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000401089 &lt;+39&gt;:    jmp    0x4010d2 &lt;phase_5+112&gt;
+0x000000000040108b &lt;+41&gt;:    movzbl (%rbx,%rax,1),%ecx
+0x000000000040108f &lt;+45&gt;:    mov    %cl,(%rsp)
+0x0000000000401092 &lt;+48&gt;:    mov    (%rsp),%rdx
+0x0000000000401096 &lt;+52&gt;:    and    $0xf,%edx
+0x0000000000401099 &lt;+55&gt;:    movzbl 0x4024b0(%rdx),%edx
+0x00000000004010a0 &lt;+62&gt;:    mov    %dl,0x10(%rsp,%rax,1)
+0x00000000004010a4 &lt;+66&gt;:    add    $0x1,%rax
+0x00000000004010a8 &lt;+70&gt;:    cmp    $0x6,%rax
+0x00000000004010ac &lt;+74&gt;:    jne    0x40108b &lt;phase_5+41&gt;
+0x00000000004010ae &lt;+76&gt;:    movb   $0x0,0x16(%rsp)
+0x00000000004010b3 &lt;+81&gt;:    mov    $0x40245e,%esi
+0x00000000004010b8 &lt;+86&gt;:    lea    0x10(%rsp),%rdi
+0x00000000004010bd &lt;+91&gt;:    call   0x401338 &lt;strings_not_equal&gt;
+0x00000000004010c2 &lt;+96&gt;:    test   %eax,%eax
+0x00000000004010c4 &lt;+98&gt;:    je     0x4010d9 &lt;phase_5+119&gt;
+0x00000000004010c6 &lt;+100&gt;:   call   0x40143a &lt;explode_bomb&gt;
+0x00000000004010cb &lt;+105&gt;:   nopl   0x0(%rax,%rax,1)
+0x00000000004010d0 &lt;+110&gt;:   jmp    0x4010d9 &lt;phase_5+119&gt;
+0x00000000004010d2 &lt;+112&gt;:   mov    $0x0,%eax
+0x00000000004010d7 &lt;+117&gt;:   jmp    0x40108b &lt;phase_5+41&gt;
+0x00000000004010d9 &lt;+119&gt;:   mov    0x18(%rsp),%rax
+0x00000000004010de &lt;+124&gt;:   xor    %fs:0x28,%rax
+0x00000000004010e7 &lt;+133&gt;:   je     0x4010ee &lt;phase_5+140&gt;
+0x00000000004010e9 &lt;+135&gt;:   call   0x400b30 &lt;__stack_chk_fail@plt&gt;
+0x00000000004010ee &lt;+140&gt;:   add    $0x20,%rsp
+0x00000000004010f2 &lt;+144&gt;:   pop    %rbx
+0x00000000004010f3 &lt;+145&gt;:   ret</code></pre>
+<p>这一关的汇编代码逻辑不算复杂，我们主要关注翻译后的代码：</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">%rbx &#x3D; %rdi;
+Mem[%rsp + 0x18] &#x3D; Mem[%fs + 0x28]; &#x2F;&#x2F; 4Byte
+%eax ^&#x3D; %eax;  						&#x2F;&#x2F; %eax &#x3D; 0
+if (string_length() !&#x3D; 6) &#123;
+	explode_bomb();
+&#125;
+
+for (%eax &#x3D; 0; %eax !&#x3D; 6; ++%eax) &#123;
+    %edx &#x3D; Mem[%rbx + %rax] &amp; 0xf;
+    Mem[%rsp + %rax + 0x10] &#x3D; Mem[0x4024b0 + %rdx]; &#x2F;&#x2F; 1Byte
+&#125;
+
+Mem[%rsp + 0x16] &#x3D; 0;
+%esi &#x3D; 0x40245e;
+%rdi &#x3D; %rsp + 0x10;
+if (string_not_equal(%rdi, %esi) !&#x3D; 0) &#123;
+	explode_bomb();
+&#125;
+
+%rax &#x3D; Mem[%rsp + 0x18] ^ Mem[%fs + 0x28];
+if (%rax !&#x3D; 0) &#123;
+	__stack_chk_fail();
+&#125;</code></pre>
+<p>从 <code>if (string_length() != 6) explode_bomb();</code> 可以看出密码是一个长度为 6 的字符串，随后的 <code>for</code> 循环遍历字符串的各个字符，提取低一字节的值 <code>%edx</code>，将其作为相对于地址 <code>0x4024b0</code> 的偏移量，读取目标地址 <code>0x4020b0 + %rdx</code> 处的低 4 位数据，存入地址 <code>%rsp + %rax + 0x10</code> 处，构造出一个起始地址为 <code>%rsp + 0x10</code> 的长度为 6 的字符串。然后将起始地址为 <code>%rsp + 0x10</code> 的字符串与起始地址为 <code>0x40245e</code> 的字符串作比较，如果不相同，则“引爆炸弹”。最后进行缓冲区溢出检测，如果溢出，则调用 <code>__stack_chk_fail()</code>.</p>
+<p>经过以上的描述，不难看出输入的 6 位字符串其实是一个相对于数组 <code>0x4024b0</code> 的索引，只不过索引值不直接给出，而是等于字符的低 4 位值。本关的目标便是使得输入的 6 位索引经过映射之后得到的字符串正好等于地址 <code>0x40245e</code> 的字符串，即 \”flyers\”.</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p5.png" alt></p>
+<p>以字符 <em>f</em> 为例，<em>f</em> 在 array 表中的（最小）索引为 9，而所有低 4 位等于 9（1001）的字符都满足条件，例如 <em>i</em> .</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">字符c1</th>
+<th style="text-align:center">索引</th>
+<th style="text-align:center">字符c2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">f</td>
+<td style="text-align:center">9</td>
+<td style="text-align:center">i</td>
+</tr>
+<tr>
+<td style="text-align:center">l</td>
+<td style="text-align:center">15</td>
+<td style="text-align:center">o</td>
+</tr>
+<tr>
+<td style="text-align:center">y</td>
+<td style="text-align:center">14</td>
+<td style="text-align:center">n</td>
+</tr>
+<tr>
+<td style="text-align:center">e</td>
+<td style="text-align:center">5</td>
+<td style="text-align:center">e</td>
+</tr>
+<tr>
+<td style="text-align:center">r</td>
+<td style="text-align:center">6</td>
+<td style="text-align:center">f</td>
+</tr>
+<tr>
+<td style="text-align:center">s</td>
+<td style="text-align:center">7</td>
+<td style="text-align:center">g</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>依次类推，一个满足条件的密码为：<em>ionefg</em> .</p>
+<h1 id="phase-6"><a href="#phase-6" class="headerlink" title="phase_6"></a>phase_6</h1><p>最复杂的一关，代码量非常大，而且逻辑比较复杂，整体观察比较困难，可以先将代码按照循环块拆分为几个部分，依次进行分析。</p>
+<p>在使用 GDB 调试的时候，可以为每个块的起始部分分别打上断点，同时为了调试的方便，可将这些命令写入 <code>.gdbinit</code> 中。</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell">b phase_6
+b *0x401153
+b *0x40116f
+b *0x4011ab
+b *0x4011d2
+r .&#x2F;ans.txt</code></pre>
+<h2 id="block-1"><a href="#block-1" class="headerlink" title="block_1"></a>block_1</h2><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x00000000004010f4 &lt;+0&gt;:     push   %r14
+0x00000000004010f6 &lt;+2&gt;:     push   %r13
+0x00000000004010f8 &lt;+4&gt;:     push   %r12
+0x00000000004010fa &lt;+6&gt;:     push   %rbp
+0x00000000004010fb &lt;+7&gt;:     push   %rbx
+0x00000000004010fc &lt;+8&gt;:     sub    $0x50,%rsp
+0x0000000000401100 &lt;+12&gt;:    mov    %rsp,%r13
+0x0000000000401103 &lt;+15&gt;:    mov    %rsp,%rsi
+0x0000000000401106 &lt;+18&gt;:    call   0x40145c &lt;read_six_numbers&gt;
+0x000000000040110b &lt;+23&gt;:    mov    %rsp,%r14
+0x000000000040110e &lt;+26&gt;:    mov    $0x0,%r12d
+0x0000000000401114 &lt;+32&gt;:    mov    %r13,%rbp
+0x0000000000401117 &lt;+35&gt;:    mov    0x0(%r13),%eax
+0x000000000040111b &lt;+39&gt;:    sub    $0x1,%eax
+0x000000000040111e &lt;+42&gt;:    cmp    $0x5,%eax
+0x0000000000401121 &lt;+45&gt;:    jbe    0x401128 &lt;phase_6+52&gt;
+0x0000000000401123 &lt;+47&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000401128 &lt;+52&gt;:    add    $0x1,%r12d
+0x000000000040112c &lt;+56&gt;:    cmp    $0x6,%r12d
+0x0000000000401130 &lt;+60&gt;:    je     0x401153 &lt;phase_6+95&gt;
+0x0000000000401132 &lt;+62&gt;:    mov    %r12d,%ebx
+0x0000000000401135 &lt;+65&gt;:    movslq %ebx,%rax
+0x0000000000401138 &lt;+68&gt;:    mov    (%rsp,%rax,4),%eax
+0x000000000040113b &lt;+71&gt;:    cmp    %eax,0x0(%rbp)
+0x000000000040113e &lt;+74&gt;:    jne    0x401145 &lt;phase_6+81&gt;
+0x0000000000401140 &lt;+76&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000401145 &lt;+81&gt;:    add    $0x1,%ebx
+0x0000000000401148 &lt;+84&gt;:    cmp    $0x5,%ebx
+0x000000000040114b &lt;+87&gt;:    jle    0x401135 &lt;phase_6+65&gt;
+0x000000000040114d &lt;+89&gt;:    add    $0x4,%r13
+0x0000000000401151 &lt;+93&gt;:    jmp    0x401114 &lt;phase_6+32&gt;</code></pre>
+<p>第一部分整体而言不算太复杂，直接查看翻译后的代码：</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">&#x2F;&#x2F; 读取6个4Byte数字放入从%r14寄存器指向地址开始的内存空间中
+%r13 &#x3D; %rsp;
+%rsi &#x3D; %rsp;
+read_six_numbers();
+%r14 &#x3D; %rsp;
+for (%r12d &#x3D; 0; %r12 !&#x3D; 6; ) &#123;
+	%rbp &#x3D; %r13;
+    %eax &#x3D; Mem[%r13];
+    %eax -&#x3D; 1;
+    if (%eax &gt; 5u) &#123;
+        explode_bomb();
+    &#125;
+    %r12d +&#x3D; 1;
+    if (%r12d &#x3D;&#x3D; 6) break;
+    for (%ebx &#x3D; %r12d; %ebx &lt;&#x3D; 5; ++%ebx) &#123;
+        %rax &#x3D; %ebx;  &#x2F;&#x2F; 符号扩展
+        %eax &#x3D; Mem[4 * %rax + %rsp];
+        if (Mem[%rbp] &#x3D;&#x3D; %eax) &#123;
+            explode_bomb();
+        &#125;
+	&#125;
+	%r13 +&#x3D; 4;
+&#125;</code></pre>
+<p>与 phase_2 类似，首先读取 6 个数字，确定密码由 6 个数字组成。</p>
+<p>随后主要关注循环中导致触发 <code>explode_bomb</code> 的条件，这些条件指明了密码的限定范围。第一个是 <code>%eax &gt; 5u</code>，注意前一条指令是 <code>%eax</code> 自减一，因此可以确定 6 个数字的范围都是 <code>[1, 6]</code>.</p>
+<blockquote>
+<p>这里自减一很有意思，刚开始看可能以为是多此一举，直接判断 %eax 是否大于 6u 不就完了吗？但是考虑到 0 这个特例，它在自减一后得到 -1，而 -1 满足无符号比较大于 5u，因此被排除在外。如果直接判断 %eax 是否大于 6u，那么数字的限定范围就变成了 [0, 6].</p>
+</blockquote>
+<p>后面的内层循环不难看出是用来判重的，因此六个数字的范围得以确定：每个数字都位于区间 <code>[1, 6]</code> 内且无重复数字。</p>
+<h2 id="block-2"><a href="#block-2" class="headerlink" title="block_2"></a>block_2</h2><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000401153 &lt;+95&gt;:    lea    0x18(%rsp),%rsi
+0x0000000000401158 &lt;+100&gt;:   mov    %r14,%rax
+0x000000000040115b &lt;+103&gt;:   mov    $0x7,%ecx
+0x0000000000401160 &lt;+108&gt;:   mov    %ecx,%edx
+0x0000000000401162 &lt;+110&gt;:   sub    (%rax),%edx
+0x0000000000401164 &lt;+112&gt;:   mov    %edx,(%rax)
+0x0000000000401166 &lt;+114&gt;:   add    $0x4,%rax
+0x000000000040116a &lt;+118&gt;:   cmp    %rsi,%rax
+0x000000000040116d &lt;+121&gt;:   jne    0x401160 &lt;phase_6+108&gt;</code></pre>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">&#x2F;&#x2F; %r14 &#x3D; %rsp
+&#x2F;&#x2F; 遍历6个数字，每个数字num的值变为7-num
+%ecx &#x3D; 7;
+for (%rax &#x3D; %r14, %rsi &#x3D; %rsp + 0x18; %rax !&#x3D; %rsi; %rax +&#x3D; 4) &#123;
+	%edx &#x3D; %ecx - Mem[%rax];
+	Mem[%rax] &#x3D; %edx;
+&#125;</code></pre>
+<p>第二部分非常简单，遍历输入的 6 个数字，将每个数字 num 更改为 7 - num.</p>
+<h2 id="block-3"><a href="#block-3" class="headerlink" title="block_3"></a>block_3</h2><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x000000000040116f &lt;+123&gt;:   mov    $0x0,%esi
+0x0000000000401174 &lt;+128&gt;:   jmp    0x401197 &lt;phase_6+163&gt;
+0x0000000000401176 &lt;+130&gt;:   mov    0x8(%rdx),%rdx
+0x000000000040117a &lt;+134&gt;:   add    $0x1,%eax
+0x000000000040117d &lt;+137&gt;:   cmp    %ecx,%eax
+0x000000000040117f &lt;+139&gt;:   jne    0x401176 &lt;phase_6+130&gt;
+0x0000000000401181 &lt;+141&gt;:   jmp    0x401188 &lt;phase_6+148&gt;
+0x0000000000401183 &lt;+143&gt;:   mov    $0x6032d0,%edx
+0x0000000000401188 &lt;+148&gt;:   mov    %rdx,0x20(%rsp,%rsi,2)
+0x000000000040118d &lt;+153&gt;:   add    $0x4,%rsi
+0x0000000000401191 &lt;+157&gt;:   cmp    $0x18,%rsi
+0x0000000000401195 &lt;+161&gt;:   je     0x4011ab &lt;phase_6+183&gt;
+0x0000000000401197 &lt;+163&gt;:   mov    (%rsp,%rsi,1),%ecx
+0x000000000040119a &lt;+166&gt;:   cmp    $0x1,%ecx
+0x000000000040119d &lt;+169&gt;:   jle    0x401183 &lt;phase_6+143&gt;
+0x000000000040119f &lt;+171&gt;:   mov    $0x1,%eax
+0x00000000004011a4 &lt;+176&gt;:   mov    $0x6032d0,%edx
+0x00000000004011a9 &lt;+181&gt;:   jmp    0x401176 &lt;phase_6+130&gt;</code></pre>
+<p>第三部分虽然代码量不大，但是跳转语句很多，逻辑非常复杂。这里我采用了分部的方式，首先改写为带 goto 语句的高级语言伪代码：</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">	%esi &#x3D; 0;
+	goto phase_6_163;
+phase_6_130:
+	%rdx &#x3D; Mem[%rdx + 0x8];
+	%eax +&#x3D; 1;
+	if (%eax !&#x3D; %ecx) goto phase_6_130;
+	goto phase_6_148;
+phase_6_143:
+	%edx &#x3D; 0x6032d0;
+phase_6_148:
+	Mem[%rsp + 2 * %rsi + 0x20] &#x3D; %rdx;
+	%rsi +&#x3D; 4;
+	if (%rsi &#x3D;&#x3D; 0x18) goto phase_6_183;
+phase_6_163:
+	%ecx &#x3D; Mem[%rsp + %rsi];
+	if (%ecx &lt;&#x3D; 1) goto phase_6_143;
+	%eax &#x3D; 1;
+	%edx &#x3D; 0x6032d0;
+	goto phase_6_130;</code></pre>
+<p>然后对照一些常见的形式 goto 改写为循环语句，这里的翻译过程比较繁琐，需要静下来仔细思考。</p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">%esi &#x3D; 0;
+while (%rsi !&#x3D; 0x18) &#123;
+	%ecx &#x3D; Mem[%rsp + %rsi];
+	if (%ecx &gt; 1) &#123;
+		%eax &#x3D; 1;
+		%rdx &#x3D; 0x6032d0;
+		while (%eax !&#x3D; %ecx) &#123;
+			%rdx &#x3D; Mem[%rdx + 0x8];
+			%eax +&#x3D; 1;
+		&#125;
+	&#125;
+	else &#123;
+		%edx &#x3D; 0x6032d0;
+	&#125;
+	Mem[%rsp + 2 * %rsi + 0x20] &#x3D; %rdx;
+	%rsi +&#x3D; 4;
+&#125;</code></pre>
+<p>观察翻译后的代码，似乎和 phase_5 类似，遍历每个数字，并将每个数字当作索引 i，在起始地址为 <code>0x6032d0</code> 的表中查找第 i 个元素，以 <code>%rsp + 0x20</code> 作为起始地址创建一个线性结构。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/p6.png" alt></p>
+<p>打印起始地址为 <code>0x6032d0</code> 的 12 个 8 字节数据，可以看到第二列中表示的值就是某一行的地址，且这些地址正好可以串联成一个线性结构，加上符号名 \”node\” 的提示，是不是很熟悉？没错，就是 <strong>链表</strong> 。上图每一行的第一列为值域，第二列为 next 域。</p>
+<p>回过来观察代码，第三部分的作用就是将输入的六个数字作为索引，创建一个数组，每个数组元素都为索引对应的 next 域。</p>
+<h2 id="block-4"><a href="#block-4" class="headerlink" title="block_4"></a>block_4</h2><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x00000000004011ab &lt;+183&gt;:   mov    0x20(%rsp),%rbx
+0x00000000004011b0 &lt;+188&gt;:   lea    0x28(%rsp),%rax
+0x00000000004011b5 &lt;+193&gt;:   lea    0x50(%rsp),%rsi
+0x00000000004011ba &lt;+198&gt;:   mov    %rbx,%rcx
+0x00000000004011bd &lt;+201&gt;:   mov    (%rax),%rdx
+0x00000000004011c0 &lt;+204&gt;:   mov    %rdx,0x8(%rcx)
+0x00000000004011c4 &lt;+208&gt;:   add    $0x8,%rax
+0x00000000004011c8 &lt;+212&gt;:   cmp    %rsi,%rax
+0x00000000004011cb &lt;+215&gt;:   je     0x4011d2 &lt;phase_6+222&gt;
+0x00000000004011cd &lt;+217&gt;:   mov    %rdx,%rcx
+0x00000000004011d0 &lt;+220&gt;:   jmp    0x4011bd &lt;phase_6+201&gt;</code></pre>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">&#x2F;&#x2F; 创建链表
+%rbx &#x3D; Mem[%rsp + 0x20];
+for (%rax &#x3D; %rsp + 0x28, %rsi &#x3D; %rsp + 0x50; ; %rcx &#x3D; %rdx) &#123;
+	%rcx &#x3D; %rbx;
+	%rdx &#x3D; Mem[%rax];
+	Mem[%rcx + 8] &#x3D; %rdx;
+	%rax +&#x3D; 8;
+	if (%rax &#x3D;&#x3D; %rsi) break;
+&#125;</code></pre>
+<p>理解清楚了第三部分，第四部分的作用就很明显了：根据第三部分创建的由 next 域构成的数组，创建一个链表结构。</p>
+<h2 id="block-5"><a href="#block-5" class="headerlink" title="block_5"></a>block_5</h2><pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x00000000004011d2 &lt;+222&gt;:   movq   $0x0,0x8(%rdx)
+0x00000000004011da &lt;+230&gt;:   mov    $0x5,%ebp
+0x00000000004011df &lt;+235&gt;:   mov    0x8(%rbx),%rax
+0x00000000004011e3 &lt;+239&gt;:   mov    (%rax),%eax
+0x00000000004011e5 &lt;+241&gt;:   cmp    %eax,(%rbx)
+0x00000000004011e7 &lt;+243&gt;:   jge    0x4011ee &lt;phase_6+250&gt;
+0x00000000004011e9 &lt;+245&gt;:   call   0x40143a &lt;explode_bomb&gt;
+0x00000000004011ee &lt;+250&gt;:   mov    0x8(%rbx),%rbx
+0x00000000004011f2 &lt;+254&gt;:   sub    $0x1,%ebp
+0x00000000004011f5 &lt;+257&gt;:   jne    0x4011df &lt;phase_6+235&gt;
+0x00000000004011f7 &lt;+259&gt;:   add    $0x50,%rsp
+0x00000000004011fb &lt;+263&gt;:   pop    %rbx
+0x00000000004011fc &lt;+264&gt;:   pop    %rbp
+0x00000000004011fd &lt;+265&gt;:   pop    %r12
+0x00000000004011ff &lt;+267&gt;:   pop    %r13
+0x0000000000401201 &lt;+269&gt;:   pop    %r14
+0x0000000000401203 &lt;+271&gt;:   ret</code></pre>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">&#x2F;&#x2F; 遍历链表，判断是否从大到小排序，若不是，则引爆
+Mem[%rdx + 8] &#x3D; 0;
+for (%ebp &#x3D; 5; %ebp !&#x3D; 0; --%ebp) &#123;
+	%rax &#x3D; Mem[%rbx + 8];
+    %eax &#x3D; Mem[%rax];
+    if (Mem[%rbx] &lt; %eax) &#123;
+        explode_bomb();
+    &#125;
+   	%rbx &#x3D; Mem[%rbx + 8];
+&#125;</code></pre>
+<p>终于到最后一部分了，这一部分的作用很明显：判断链表是否有序，更准确地说，是否以非递增顺序排列。</p>
+<p>那么本关的目标终于浮出水面了：</p>
+<p><em>输入六个数字，对于每个数字 num，将 7 - num 作为索引，根据链表 node 重构出一个新的链表，并保证重构的链表按非递增顺序排列。</em></p>
+<p>注意链表值域的比较只关注低 4 字节，因此链表各结点值域从大到小排序为：<code>3 4 5 6 1 2</code>，那么对应的输入数字为：<code>4 3 2 1 6 5</code>，即本关的正确答案。</p>
+<h1 id="secret-phase"><a href="#secret-phase" class="headerlink" title="secret_phase"></a>secret_phase</h1><p>解决隐藏关卡首先要解决的问题是：如何进入？观察 main 函数的汇编代码，在结束 phase_6 之后、main 函数返回之前，只有 phase_defused 函数被调用，看来入口可能隐藏在一直以来被忽略的部分。</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/sp-4.png" alt></p>
+<p>对 phase_defused 进行反汇编，结果如下：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x00000000004015c4 &lt;+0&gt;:     sub    $0x78,%rsp
+0x00000000004015c8 &lt;+4&gt;:     mov    %fs:0x28,%rax
+0x00000000004015d1 &lt;+13&gt;:    mov    %rax,0x68(%rsp)
+0x00000000004015d6 &lt;+18&gt;:    xor    %eax,%eax
+0x00000000004015d8 &lt;+20&gt;:    cmpl   $0x6,0x202181(%rip)        # 0x603760 &lt;num_input_strings&gt;
+0x00000000004015df &lt;+27&gt;:    jne    0x40163f &lt;phase_defused+123&gt;
+0x00000000004015e1 &lt;+29&gt;:    lea    0x10(%rsp),%r8
+0x00000000004015e6 &lt;+34&gt;:    lea    0xc(%rsp),%rcx
+0x00000000004015eb &lt;+39&gt;:    lea    0x8(%rsp),%rdx
+0x00000000004015f0 &lt;+44&gt;:    mov    $0x402619,%esi
+0x00000000004015f5 &lt;+49&gt;:    mov    $0x603870,%edi
+0x00000000004015fa &lt;+54&gt;:    call   0x400bf0 &lt;__isoc99_sscanf@plt&gt;
+0x00000000004015ff &lt;+59&gt;:    cmp    $0x3,%eax
+0x0000000000401602 &lt;+62&gt;:    jne    0x401635 &lt;phase_defused+113&gt;
+0x0000000000401604 &lt;+64&gt;:    mov    $0x402622,%esi
+0x0000000000401609 &lt;+69&gt;:    lea    0x10(%rsp),%rdi
+0x000000000040160e &lt;+74&gt;:    call   0x401338 &lt;strings_not_equal&gt;
+0x0000000000401613 &lt;+79&gt;:    test   %eax,%eax
+0x0000000000401615 &lt;+81&gt;:    jne    0x401635 &lt;phase_defused+113&gt;
+0x0000000000401617 &lt;+83&gt;:    mov    $0x4024f8,%edi
+0x000000000040161c &lt;+88&gt;:    call   0x400b10 &lt;puts@plt&gt;
+0x0000000000401621 &lt;+93&gt;:    mov    $0x402520,%edi
+0x0000000000401626 &lt;+98&gt;:    call   0x400b10 &lt;puts@plt&gt;
+0x000000000040162b &lt;+103&gt;:   mov    $0x0,%eax
+0x0000000000401630 &lt;+108&gt;:   call   0x401242 &lt;secret_phase&gt;
+0x0000000000401635 &lt;+113&gt;:   mov    $0x402558,%edi
+0x000000000040163a &lt;+118&gt;:   call   0x400b10 &lt;puts@plt&gt;
+0x000000000040163f &lt;+123&gt;:   mov    0x68(%rsp),%rax
+0x0000000000401644 &lt;+128&gt;:   xor    %fs:0x28,%rax
+0x000000000040164d &lt;+137&gt;:   je     0x401654 &lt;phase_defused+144&gt;
+0x000000000040164f &lt;+139&gt;:   call   0x400b30 &lt;__stack_chk_fail@plt&gt;
+0x0000000000401654 &lt;+144&gt;:   add    $0x78,%rsp
+0x0000000000401658 &lt;+148&gt;:   ret</code></pre>
+<p>和之前的做法一样，将汇编代码翻译为 C 语言风格的伪代码，同时打印程序中用到的一些字符串：</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/sp.png" alt></p>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">%rax &#x3D; Mem[%fs + 0x28];
+Mem[%rsp + 0x68] &#x3D; %rax;
+if (Mem[%rip + 0x202181] &#x3D;&#x3D; 6) &#123; &#x2F;&#x2F; num_input_strings
+	%r8 &#x3D; %rsp + 0x10;
+	%rcx &#x3D; %rsp + 0xc;
+	%rdx &#x3D; %rsp + 0x8;
+	%rdi &#x3D; 0x603870;
+	sscanf(%rdi, &quot;%d %d %s&quot;, %rdx, %rcx, %r8);
+	if (%eax &#x3D;&#x3D; 3) &#123;
+		%rdi &#x3D; %rsp + 0x10;
+		if (strings_not_equal(%rdi, &quot;DrEvil&quot;) &#x3D;&#x3D; 0) &#123;
+			puts(&quot;Curses, you&#39;ve found the secret phase!&quot;);
+			puts(&quot;But finding it and solving it are quite different...&quot;);
+			%eax &#x3D; 0;
+			secret_phase();
+		&#125;
+	&#125;
+	puts(&quot;Congratulations! You&#39;ve defused the bomb!&quot;);
+&#125;
+%rax &#x3D; Mem[%rsp + 0x68];
+if (%rax !&#x3D; Mem[%fs + 0x28]) &#123;
+	__stack_chk_fail();
+&#125;</code></pre>
+<p>仔细分析上述代码的逻辑，当输入的字符串个数等于 6 时，即解决了 phase_1 ~ phase_6 所有关卡后，程序调用 <code>sscanf</code> 从地址 <code>0x603870</code> 处读取以空格分隔的两个整数和一个字符串，分别存入寄存器 <code>%rdx</code>、<code>%rcx</code> 和 <code>%r8</code> 中，当函数返回值为 3，即成功匹配了 3 个值，且匹配到的第三个值（字符串）等于 \”DrEvil\” 时，即可进入隐藏关卡。</p>
+<p>但是上面我们已经打印了地址 <code>0x603870</code> 处的字符串，为 <code>3 0</code>，只有两个，无法使得匹配数为 3. 我最开始想到的解决方法就是在调试过程中手动更改该地址处的值，但是这样的做法也只具备调试作用，进入隐藏关卡密码仍然无法得到。</p>
+<p>换个角度来思考，这个 <code>3 0</code> 有没有可能不是硬编码的数据，而是我们手动输入的？记得之前 <code>phase_4</code> 的正确密码之一就是 <code>3 0</code>。</p>
+<p>将断点设置在 phase_4 处，并打印 <code>%rdi</code> 寄存器的值， 发现正好就是 <code>0x603870</code>，因此 phase_4 的完整密码应该是 <code>3 0 DrEvil</code> （正如前面所说，前两位也可以是 <code>1 0</code>、<code>7 0</code> 等）。</p>
+<blockquote>
+<p>注意末尾的 DrEvil 在 phase_4 中并不会被读取，因为模式字符串为 “%d %d”，因此匹配成功的值最多为 2，不会影响 <code>cmp  $0x2, %eax</code> 的判断。</p>
+</blockquote>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/sp-2.png" alt></p>
+<p>经过前面的准备，终于可以着手解决隐藏关卡了，相信有了前面这些关卡的锻炼，隐藏关卡不会显得太难。</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000401242 &lt;+0&gt;:     push   %rbx
+0x0000000000401243 &lt;+1&gt;:     call   0x40149e &lt;read_line&gt;
+0x0000000000401248 &lt;+6&gt;:     mov    $0xa,%edx
+0x000000000040124d &lt;+11&gt;:    mov    $0x0,%esi
+0x0000000000401252 &lt;+16&gt;:    mov    %rax,%rdi
+0x0000000000401255 &lt;+19&gt;:    call   0x400bd0 &lt;strtol@plt&gt;
+0x000000000040125a &lt;+24&gt;:    mov    %rax,%rbx
+0x000000000040125d &lt;+27&gt;:    lea    -0x1(%rax),%eax
+0x0000000000401260 &lt;+30&gt;:    cmp    $0x3e8,%eax
+0x0000000000401265 &lt;+35&gt;:    jbe    0x40126c &lt;secret_phase+42&gt;
+0x0000000000401267 &lt;+37&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x000000000040126c &lt;+42&gt;:    mov    %ebx,%esi
+0x000000000040126e &lt;+44&gt;:    mov    $0x6030f0,%edi
+0x0000000000401273 &lt;+49&gt;:    call   0x401204 &lt;fun7&gt;
+0x0000000000401278 &lt;+54&gt;:    cmp    $0x2,%eax
+0x000000000040127b &lt;+57&gt;:    je     0x401282 &lt;secret_phase+64&gt;
+0x000000000040127d &lt;+59&gt;:    call   0x40143a &lt;explode_bomb&gt;
+0x0000000000401282 &lt;+64&gt;:    mov    $0x402438,%edi
+0x0000000000401287 &lt;+69&gt;:    call   0x400b10 &lt;puts@plt&gt;
+0x000000000040128c &lt;+74&gt;:    call   0x4015c4 &lt;phase_defused&gt;
+0x0000000000401291 &lt;+79&gt;:    pop    %rbx
+0x0000000000401292 &lt;+80&gt;:    ret</code></pre>
+<pre class="language-pseudocode" data-language="pseudocode"><code class="language-pseudocode">read_line();
+strtol(%rax, 0, 0xa);
+%rbx &#x3D; %rax;
+%eax &#x3D; %rax - 1;
+if (%eax &gt; 0x3e8) &#123;  &#x2F;&#x2F; 无符号比较
+	explode_bomb();
+&#125;
+fun7(0x6030f0, %ebx);
+if (%eax !&#x3D; 2) &#123;
+	explode_bomb();
+&#125;
+puts(0x402438);
+phase_defused();</code></pre>
+<p>可以看到，隐藏关卡的代码逻辑还是比较清晰的：读取一行，应该是隐藏关卡的密码，将其转换为 <code>long</code> 类型，然后又是和之前类似的范围限定语句，随后调用函数 <code>fun7</code>，如果返回值为 2，则密码输入正确。</p>
+<p>问题的关键还是在于函数 <code>fun7</code>，其代码如下：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">0x0000000000401204 &lt;+0&gt;:     sub    $0x8,%rsp
+0x0000000000401208 &lt;+4&gt;:     test   %rdi,%rdi
+0x000000000040120b &lt;+7&gt;:     je     0x401238 &lt;fun7+52&gt;
+0x000000000040120d &lt;+9&gt;:     mov    (%rdi),%edx
+0x000000000040120f &lt;+11&gt;:    cmp    %esi,%edx
+0x0000000000401211 &lt;+13&gt;:    jle    0x401220 &lt;fun7+28&gt;
+0x0000000000401213 &lt;+15&gt;:    mov    0x8(%rdi),%rdi
+0x0000000000401217 &lt;+19&gt;:    call   0x401204 &lt;fun7&gt;
+0x000000000040121c &lt;+24&gt;:    add    %eax,%eax
+0x000000000040121e &lt;+26&gt;:    jmp    0x40123d &lt;fun7+57&gt;
+0x0000000000401220 &lt;+28&gt;:    mov    $0x0,%eax
+0x0000000000401225 &lt;+33&gt;:    cmp    %esi,%edx
+0x0000000000401227 &lt;+35&gt;:    je     0x40123d &lt;fun7+57&gt;
+0x0000000000401229 &lt;+37&gt;:    mov    0x10(%rdi),%rdi
+0x000000000040122d &lt;+41&gt;:    call   0x401204 &lt;fun7&gt;
+0x0000000000401232 &lt;+46&gt;:    lea    0x1(%rax,%rax,1),%eax
+0x0000000000401236 &lt;+50&gt;:    jmp    0x40123d &lt;fun7+57&gt;
+0x0000000000401238 &lt;+52&gt;:    mov    $0xffffffff,%eax
+0x000000000040123d &lt;+57&gt;:    add    $0x8,%rsp
+0x0000000000401241 &lt;+61&gt;:    ret</code></pre>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token function">fun7</span><span class="token punctuation">(</span><span class="token keyword">unsigned</span> x<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>x <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">0xffffffff</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">int</span> z <span class="token operator">=</span> <span class="token operator">*</span>x<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>z <span class="token operator">></span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">2</span> <span class="token operator">*</span> <span class="token function">fun7</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span>x <span class="token operator">+</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>z <span class="token operator">==</span> y<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token number">2</span> <span class="token operator">*</span> <span class="token function">fun7</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span>x <span class="token operator">+</span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>又是一个递归函数，不过和 phase_4 不同，这个函数的代码显得很有规律，看到 <code>*(x + 8)</code> 和 <code>*(x + 16)</code> 这样的表达式很容易想到可能又是某种链接结构，不妨打印 <code>0x6030f0</code> 处的内容：</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/sp-3.png" alt></p>
+<p>这下结果很明确了，每个结点包含两个链接（指针）域，没错，正是二叉树。为了分析的方便，我根据上图的数据内容绘制了一个等价的二叉树，如下图所示：</p>
+<blockquote>
+<p>可以看到，每个结点由 4 个 8 字节组成，前三个应该分别是值域、左孩子、右孩子，最后一个全为 0 的 8 字节貌似很多余，个人推测应该是 C 语言结构体的 <strong>字节对齐</strong> 导致的。</p>
+</blockquote>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/btree.png" alt></p>
+<p>最后再回到函数 fun7 中，要使得最终结果等于 2，一种可能的计算方法如下：</p>
+<p><img src="/2024/09/17/CSAPP-Bomb-Lab/formu.png" alt></p>
+<p>我们只需要保证二叉树遍历时依次遍历左孩子、右孩子、左孩子，且输入密码正好等于叶子结点即可，<code>0x14</code> 正好就满足条件，因此隐藏关卡的密码为 20.</p>
+<p>至此，”炸弹“ 成功被”拆除“。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/">http://lordaeronesz.github.io/2024/09/17/CSAPP-Bomb-Lab/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a><a class="post-meta__tags" href="/tags/%E6%B1%87%E7%BC%96%E8%AF%AD%E8%A8%80/">汇编语言</a></div><div class="post_share"><div class="social-share" data-image="/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/09/25/CSAPP-Attack-Lab/"><img class="prev-cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">CSAPP Attack Lab</div></div></a></div><div class="next-post pull-right"><a href="/2024/08/31/CSAPP-Data-Lab/"><img class="next-cover" src="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">CSAPP Data Lab</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/09/25/CSAPP-Attack-Lab/" title="CSAPP Attack Lab"><img class="cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-25</div><div class="title">CSAPP Attack Lab</div></div></a></div><div><a href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img class="cover" src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-17</div><div class="title">CSAPP Cache Lab</div></div></a></div><div><a href="/2024/08/31/CSAPP-Data-Lab/" title="CSAPP Data Lab"><img class="cover" src="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-31</div><div class="title">CSAPP Data Lab</div></div></a></div><div><a href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img class="cover" src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-10</div><div class="title">CSAPP Malloc Lab</div></div></a></div><div><a href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img class="cover" src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-29</div><div class="title">CSAPP Shell Lab</div></div></a></div><div><a href="/2023/03/11/计算机基础面试题总结/" title="计算机基础面试题总结"><img class="cover" src="/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-03-11</div><div class="title">计算机基础面试题总结</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#bomb-c"><span class="toc-number">1.</span> <span class="toc-text">bomb.c</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-1"><span class="toc-number">2.</span> <span class="toc-text">phase_1</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-2"><span class="toc-number">3.</span> <span class="toc-text">phase_2</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-3"><span class="toc-number">4.</span> <span class="toc-text">phase_3</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E4%BC%A0%E9%80%92"><span class="toc-number">4.0.1.</span> <span class="toc-text">参数传递</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%94%E5%9B%9E%E5%80%BC"><span class="toc-number">4.0.2.</span> <span class="toc-text">返回值</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-4"><span class="toc-number">5.</span> <span class="toc-text">phase_4</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-5"><span class="toc-number">6.</span> <span class="toc-text">phase_5</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#phase-6"><span class="toc-number">7.</span> <span class="toc-text">phase_6</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#block-1"><span class="toc-number">7.1.</span> <span class="toc-text">block_1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#block-2"><span class="toc-number">7.2.</span> <span class="toc-text">block_2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#block-3"><span class="toc-number">7.3.</span> <span class="toc-text">block_3</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#block-4"><span class="toc-number">7.4.</span> <span class="toc-text">block_4</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#block-5"><span class="toc-number">7.5.</span> <span class="toc-text">block_5</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#secret-phase"><span class="toc-number">8.</span> <span class="toc-text">secret_phase</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"/></a><div class="content"><a class="title" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</a><time datetime="2025-07-26T15:30:11.000Z" title="发表于 2025-07-26 23:30:11">2025-07-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序"><img src="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/rv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RISC-V 架构下的裸金属程序"/></a><div class="content"><a class="title" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序">RISC-V 架构下的裸金属程序</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"/></a><div class="content"><a class="title" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析"><img src="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="xv6-riscv 上下文切换代码分析"/></a><div class="content"><a class="title" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析">xv6-riscv 上下文切换代码分析</a><time datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"/></a><div class="content"><a class="title" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</a><time datetime="2025-07-10T15:30:11.000Z" title="发表于 2025-07-10 23:30:11">2025-07-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

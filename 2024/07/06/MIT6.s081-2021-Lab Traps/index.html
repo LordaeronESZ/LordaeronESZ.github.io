@@ -1,0 +1,585 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIT6.s081 2021 Lab Traps | Lordaeron_ESZ's blog</title><meta name="keywords" content="经验,操作系统,xv6"><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="使用gdb调试xv6内核从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。  安装 gdb-multiarch.  利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令： sudo apt install gdb-multiarch  在 xv6">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.s081 2021 Lab Traps">
+<meta property="og:url" content="http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/index.html">
+<meta property="og:site_name" content="Lordaeron_ESZ&#39;s blog">
+<meta property="og:description" content="使用gdb调试xv6内核从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。  安装 gdb-multiarch.  利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令： sudo apt install gdb-multiarch  在 xv6">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png">
+<meta property="article:published_time" content="2024-07-06T03:45:11.000Z">
+<meta property="article:modified_time" content="2024-07-07T08:04:10.879Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="xv6">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png"><link rel="shortcut icon" href="/img/bird_32x32.png"><link rel="canonical" href="http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="ClHeIfdxbuDap8IIc_tsXB2ONrEjpWXvdqFNV7FPsa4"/><meta name="baidu-site-verification" content="code-64LOUYpRAB"/><meta name="bing_site_verification" content="5E3A4478903716830DB93F75FFB66BEC"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?83d8d2d69250d7480924aa794b7af03a";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"prismjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MIT6.s081 2021 Lab Traps',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-07-07 16:04:10'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css" media="defer" onload="this.media='all'"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Lordaeron_ESZ's blog" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/huaji0.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Lordaeron_ESZ's blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/books/"><i class="fa-fw fas fa-book"></i><span> 阅读</span></a></div><div class="menus_item"><a class="site-page" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MIT6.s081 2021 Lab Traps</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-06T03:45:11.000Z" title="发表于 2024-07-06 11:45:11">2024-07-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-07-07T08:04:10.879Z" title="更新于 2024-07-07 16:04:10">2024-07-07</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>14分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MIT6.s081 2021 Lab Traps"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div><article class="post-content" id="article-container"><h1 id="使用gdb调试xv6内核"><a href="#使用gdb调试xv6内核" class="headerlink" title="使用gdb调试xv6内核"></a>使用gdb调试xv6内核</h1><p>从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。</p>
+<ol>
+<li>安装 <code>gdb-multiarch</code>.</li>
+</ol>
+<p>利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令：</p>
+<pre class="language-shell" data-language="shell"><code class="language-shell">sudo apt install gdb-multiarch</code></pre>
+<ol>
+<li>在 xv6 项目根目录下可以看到 <code>.gdbinit</code> 文件，其中已经写好了一些 <code>gdb</code> 的初始化选项，使用文本编辑器或 <code>cat</code> 命令查看：</li>
+</ol>
+<pre class="language-ini" data-language="ini"><code class="language-ini">set confirm off                                                         
+set architecture riscv:rv64                                             
+target remote 127.0.0.1:26000                                           
+symbol-file kernel/kernel                                               
+set disassemble-next-line auto           
+set riscv use-compressed-breakpoints yes</code></pre>
+<ol>
+<li>在 <code>~/.config/gdb/</code> 目录下的文件 <code>gdbinit</code> 中（没有则新建）添加安全加载路径，否则可能无法加载 <code>.gdbinit</code> 的配置。</li>
+</ol>
+<pre class="language-ini" data-language="ini"><code class="language-ini">add-auto-load-safe-path &lt;xv6项目的根目录>/.gdbinit</code></pre>
+<ol>
+<li>打开两个终端窗口（可以使用 tmux 进行分屏），都需要进入 xv6 根目录，第一个窗口输入 <code>make-qemu</code> 等待调试器连接，第二个窗口输入 <code>gdb-multiarch</code> 打开 <code>gdb</code>，如果前面配置正确，那么 <code>gdb</code> 并自动加载 <code>.gdbinit</code> 配置，与 <code>qemu</code> 连接，之后便可以开始正常调试了。</li>
+</ol>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/gdb.png" alt></p>
+<h1 id="RISC-V-assembly"><a href="#RISC-V-assembly" class="headerlink" title="RISC-V assembly"></a>RISC-V assembly</h1><p>一些有关 RISC-V 汇编的问题，最好先通过网上博客或手册简单了解一下 RISC-V 的基本指令。</p>
+<p><strong>Q1:</strong> </p>
+<blockquote>
+<p>Which registers contain arguments to functions? For example, which register holds 13 in main’s call to <code>printf</code>?</p>
+</blockquote>
+<p><strong>A1:</strong> </p>
+<p>可以参考 RISC-V 的 <em>calling convention</em>，<code>a0</code> - <code>a7</code>: 这些寄存器用于传递函数的前八个整数或指针类型的参数，如果超出这些寄存器的数量，超出的部分会存放在栈上。观察指令 <code>li  a2,13</code> 可知，13 作为 <code>printf</code> 的第二个参数，存放在寄存器 <code>a2</code> 中。</p>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/reg.png" alt></p>
+<p><strong>Q2:</strong></p>
+<blockquote>
+<p>Where is the call to function <code>f</code> in the assembly code for main? Where is the call to <code>g</code>? (Hint: the compiler may inline functions.)</p>
+</blockquote>
+<p><strong>A2:</strong> </p>
+<p>调用函数 <code>f</code> 和函数 <code>g</code> 的代码被编译器优化，直接计算出了结果 12，作为 <code>printf</code> 的参数存入寄存器 <code>a1</code> 中：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">26:   45b1                    li  a1,12</code></pre>
+<p><strong>Q3:</strong></p>
+<blockquote>
+<p>At what address is the function <code>printf</code> located?</p>
+</blockquote>
+<p><strong>A3:</strong> </p>
+<p>位于 0x638 地址处。</p>
+<p><strong>Q4:</strong></p>
+<blockquote>
+<p>What value is in the register <code>ra</code> just after the <code>jalr</code> to <code>printf</code> in <code>main</code>?</p>
+</blockquote>
+<p><strong>A4:</strong> 参考 <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2021/readings/riscv-calling.pdf">riscv-calling</a>，<code>ra</code> 用来存储函数调用的返回地址，因此 <code>ra</code> 的值为 <code>jalr    1544(ra)</code> 的后一条指令地址，即 0x38.</p>
+<p><strong>Q5:</strong></p>
+<blockquote>
+<p>Run the following code.</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">unsigned</span> <span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0x00646c72</span><span class="token punctuation">;</span>
+<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"H%x Wo%s"</span><span class="token punctuation">,</span> <span class="token number">57616</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>What is the output? <a target="_blank" rel="noopener" href="http://web.cs.mun.ca/~michael/c/ascii-table.html">Here’s an ASCII table</a> that maps bytes to characters.</p>
+<p>The output depends on that fact that the RISC-V is little-endian. If the RISC-V were instead big-endian what would you set <code>i</code> to in order to yield the same output? Would you need to change <code>57616</code> to a different value?</p>
+<p><a target="_blank" rel="noopener" href="http://www.webopedia.com/TERM/b/big_endian.html">Here’s a description of little- and big-endian</a> and <a target="_blank" rel="noopener" href="http://www.networksorcery.com/enp/ien/ien137.txt">a more whimsical description</a>.</p>
+</blockquote>
+<p><strong>A5:</strong></p>
+<ul>
+<li><code>%x</code> 用于输出一个无符号十六进制整数。</li>
+<li><code>%s</code> 用于输出一个字符指针所指向的字符串，直到遇到空字符<code>\0</code>为止。</li>
+</ul>
+<p>小端模式下，57616 的 十六进制表示为 e110，<code>&amp;i</code> 首地址开始的字节分别为 <code>0x72, 0x6c, 0x64, 0x0</code>，对应 ASCII 表中的字符为 <code>r, l, d</code>，因此最终输出结果为 <code>He110 World</code>.</p>
+<p>若采取大端模式，<code>i</code> 的值应当替换为 <code>0x726c6400</code>，57616 的值无需改变，因为十六进制的书写规则并没有改变（高位在左，低位在右）。</p>
+<p><strong>Q6:</strong></p>
+<blockquote>
+<p>In the following code, what is going to be printed after <code>&#39;y=&#39;</code>? (note: the answer is not a specific value.) Why does this happen?</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"x=%d y=%d"</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+</blockquote>
+<p><strong>A6:</strong></p>
+<p>关于可变参数的内容查看 《<em>C Programming Language 2nd Edition</em>》（K\&amp;R）的 7.3 节 <em>Variable-length Argument Lists</em>.</p>
+<p>简而言之，这样的操作将引发<strong>未定义行为</strong>，此时 <code>ap</code> 指向了一个未知的内存区域，并将该区域的数据以整型的形式输出。</p>
+<h1 id="Backtrace"><a href="#Backtrace" class="headerlink" title="Backtrace"></a>Backtrace</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>思路其实很简单：对照 <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2021/lec/l-riscv-slides.pdf">lecture notes</a> 给出的栈的结构，从当前栈帧的起始地址 <code>fp</code> 开始，<code>fp - 8</code> 的位置存放着当前函数调用的返回地址（上一次函数调用处的下一条指令地址），即我们 <strong>需要打印</strong> 的地址，<code>fp - 16</code> 的位置存放着上一次函数调用所在栈帧的起始地址，将该地址作为新的 <code>fp</code> 重复上述步骤即可。</p>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/st.png" alt></p>
+<p>关键问题是 <strong>什么时候停止</strong> ？可以看到上述 backtrace 的过程就好像是在遍历一个链表，当链表的 <code>next</code> 域为空指针时链表到达末尾，那 traceback 完成后<code>fp</code> 的值应该是什么？为了寻找这个问题的答案，我选择先不设置终止条件，让它一直向上搜索，最后发现，返回地址最终为一个很小的值，这个地址显然不是我们想要的，在此之前应该退出，即本次 traceback 的尽头是 0x80001c92.</p>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/noterm.png" alt></p>
+<p>但打印出来的函数调用的返回地址似乎并没有什么规律，因此我又尝试将遍历过程中的栈帧起始地址 <code>fp</code> 打印出来，得到以下结果：</p>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/pfp.png" alt></p>
+<p>结合提示：</p>
+<blockquote>
+<p>Xv6 allocates one page for each stack in the xv6 kernel at PAGE-aligned address.</p>
+</blockquote>
+<p>原因就很明显了，在打印第三个返回地址时，此时栈帧起始地址为 0x3fffffa000，注意该地址后 12 二进制数为 0，且页面大小为 4KB，因此该地址位于一个页面的起始地址。又因为 xv6 内核只为每个 <strong>内核栈</strong> 分配一个页面的存储空间，该页面的起始地址按页面大小对齐，所以此时已经到达一个内核栈的顶端，无需继续遍历。</p>
+<p>弄清楚了这些，代码的编写就很简单了：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">void</span> <span class="token function">backtrace</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"backtrace:\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    uint64 fp <span class="token operator">=</span> <span class="token function">r_fp</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    uint64 top <span class="token operator">=</span> <span class="token function">PGROUNDUP</span><span class="token punctuation">(</span>fp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">do</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%p\n"</span><span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">(</span>uint64 <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>fp <span class="token operator">-</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        fp <span class="token operator">=</span> <span class="token operator">*</span><span class="token punctuation">(</span>uint64 <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span>fp <span class="token operator">-</span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>fp <span class="token operator">&lt;</span> top<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// reach the top of kernel stack</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff"><span class="token coord">--- a/kernel/defs.h</span>
+<span class="token coord">+++ b/kernel/defs.h</span>
+@@ -80,6 +80,7 @@ int             pipewrite(struct pipe*, uint64, int);
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">void            printf(char*, ...);
+</span><span class="token prefix unchanged"> </span><span class="token line">void            panic(char*) __attribute__((noreturn));
+</span><span class="token prefix unchanged"> </span><span class="token line">void            printfinit(void);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">void			backtrace(void); // here
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// proc.c
+</span><span class="token prefix unchanged"> </span><span class="token line">int             cpuid(void);
+</span></span>diff --git a/kernel/printf.c b/kernel/printf.c
+index e1347de..a068cbd 100644
+<span class="token coord">--- a/kernel/printf.c</span>
+<span class="token coord">+++ b/kernel/printf.c</span>
+@@ -114,6 +114,23 @@ printf(char *fmt, ...)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    release(&amp;pr.lock);
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">// here
+</span><span class="token prefix inserted">+</span><span class="token line">void backtrace(void) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">	printf("backtrace:\n");
+</span><span class="token prefix inserted">+</span><span class="token line">	uint64 fp = r_fp();
+</span><span class="token prefix inserted">+</span><span class="token line">	uint64 top = PGROUNDUP(fp);
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	do &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">		printf("%p\n", *(uint64 *)(fp - 8));
+</span><span class="token prefix inserted">+</span><span class="token line">		fp = *(uint64 *)(fp - 16);
+</span><span class="token prefix inserted">+</span><span class="token line">	&#125; while (lower &lt; top);
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">void
+</span><span class="token prefix unchanged"> </span><span class="token line">panic(char *s)
+</span><span class="token prefix unchanged"> </span><span class="token line">&#123;
+</span></span>diff --git a/kernel/riscv.h b/kernel/riscv.h
+index 1691faf..fae7bf3 100644
+<span class="token coord">--- a/kernel/riscv.h</span>
+<span class="token coord">+++ b/kernel/riscv.h</span>
+@@ -331,6 +331,15 @@ sfence_vma()
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  asm volatile("sfence.vma zero, zero");
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">// here
+</span><span class="token prefix inserted">+</span><span class="token line">static inline uint64
+</span><span class="token prefix inserted">+</span><span class="token line">r_fp()
+</span><span class="token prefix inserted">+</span><span class="token line">&#123;
+</span><span class="token prefix inserted">+</span><span class="token line">  uint64 x;
+</span><span class="token prefix inserted">+</span><span class="token line">  asm volatile("mv %0, s0" : "=r" (x) );
+</span><span class="token prefix inserted">+</span><span class="token line">  return x;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">#define PGSIZE 4096 // bytes per page
+</span><span class="token prefix unchanged"> </span><span class="token line">#define PGSHIFT 12  // bits of offset within a page
+</span></span>diff --git a/kernel/sysproc.c b/kernel/sysproc.c
+index e8bcda9..f27c007 100644
+<span class="token coord">--- a/kernel/sysproc.c</span>
+<span class="token coord">+++ b/kernel/sysproc.c</span>
+@@ -70,6 +70,7 @@ sys_sleep(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    sleep(&amp;ticks, &amp;tickslock);
+</span><span class="token prefix unchanged"> </span><span class="token line">  &#125;
+</span><span class="token prefix unchanged"> </span><span class="token line">  release(&amp;tickslock);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  backtrace(); // here
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  return 0;
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;</span></span></code></pre>
+<h1 id="Alarm"><a href="#Alarm" class="headerlink" title="Alarm"></a>Alarm</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>目前为止感觉最复杂的一题，需要对 trap 机制有一个比较深入的理解，建议在上手之前先仔细阅读与 trap 有关的代码：<code>kernel/trampoline.S</code> 和 <code>kernel/trap.c</code>，这里也推荐一位博主写的两篇有关 xv6 的 trap 机制的博客：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zzy980511/article/details/130255251">6.S081——陷阱部分(一文读懂xv6系统调用)——xv6源码完全解析系列(5)</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zzy980511/article/details/130642258">6.S081——补充材料——RISC-V架构中的异常与中断详解</a></p>
+<h3 id="test0-invoke-handler"><a href="#test0-invoke-handler" class="headerlink" title="test0: invoke handler"></a>test0: invoke handler</h3><p>我们不妨按照提示的顺序来进行，不关注 <code>sys_sigreturn</code>，先把 <code>sys_sigalarm</code> 的功能实现。</p>
+<p>实际上，<code>sys_sigalarm</code> 函数的功能很简单，只是简单地将用户态下传递的参数 <code>ticks</code> 和 <code>handler</code> 存入进程的 <code>struct proc</code> 结构体中。实现调用 <code>handler</code> 的操作需要在内核态下的 <code>usertrap</code> 中完成，具体来说，针对时钟中断导致的 trap 将在 <code>if(which_dev == 2)</code> 后的语句中被处理。有两个目标需要完成： <strong>定时</strong> 和 <strong>函数调用</strong> 。</p>
+<p>定时的逻辑比较清楚，在 <code>struct proc</code> 中添加变量 <code>ticksum</code>，代表从上次 <code>handler</code> 处理完成开始进程累计的时钟中断次数，该变量在进程初始化时设置为 0，随后每次遇到时钟中断，都自增 1，如果自增后的值达到了设定的间隔 <code>ticks</code>，则将其复位为 0，调用 <code>handler</code> 函数。</p>
+<p>函数调用是一个需要考虑的问题，这里不能直接利用函数指针 <code>handler</code> 进行函数调用，因为 <code>handler</code> 指向的函数位于用户空间下，而 <code>usertrap</code> 位于内核态下，页表的地址映射不同，无法直接根据用户空间下的虚拟地址进行寻址（直接调用引发的错误如下图所示），需要在本次中断结束返回到用户态之后执行。因此正确的做法应该是设置进程 <code>struct proc</code> 的 <code>epc</code> 寄存器为函数指针 <code>handler</code>，这样在中断处理完成，进程回到用户态并被 CPU 调度执行后，寄存器 <code>pc</code> 将被设置预先保存的 <code>epc</code> 的值，这样函数 <code>handler</code> 就被成功调度执行了。至此，test0 应该成功通过。</p>
+<p><img src="/2024/07/06/MIT6.s081-2021-Lab%20Traps/nil.png" alt></p>
+<p>在进入到 test1\&amp;2 之前，有必要说一说我的一些思考：在上面的讨论中，我们知道内核无法直接根据函数指针 <code>handler</code> 的值进行用户空间函数的调用，那能否在内核态下根据进程的用户态页表和给定的虚拟地址，利用软件地址转换机制（<code>vm.c</code> 中的 <code>walkaddr</code> 函数）来将用户空间的虚拟地址转换为物理地址进行寻址呢（这也是我最开始的想法）？答案是不行，因为即便是在内核态下，程序中的地址仍然是虚拟地址，也就是说即便知道用户态函数实际存储的物理地址，我们也只有在 <strong>给出一个虚拟地址，该虚拟地址经过内核页表地址转换之后，刚好得到了正确的物理地址，</strong> 才可能成功。而实际上，尽管内核 <code>KERNBASE</code> 到 <code>PHYSTOP</code> 地址都是直接映射，但内核页表中可能并没有所需要的页表项，因此，这并不会成功。</p>
+<h3 id="test1-test2-resume-interrupted-code"><a href="#test1-test2-resume-interrupted-code" class="headerlink" title="test1/test2(): resume interrupted code"></a>test1/test2(): resume interrupted code</h3><p>test1 的目标是，存储和恢复中断处理前后的寄存器状态。那么问题就来了：为什么需要存储这些寄存器？需要存储哪些寄存器？</p>
+<p>其实最开始，我是有些纠结寄存器状态的存储目的是什么，认为可能是与内核态和用户态切换有关，但仔细想想，这部分的工作应该是由 <code>trampoline.S</code> 和 <code>usertrapret</code> 来完成的，那么为什么还需要存储和恢复寄存器？</p>
+<p>事实上，在系统未关闭中断的情况下，时钟中断可能在程序执行的任何时刻发生，且在返回到原程序位置继续执行之前还需要执行预先设定好的 <code>handler</code> 函数，那么寄存器状态的保存将是必要的。一方面在执行 <code>handler</code> 函数期间，如果 <code>handler</code> 函数包含一些对局部变量的处理，那么通用寄存器的值将会发生改变，从而使得中断返回时程序的执行结果与预期不符；另一方面，由于 <code>epc</code> 的值被手动改变，如果执行完 <code>handler</code> 之后不恢复中断发生时的保存的 <code>pc</code> 值，那么 <code>pc</code> 将会指向 <code>handler</code> 函数末尾的下一条指令，中断因此无法正常返回。 简单来说，这部分的操作相当于手动模拟了 <strong>线程</strong> 的切换。</p>
+<p>另一个问题是：需要存储哪些寄存器？好吧，在解决这个 Lab 时我其实偷了点懒，没有去仔细琢磨，只是简单地将整个 <code>trapframe</code> 中所有的寄存器都保存下来。但根据上面的讨论，再结合 RISC-V 的 <em>calling convention</em>，应该不难得出答案。</p>
+<p>最后的 test2 就比较简单了，目标是：</p>
+<blockquote>
+<p>Prevent re-entrant calls to the handler——if a handler hasn’t returned yet, the kernel shouldn’t call it again.</p>
+</blockquote>
+<p>解决的办法有很多，可以额外在 <code>strcut proc</code> 添加一个变量，用来表示进程当前是否正处在处理 <code>handler</code> 的过程中，如果是，则不进行 <code>ticksum</code> 的自增操作。这里我采用了一点 <strong>小技巧</strong> ：不添加额外的变量，而是在处理 <code>handler</code> 前将 <code>ticksum</code> 置为负数，并在自增前判断 <code>ticksum</code> 是否非负，在 <code>sys_sigreturn</code> 时再将它置为 0，本质上与添加变量的操作大差不差。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/Makefile b/Makefile
+index 7a7e380..bc4d47a 100644
+<span class="token coord">--- a/Makefile</span>
+<span class="token coord">+++ b/Makefile</span>
+@@ -188,6 +188,7 @@ UPROGS=\
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">	$U/_grind\
+</span><span class="token prefix unchanged"> </span><span class="token line">	$U/_wc\
+</span><span class="token prefix unchanged"> </span><span class="token line">	$U/_zombie\
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">	$U/_alarmtest\
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span></span>diff --git a/kernel/proc.c b/kernel/proc.c
+index 22e7ce4..80096f7 100644
+<span class="token coord">--- a/kernel/proc.c</span>
+<span class="token coord">+++ b/kernel/proc.c</span>
+@@ -119,6 +119,7 @@ allocproc(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">found:
+</span><span class="token prefix unchanged"> </span><span class="token line">  p->pid = allocpid();
+</span><span class="token prefix unchanged"> </span><span class="token line">  p->state = USED;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  p->ticksum = 0; // here
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">  // Allocate a trapframe page.
+</span><span class="token prefix unchanged"> </span><span class="token line">  if((p->trapframe = (struct trapframe *)kalloc()) == 0)&#123;
+</span></span>diff --git a/kernel/proc.h b/kernel/proc.h
+index f6ca8b7..c1d5a23 100644
+<span class="token coord">--- a/kernel/proc.h</span>
+<span class="token coord">+++ b/kernel/proc.h</span>
+@@ -105,4 +105,10 @@ struct proc &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  struct file *ofile[NOFILE];  // Open files
+</span><span class="token prefix unchanged"> </span><span class="token line">  struct inode *cwd;           // Current directory
+</span><span class="token prefix unchanged"> </span><span class="token line">  char name[16];               // Process name (debugging)
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  int ticks;         // here
+</span><span class="token prefix inserted">+</span><span class="token line">  void (*handler)();
+</span><span class="token prefix inserted">+</span><span class="token line">  int ticksum;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">  struct trapframe strapframe;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span></span>diff --git a/kernel/syscall.c b/kernel/syscall.c
+index c1b3670..d4e5585 100644
+<span class="token coord">--- a/kernel/syscall.c</span>
+<span class="token coord">+++ b/kernel/syscall.c</span>
+@@ -104,6 +104,8 @@ extern uint64 sys_unlink(void);
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_wait(void);
+</span><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_write(void);
+</span><span class="token prefix unchanged"> </span><span class="token line">extern uint64 sys_uptime(void);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">extern uint64 sys_sigalarm(void); // here
+</span><span class="token prefix inserted">+</span><span class="token line">extern uint64 sys_sigreturn(void);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">static uint64 (*syscalls[])(void) = &#123;
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_fork]    sys_fork,
+</span></span>@@ -127,6 +129,8 @@ static uint64 (*syscalls[])(void) = &#123;
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">[SYS_link]    sys_link,
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_mkdir]   sys_mkdir,
+</span><span class="token prefix unchanged"> </span><span class="token line">[SYS_close]   sys_close,
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">[SYS_sigalarm]  sys_sigalarm,  // here
+</span><span class="token prefix inserted">+</span><span class="token line">[SYS_sigreturn] sys_sigreturn,
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">&#125;;
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">void
+</span></span>diff --git a/kernel/syscall.h b/kernel/syscall.h
+index bc5f356..a040610 100644
+<span class="token coord">--- a/kernel/syscall.h</span>
+<span class="token coord">+++ b/kernel/syscall.h</span>
+<span class="token coord">@@ -20,3 +20,5 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#define SYS_link   19
+</span><span class="token prefix unchanged"> </span><span class="token line">#define SYS_mkdir  20
+</span><span class="token prefix unchanged"> </span><span class="token line">#define SYS_close  21
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">#define SYS_sigalarm  22  // here
+</span><span class="token prefix inserted">+</span><span class="token line">#define SYS_sigreturn 23
+</span></span>diff --git a/kernel/sysproc.c b/kernel/sysproc.c
+index f27c007..ee859ed 100644
+<span class="token coord">--- a/kernel/sysproc.c</span>
+<span class="token coord">+++ b/kernel/sysproc.c</span>
+@@ -96,3 +96,28 @@ sys_uptime(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">  release(&amp;tickslock);
+</span><span class="token prefix unchanged"> </span><span class="token line">  return xticks;
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">// here
+</span><span class="token prefix inserted">+</span><span class="token line">uint64 sys_sigalarm(void) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">	struct proc *p = myproc();
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	if (argint(0, &amp;(p->ticks)) &lt; 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">		return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">	&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	if (argaddr(1, (uint64 *)&amp;(p->handler)) &lt; 0) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">		return -1;
+</span><span class="token prefix inserted">+</span><span class="token line">	&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	return 0;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">uint64 sys_sigreturn(void) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">	struct proc *p = myproc();
+</span><span class="token prefix inserted">+</span><span class="token line">	
+</span><span class="token prefix inserted">+</span><span class="token line">	// restore registers
+</span><span class="token prefix inserted">+</span><span class="token line">	memmove(p->trapframe, &amp;(p->strapframe), sizeof(p->strapframe));
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	p->ticksum = 0;
+</span><span class="token prefix inserted">+</span><span class="token line">	return 0;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span></span>diff --git a/kernel/trap.c b/kernel/trap.c
+index a63249e..447e6d8 100644
+<span class="token coord">--- a/kernel/trap.c</span>
+<span class="token coord">+++ b/kernel/trap.c</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span></span>@@ -77,8 +77,17 @@ usertrap(void)
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    exit(-1);
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">  // give up the CPU if this is a timer interrupt.
+</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">  if(which_dev == 2)
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  if(which_dev == 2) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">	// here
+</span><span class="token prefix inserted">+</span><span class="token line">	if (p->ticks > 0 &amp;&amp; p->ticksum >= 0 &amp;&amp; ++(p->ticksum) >= p->ticks) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">	  // save registers
+</span><span class="token prefix inserted">+</span><span class="token line">	  memmove(&amp;(p->strapframe), p->trapframe, sizeof(p->strapframe));
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">	  p->ticksum = -1; // prevent re-entrant calls to the handler
+</span><span class="token prefix inserted">+</span><span class="token line">	  p->trapframe->epc = (uint64)p->handler;
+</span><span class="token prefix inserted">+</span><span class="token line">	&#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    yield();
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">  &#125;
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">  usertrapret();
+</span><span class="token prefix unchanged"> </span><span class="token line">&#125;
+</span></span>diff --git a/user/user.h b/user/user.h
+index b71ecda..422a4c1 100644
+<span class="token coord">--- a/user/user.h</span>
+<span class="token coord">+++ b/user/user.h</span>
+@@ -23,6 +23,8 @@ int getpid(void);
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">char* sbrk(int);
+</span><span class="token prefix unchanged"> </span><span class="token line">int sleep(int);
+</span><span class="token prefix unchanged"> </span><span class="token line">int uptime(void);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">int sigalarm(int ticks, void (*handler)()); // here
+</span><span class="token prefix inserted">+</span><span class="token line">int sigreturn(void);
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">
+</span><span class="token prefix unchanged"> </span><span class="token line">// ulib.c
+</span><span class="token prefix unchanged"> </span><span class="token line">int stat(const char*, struct stat*);
+</span></span>diff --git a/user/usys.pl b/user/usys.pl
+index 01e426e..84c6784 100755
+<span class="token coord">--- a/user/usys.pl</span>
+<span class="token coord">+++ b/user/usys.pl</span>
+@@ -36,3 +36,5 @@ entry("getpid");
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">entry("sbrk");
+</span><span class="token prefix unchanged"> </span><span class="token line">entry("sleep");
+</span><span class="token prefix unchanged"> </span><span class="token line">entry("uptime");
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">entry("sigalarm"); # here
+</span><span class="token prefix inserted">+</span><span class="token line">entry("sigreturn");</span></span></code></pre>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/">http://lordaeronesz.github.io/2024/07/06/MIT6.s081-2021-Lab%20Traps/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://lordaeronesz.github.io" target="_blank">Lordaeron_ESZ's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post_share"><div class="social-share" data-image="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button button--animated"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechatpay.png" target="_blank"><img class="post-qr-code-img" src="/img/wechatpay.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/"><img class="prev-cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div class="next-post pull-right"><a href="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/"><img class="next-cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">MIT6.s081 2021 Lab Page tables</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span> 相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/08/13/MIT6.s081-2021-Lab Copy on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Copy on-write</div></div></a></div><div><a href="/2024/08/16/MIT6.s081-2021-Lab File system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="title">MIT6.s081 2021 Lab File system</div></div></a></div><div><a href="/2024/08/13/MIT6.s081-2021-Lab Multithreading/" title="MIT6.s081 2021 Lab Multithreading"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="title">MIT6.s081 2021 Lab Multithreading</div></div></a></div><div><a href="/2024/07/01/MIT6.s081-2021-Lab Page tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="title">MIT6.s081 2021 Lab Page tables</div></div></a></div><div><a href="/2024/06/27/MIT6.s081-2021-Lab System calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="title">MIT6.s081 2021 Lab System calls</div></div></a></div><div><a href="/2024/06/24/MIT6.s081-2021-Lab Utilities/" title="MIT6.s081 2021 Lab Utilities"><img class="cover" src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-24</div><div class="title">MIT6.s081 2021 Lab Utilities</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/huaji0.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Chaoqun Zheng</div><div class="author-info__description">Write the code, change the world</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">88</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">47</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://blog.csdn.net/qq_37409526" target="_blank" title="CSDN"><i class="fab fa-cuttlefish"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fas fa-bold"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8gdb%E8%B0%83%E8%AF%95xv6%E5%86%85%E6%A0%B8"><span class="toc-number">1.</span> <span class="toc-text">使用gdb调试xv6内核</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RISC-V-assembly"><span class="toc-number">2.</span> <span class="toc-text">RISC-V assembly</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Backtrace"><span class="toc-number">3.</span> <span class="toc-text">Backtrace</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Alarm"><span class="toc-number">4.</span> <span class="toc-text">Alarm</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">4.1.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#test0-invoke-handler"><span class="toc-number">4.1.1.</span> <span class="toc-text">test0: invoke handler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#test1-test2-resume-interrupted-code"><span class="toc-number">4.1.2.</span> <span class="toc-text">test1&#x2F;test2(): resume interrupted code</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">4.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"/></a><div class="content"><a class="title" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</a><time datetime="2025-07-26T15:30:11.000Z" title="发表于 2025-07-26 23:30:11">2025-07-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序"><img src="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/rv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RISC-V 架构下的裸金属程序"/></a><div class="content"><a class="title" href="/2025/07/19/RISC-V%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E8%A3%B8%E9%87%91%E5%B1%9E%E7%A8%8B%E5%BA%8F/" title="RISC-V 架构下的裸金属程序">RISC-V 架构下的裸金属程序</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"><img src="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/Cabin.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结"/></a><div class="content"><a class="title" href="/2025/07/19/%E8%AE%BA%E6%96%87%E3%80%8ACabin%EF%BC%9AConfining%20Untrusted%20Programs%20within%20Confidential%20VMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结">论文《Cabin：Confining Untrusted Programs within Confidential VMs》总结</a><time datetime="2025-07-19T15:30:11.000Z" title="发表于 2025-07-19 23:30:11">2025-07-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析"><img src="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/unix.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="xv6-riscv 上下文切换代码分析"/></a><div class="content"><a class="title" href="/2025/07/12/xv6-riscv%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/" title="xv6-riscv 上下文切换代码分析">xv6-riscv 上下文切换代码分析</a><time datetime="2025-07-12T15:30:11.000Z" title="发表于 2025-07-12 23:30:11">2025-07-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"/></a><div class="content"><a class="title" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</a><time datetime="2025-07-10T15:30:11.000Z" title="发表于 2025-07-10 23:30:11">2025-07-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2025 By Chaoqun Zheng</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="http://beian.miit.gov.cn/"><img class="icp-icon" src="/img/beian_icon.png"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.2
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        insertScript: [200, () => {
+          document.querySelectorAll('mjx-container:not\([display]\)').forEach(node => {
+            const target = node.parentNode
+            if (target.nodeName.toLowerCase() === 'li') {
+              target.parentNode.classList.add('has-jax')
+            } else {
+              target.classList.add('has-jax')
+            }
+          });
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-sooty-mu.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><canvas class="fireworks" mobile="true"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
