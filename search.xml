@@ -16337,4 +16337,395 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>操作系统</tag>
       </tags>
   </entry>
+  <entry>
+    <title>QEMU softmmu模型</title>
+    <url>/2025/09/01/QEMU%20softmmu%E6%A8%A1%E5%9E%8B/</url>
+    <content><![CDATA[<p>本文将分析 QEMU TCG 模式下的访存模型，也就是 softmmu 的设计，基于的版本为 QEMU 6.2，架构则以 RISC-V 为例。</p>
+<span id="more"></span>
+<h1 id="基本调用链"><a href="#基本调用链" class="headerlink" title="基本调用链"></a>基本调用链</h1><pre class="language-none"><code class="language-none">1. target&#x2F;riscv&#x2F;translate.c 访存指令翻译。
+2. accel&#x2F;tcg&#x2F;cputlb.c 调用 helper 加载函数（如 helper_le_ldq_mmu）。
+3. 调用 load_helper 函数
+	1. 查 TLB，若未命中，则 tlb_fill 进行填充。
+	2. 处理各种特殊情况（MMIO、不对界访问等）。
+	3. 计算得到对应的宿主机虚拟地址 haddr &#x3D; addr + entry-&gt;addend，并根据字长进行访问。</code></pre>
+<h1 id="TLB-数据结构"><a href="#TLB-数据结构" class="headerlink" title="TLB 数据结构"></a>TLB 数据结构</h1><p>QEMU 的 softmmu 模型的核心数据结构为其 TLB 的设计，结构如下：</p>
+<h2 id="CPUTLB"><a href="#CPUTLB" class="headerlink" title="CPUTLB"></a>CPUTLB</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">CPUTLB</span> <span class="token punctuation">&#123;</span>
+    CPUTLBCommon c<span class="token punctuation">;</span>  <span class="token comment">// 存储 TLB 的一系列元数据。</span>
+    CPUTLBDesc d<span class="token punctuation">[</span>NB_MMU_MODES<span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">// 慢速（二级） TLB，主要用于存储从一级 TLB 中被驱逐（evict）出的条目。</span>
+    CPUTLBDescFast f<span class="token punctuation">[</span>NB_MMU_MODES<span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">// 快速（一级） TLB，用于快速完成地址转换。</span>
+<span class="token punctuation">&#125;</span> CPUTLB<span class="token punctuation">;</span></code></pre>
+<h2 id="CPUTLBDesc"><a href="#CPUTLBDesc" class="headerlink" title="CPUTLBDesc"></a>CPUTLBDesc</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">CPUTLBDesc</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">/* 大页处理相关 */</span>
+    target_ulong large_page_addr<span class="token punctuation">;</span>
+    target_ulong large_page_mask<span class="token punctuation">;</span>
+    
+    <span class="token comment">/* 与 TLB 动态调整相关 */</span>
+    <span class="token class-name">int64_t</span> window_begin_ns<span class="token punctuation">;</span>
+    <span class="token class-name">size_t</span> window_max_entries<span class="token punctuation">;</span>
+    <span class="token class-name">size_t</span> n_used_entries<span class="token punctuation">;</span>
+    
+   	<span class="token comment">/* vTLB 中表中使用的下一个索引 */</span>
+    <span class="token class-name">size_t</span> vindex<span class="token punctuation">;</span>
+
+    <span class="token comment">/* 二级 TLB（vTLB） 和二级 IOTLB（vIOTLB） */</span>
+    CPUTLBEntry vtable<span class="token punctuation">[</span>CPU_VTLB_SIZE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    CPUIOTLBEntry viotlb<span class="token punctuation">[</span>CPU_VTLB_SIZE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token comment">/* 一级 IOTLB，与 IOMMU 相关（不太了解） */</span>
+    CPUIOTLBEntry <span class="token operator">*</span>iotlb<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> CPUTLBDesc<span class="token punctuation">;</span></code></pre>
+<h2 id="CPUTLBDescFast"><a href="#CPUTLBDescFast" class="headerlink" title="CPUTLBDescFast"></a>CPUTLBDescFast</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">CPUTLBDescFast</span> <span class="token punctuation">&#123;</span>
+    <span class="token class-name">uintptr_t</span> mask<span class="token punctuation">;</span>  <span class="token comment">// 用于完成 (address, mmu_idx) -> TLB_index 的映射</span>
+    CPUTLBEntry <span class="token operator">*</span>table<span class="token punctuation">;</span>  <span class="token comment">// 一级 TLB 表</span>
+<span class="token punctuation">&#125;</span> CPUTLBDescFast <span class="token function">QEMU_ALIGNED</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h2 id="CPUTLBEntry"><a href="#CPUTLBEntry" class="headerlink" title="CPUTLBEntry"></a>CPUTLBEntry</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">CPUTLBEntry</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">union</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">struct</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">/* 用于与 address 对比判断是否命中 */</span>
+            target_ulong addr_read<span class="token punctuation">;</span>
+            target_ulong addr_write<span class="token punctuation">;</span>
+            target_ulong addr_code<span class="token punctuation">;</span>
+            <span class="token comment">/* 宿主机虚拟地址 haddr 与模拟器虚拟地址 address 的偏移量，用于地址转换 */</span>
+            <span class="token class-name">uintptr_t</span> addend<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+        <span class="token class-name">uint8_t</span> dummy<span class="token punctuation">[</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> CPU_TLB_ENTRY_BITS<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> CPUTLBEntry<span class="token punctuation">;</span></code></pre>
+<p>这里为读、写、执行都分别设置一个地址字段，其实是一种空间换时间的策略。比如说一个页面（如地址为 <code>addr</code>）具有 <strong>可读可写但不可执行</strong> 的权限，那么在进行 TLB 填充时，字段 <code>addr_read</code> 和 <code>addr_write</code> 都会被赋上 <code>addr</code> 的值，而 <code>addr_code</code> 则为（无符号）-1。这样在后续进行 TLB 命中判定时，本次是什么访问方式就与哪个字段进行比对，那么自然，如果本次针对 <code>addr</code> 的访问是取址访问（执行），自然就会发生 TLB miss。</p>
+<p>这样的设计可以使得 TLB 命中判定仅由一条 <code>cmp</code> 指令来完成，而如果使用类似页表条目的设计方法，引入一些权限位来标识页面是否可读可写可执行，空间占用自然更少，但同时比对效率也更低。</p>
+<h1 id="内存访问"><a href="#内存访问" class="headerlink" title="内存访问"></a>内存访问</h1><h2 id="load-helper"><a href="#load-helper" class="headerlink" title="load_helper"></a>load_helper</h2><p><code>load_helper/store_helper</code> 是 QEMU softmmu 访存的核心函数，作用是根据 <code>addr</code> 和访问类型来对指定的模拟器内存进行对应的读/写操作。本文只分析 <code>load_helper</code>，<code>store_helper</code> 的实现与其类似。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/*
+ * env: CPU 架构相关的状态寄存器集合
+ * addr: 要读取的模拟器目标虚拟地址
+ * oi: 内存操作索引（包含 Memop 和 mmu_idx）
+ * retaddr: 调用者返回地址（用于异常处理）
+ * op: 内存操作类型（大小、端序）
+ * code_read: 标志（是取指还是数据访问）
+ * full_load: 用于递归处理不对界/跨页
+ */</span>
+<span class="token keyword">static</span> <span class="token keyword">inline</span> <span class="token class-name">uint64_t</span> QEMU_ALWAYS_INLINE
+<span class="token function">load_helper</span><span class="token punctuation">(</span>CPUArchState <span class="token operator">*</span>env<span class="token punctuation">,</span> target_ulong addr<span class="token punctuation">,</span> MemOpIdx oi<span class="token punctuation">,</span>
+            <span class="token class-name">uintptr_t</span> retaddr<span class="token punctuation">,</span> MemOp op<span class="token punctuation">,</span> bool code_read<span class="token punctuation">,</span>
+            FullLoadHelper <span class="token operator">*</span>full_load<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">uintptr_t</span> mmu_idx <span class="token operator">=</span> <span class="token function">get_mmuidx</span><span class="token punctuation">(</span>oi<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">uintptr_t</span> index <span class="token operator">=</span> <span class="token function">tlb_index</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    CPUTLBEntry <span class="token operator">*</span>entry <span class="token operator">=</span> <span class="token function">tlb_entry</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    target_ulong tlb_addr <span class="token operator">=</span> code_read <span class="token operator">?</span> entry<span class="token operator">-></span>addr_code <span class="token operator">:</span> entry<span class="token operator">-></span>addr_read<span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token class-name">size_t</span> tlb_off <span class="token operator">=</span> code_read <span class="token operator">?</span>
+        <span class="token function">offsetof</span><span class="token punctuation">(</span>CPUTLBEntry<span class="token punctuation">,</span> addr_code<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">offsetof</span><span class="token punctuation">(</span>CPUTLBEntry<span class="token punctuation">,</span> addr_read<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> MMUAccessType access_type <span class="token operator">=</span>
+        code_read <span class="token operator">?</span> MMU_INST_FETCH <span class="token operator">:</span> MMU_DATA_LOAD<span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> a_bits <span class="token operator">=</span> <span class="token function">get_alignment_bits</span><span class="token punctuation">(</span><span class="token function">get_memop</span><span class="token punctuation">(</span>oi<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>haddr<span class="token punctuation">;</span>
+    <span class="token class-name">uint64_t</span> res<span class="token punctuation">;</span>
+    <span class="token class-name">size_t</span> size <span class="token operator">=</span> <span class="token function">memop_size</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* 处理架构相关的访存不对界异常 */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>addr <span class="token operator">&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> a_bits<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">cpu_unaligned_access</span><span class="token punctuation">(</span><span class="token function">env_cpu</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token punctuation">,</span> addr<span class="token punctuation">,</span> access_type<span class="token punctuation">,</span>
+                             mmu_idx<span class="token punctuation">,</span> retaddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 判断一级 TLB 是否命中  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">tlb_hit</span><span class="token punctuation">(</span>tlb_addr<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 
+         * 判断二级 TLB 是否命中
+         * 若二级 TLB 命中，则将二级 TLB 中的条目与 addr 对应的一级 TLB
+         * 中的条目进行交换，此后 entry 将为正确的条目。
+         */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">victim_tlb_hit</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> index<span class="token punctuation">,</span> tlb_off<span class="token punctuation">,</span>
+                            addr <span class="token operator">&amp;</span> TARGET_PAGE_MASK<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">/* 若二级 TLB 未命中，则需要进行填充。 */</span>
+            <span class="token function">tlb_fill</span><span class="token punctuation">(</span><span class="token function">env_cpu</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token punctuation">,</span> addr<span class="token punctuation">,</span> size<span class="token punctuation">,</span>
+                     access_type<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> retaddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            index <span class="token operator">=</span> <span class="token function">tlb_index</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            entry <span class="token operator">=</span> <span class="token function">tlb_entry</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        tlb_addr <span class="token operator">=</span> code_read <span class="token operator">?</span> entry<span class="token operator">-></span>addr_code <span class="token operator">:</span> entry<span class="token operator">-></span>addr_read<span class="token punctuation">;</span>
+        tlb_addr <span class="token operator">&amp;=</span> <span class="token operator">~</span>TLB_INVALID_MASK<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 处理一些特殊情况（TLB 的 tlb_addr 的低位存储着一些属性位） */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>tlb_addr <span class="token operator">&amp;</span> <span class="token operator">~</span>TARGET_PAGE_MASK<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        CPUIOTLBEntry <span class="token operator">*</span>iotlbentry<span class="token punctuation">;</span>
+        bool need_swap<span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>addr <span class="token operator">&amp;</span> <span class="token punctuation">(</span>size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">goto</span> do_unaligned_access<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        iotlbentry <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>iotlb<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+        <span class="token comment">/* 处理观测点访问  */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>tlb_addr <span class="token operator">&amp;</span> TLB_WATCHPOINT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">cpu_check_watchpoint</span><span class="token punctuation">(</span><span class="token function">env_cpu</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token punctuation">,</span> addr<span class="token punctuation">,</span> size<span class="token punctuation">,</span>
+                                 iotlbentry<span class="token operator">-></span>attrs<span class="token punctuation">,</span> BP_MEM_READ<span class="token punctuation">,</span> retaddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">/* 判断是否需要端序交换 */</span>
+        need_swap <span class="token operator">=</span> size <span class="token operator">></span> <span class="token number">1</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>tlb_addr <span class="token operator">&amp;</span> TLB_BSWAP<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">/* 处理 I/O 访问 */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">likely</span><span class="token punctuation">(</span>tlb_addr <span class="token operator">&amp;</span> TLB_MMIO<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> <span class="token function">io_readx</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> iotlbentry<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> addr<span class="token punctuation">,</span> retaddr<span class="token punctuation">,</span>
+                            access_type<span class="token punctuation">,</span> op <span class="token operator">^</span> <span class="token punctuation">(</span>need_swap <span class="token operator">*</span> MO_BSWAP<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        haddr <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span>addr <span class="token operator">+</span> entry<span class="token operator">-></span>addend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">/* 两个 load_memop 分开写便于编译器优化（不太懂） */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">unlikely</span><span class="token punctuation">(</span>need_swap<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> <span class="token function">load_memop</span><span class="token punctuation">(</span>haddr<span class="token punctuation">,</span> op <span class="token operator">^</span> MO_BSWAP<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> <span class="token function">load_memop</span><span class="token punctuation">(</span>haddr<span class="token punctuation">,</span> op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 处理慢速的不对界访问 (横跨多个页面或者 I/O).  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">></span> <span class="token number">1</span>
+        <span class="token operator">&amp;&amp;</span> <span class="token function">unlikely</span><span class="token punctuation">(</span><span class="token punctuation">(</span>addr <span class="token operator">&amp;</span> <span class="token operator">~</span>TARGET_PAGE_MASK<span class="token punctuation">)</span> <span class="token operator">+</span> size <span class="token operator">-</span> <span class="token number">1</span>
+                    <span class="token operator">>=</span> TARGET_PAGE_SIZE<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        target_ulong addr1<span class="token punctuation">,</span> addr2<span class="token punctuation">;</span>
+        <span class="token class-name">uint64_t</span> r1<span class="token punctuation">,</span> r2<span class="token punctuation">;</span>
+        <span class="token keyword">unsigned</span> shift<span class="token punctuation">;</span>
+    do_unaligned_access<span class="token operator">:</span>
+        addr1 <span class="token operator">=</span> addr <span class="token operator">&amp;</span> <span class="token operator">~</span><span class="token punctuation">(</span><span class="token punctuation">(</span>target_ulong<span class="token punctuation">)</span>size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        addr2 <span class="token operator">=</span> addr1 <span class="token operator">+</span> size<span class="token punctuation">;</span>
+        r1 <span class="token operator">=</span> <span class="token function">full_load</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> addr1<span class="token punctuation">,</span> oi<span class="token punctuation">,</span> retaddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        r2 <span class="token operator">=</span> <span class="token function">full_load</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> addr2<span class="token punctuation">,</span> oi<span class="token punctuation">,</span> retaddr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        shift <span class="token operator">=</span> <span class="token punctuation">(</span>addr <span class="token operator">&amp;</span> <span class="token punctuation">(</span>size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">memop_big_endian</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            res <span class="token operator">=</span> <span class="token punctuation">(</span>r1 <span class="token operator">&lt;&lt;</span> shift<span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span>r2 <span class="token operator">>></span> <span class="token punctuation">(</span><span class="token punctuation">(</span>size <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">-</span> shift<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            res <span class="token operator">=</span> <span class="token punctuation">(</span>r1 <span class="token operator">>></span> shift<span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span>r2 <span class="token operator">&lt;&lt;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>size <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">-</span> shift<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> res <span class="token operator">&amp;</span> <span class="token function">MAKE_64BIT_MASK</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> size <span class="token operator">*</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 加上 TLB 条目的 addend 偏移量得到宿主机的虚拟地址 */</span>
+    haddr <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span>addr <span class="token operator">+</span> entry<span class="token operator">-></span>addend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token function">load_memop</span><span class="token punctuation">(</span>haddr<span class="token punctuation">,</span> op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="TLB-填充"><a href="#TLB-填充" class="headerlink" title="TLB 填充"></a>TLB 填充</h1><h2 id="tlb-set-page"><a href="#tlb-set-page" class="headerlink" title="tlb_set_page"></a>tlb_set_page</h2><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* 
+ * cpu: CPU 数据结构
+ * vaddr: 虚拟地址
+ * paddr: 虚拟地址对应的物理地址
+ * attrs: 内存事务属性，通常为 UNSPECIFIED
+ * prot: 访问权限（读/写/执行）
+ * mmu_idx: 地址空间标识符
+ * size: 映射大小（支持大页）
+ */</span>
+<span class="token keyword">void</span> <span class="token function">tlb_set_page_with_attrs</span><span class="token punctuation">(</span>CPUState <span class="token operator">*</span>cpu<span class="token punctuation">,</span> target_ulong vaddr<span class="token punctuation">,</span>
+                             hwaddr paddr<span class="token punctuation">,</span> MemTxAttrs attrs<span class="token punctuation">,</span> <span class="token keyword">int</span> prot<span class="token punctuation">,</span>
+                             <span class="token keyword">int</span> mmu_idx<span class="token punctuation">,</span> target_ulong size<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    CPUArchState <span class="token operator">*</span>env <span class="token operator">=</span> cpu<span class="token operator">-></span>env_ptr<span class="token punctuation">;</span>
+    CPUTLB <span class="token operator">*</span>tlb <span class="token operator">=</span> <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    CPUTLBDesc <span class="token operator">*</span>desc <span class="token operator">=</span> <span class="token operator">&amp;</span>tlb<span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    MemoryRegionSection <span class="token operator">*</span>section<span class="token punctuation">;</span>
+    <span class="token keyword">unsigned</span> <span class="token keyword">int</span> index<span class="token punctuation">;</span>
+    target_ulong address<span class="token punctuation">;</span>
+    target_ulong write_address<span class="token punctuation">;</span>
+    <span class="token class-name">uintptr_t</span> addend<span class="token punctuation">;</span>
+    CPUTLBEntry <span class="token operator">*</span>te<span class="token punctuation">,</span> tn<span class="token punctuation">;</span>
+    hwaddr iotlb<span class="token punctuation">,</span> xlat<span class="token punctuation">,</span> sz<span class="token punctuation">,</span> paddr_page<span class="token punctuation">;</span>
+    target_ulong vaddr_page<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> asidx <span class="token operator">=</span> <span class="token function">cpu_asidx_from_attrs</span><span class="token punctuation">(</span>cpu<span class="token punctuation">,</span> attrs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> wp_flags<span class="token punctuation">;</span>
+    bool is_ram<span class="token punctuation">,</span> is_romd<span class="token punctuation">;</span>
+
+    <span class="token function">assert_cpu_is_self</span><span class="token punctuation">(</span>cpu<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;=</span> TARGET_PAGE_SIZE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        sz <span class="token operator">=</span> TARGET_PAGE_SIZE<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 记录大页信息 */</span>
+        <span class="token function">tlb_add_large_page</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> vaddr<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        sz <span class="token operator">=</span> size<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    vaddr_page <span class="token operator">=</span> vaddr <span class="token operator">&amp;</span> TARGET_PAGE_MASK<span class="token punctuation">;</span>
+    paddr_page <span class="token operator">=</span> paddr <span class="token operator">&amp;</span> TARGET_PAGE_MASK<span class="token punctuation">;</span>
+
+    <span class="token comment">/*
+     * 将物理内存区域转换为对应的内存区域 MemoryRegionSection
+     * 并获取内存区域的偏移量 xlat，实际可用大小 sz 和访问权限 prot
+     */</span>
+    section <span class="token operator">=</span> <span class="token function">address_space_translate_for_iotlb</span><span class="token punctuation">(</span>cpu<span class="token punctuation">,</span> asidx<span class="token punctuation">,</span> paddr_page<span class="token punctuation">,</span>
+                                                <span class="token operator">&amp;</span>xlat<span class="token punctuation">,</span> <span class="token operator">&amp;</span>sz<span class="token punctuation">,</span> attrs<span class="token punctuation">,</span> <span class="token operator">&amp;</span>prot<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>sz <span class="token operator">>=</span> TARGET_PAGE_SIZE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">tlb_debug</span><span class="token punctuation">(</span><span class="token string">"vaddr="</span> TARGET_FMT_lx <span class="token string">" paddr=0x"</span> TARGET_FMT_plx
+              <span class="token string">" prot=%x idx=%d\n"</span><span class="token punctuation">,</span>
+              vaddr<span class="token punctuation">,</span> paddr<span class="token punctuation">,</span> prot<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    address <span class="token operator">=</span> vaddr_page<span class="token punctuation">;</span>
+    <span class="token comment">/* 映射小于页大小（奇怪的情况？） */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;</span> TARGET_PAGE_SIZE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 使得 TLB 条目无效化  */</span>
+        address <span class="token operator">|=</span> TLB_INVALID_MASK<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>attrs<span class="token punctuation">.</span>byte_swap<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        address <span class="token operator">|=</span> TLB_BSWAP<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    is_ram <span class="token operator">=</span> <span class="token function">memory_region_is_ram</span><span class="token punctuation">(</span>section<span class="token operator">-></span>mr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    is_romd <span class="token operator">=</span> <span class="token function">memory_region_is_romd</span><span class="token punctuation">(</span>section<span class="token operator">-></span>mr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>is_ram <span class="token operator">||</span> is_romd<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        addend <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">uintptr_t</span><span class="token punctuation">)</span><span class="token function">memory_region_get_ram_ptr</span><span class="token punctuation">(</span>section<span class="token operator">-></span>mr<span class="token punctuation">)</span> <span class="token operator">+</span> xlat<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        addend <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    write_address <span class="token operator">=</span> address<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>is_ram<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        iotlb <span class="token operator">=</span> <span class="token function">memory_region_get_ram_addr</span><span class="token punctuation">(</span>section<span class="token operator">-></span>mr<span class="token punctuation">)</span> <span class="token operator">+</span> xlat<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>prot <span class="token operator">&amp;</span> PAGE_WRITE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>section<span class="token operator">-></span>readonly<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                write_address <span class="token operator">|=</span> TLB_DISCARD_WRITE<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">cpu_physical_memory_is_clean</span><span class="token punctuation">(</span>iotlb<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                write_address <span class="token operator">|=</span> TLB_NOTDIRTY<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        iotlb <span class="token operator">=</span> <span class="token function">memory_region_section_get_iotlb</span><span class="token punctuation">(</span>cpu<span class="token punctuation">,</span> section<span class="token punctuation">)</span> <span class="token operator">+</span> xlat<span class="token punctuation">;</span>
+        write_address <span class="token operator">|=</span> TLB_MMIO<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>is_romd<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            address <span class="token operator">=</span> write_address<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 检测当前页面是否设置了监视点 */</span>
+    wp_flags <span class="token operator">=</span> <span class="token function">cpu_watchpoint_address_matches</span><span class="token punctuation">(</span>cpu<span class="token punctuation">,</span> vaddr_page<span class="token punctuation">,</span>
+                                              TARGET_PAGE_SIZE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    index <span class="token operator">=</span> <span class="token function">tlb_index</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> vaddr_page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    te <span class="token operator">=</span> <span class="token function">tlb_entry</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> vaddr_page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">qemu_spin_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>tlb<span class="token operator">-></span>c<span class="token punctuation">.</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* 标记 TLB 为脏  */</span>
+    tlb<span class="token operator">-></span>c<span class="token punctuation">.</span>dirty <span class="token operator">|=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> mmu_idx<span class="token punctuation">;</span>
+
+    <span class="token comment">/* 确保 vTLB 中没有 vaddr 的缓存 */</span>
+    <span class="token function">tlb_flush_vtlb_page_locked</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> vaddr_page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* 
+     * 如果对应 TLB 条目位置现已存在其他 vaddr 的条目，
+     * 则将其驱逐至 vTLB 中
+     */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">tlb_hit_page_anyprot</span><span class="token punctuation">(</span>te<span class="token punctuation">,</span> vaddr_page<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token function">tlb_entry_is_empty</span><span class="token punctuation">(</span>te<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">unsigned</span> vidx <span class="token operator">=</span> desc<span class="token operator">-></span>vindex<span class="token operator">++</span> <span class="token operator">%</span> CPU_VTLB_SIZE<span class="token punctuation">;</span>
+        CPUTLBEntry <span class="token operator">*</span>tv <span class="token operator">=</span> <span class="token operator">&amp;</span>desc<span class="token operator">-></span>vtable<span class="token punctuation">[</span>vidx<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+        <span class="token function">copy_tlb_helper_locked</span><span class="token punctuation">(</span>tv<span class="token punctuation">,</span> te<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        desc<span class="token operator">-></span>viotlb<span class="token punctuation">[</span>vidx<span class="token punctuation">]</span> <span class="token operator">=</span> desc<span class="token operator">-></span>iotlb<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token function">tlb_n_used_entries_dec</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    desc<span class="token operator">-></span>iotlb<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">.</span>addr <span class="token operator">=</span> iotlb <span class="token operator">-</span> vaddr_page<span class="token punctuation">;</span>
+    desc<span class="token operator">-></span>iotlb<span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">.</span>attrs <span class="token operator">=</span> attrs<span class="token punctuation">;</span>
+
+    <span class="token comment">/* 设置 addend 字段，使得 vaddr_page + addend = haddr */</span>
+    tn<span class="token punctuation">.</span>addend <span class="token operator">=</span> addend <span class="token operator">-</span> vaddr_page<span class="token punctuation">;</span>
+    <span class="token comment">/* 设置可读的条目 */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>prot <span class="token operator">&amp;</span> PAGE_READ<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        tn<span class="token punctuation">.</span>addr_read <span class="token operator">=</span> address<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>wp_flags <span class="token operator">&amp;</span> BP_MEM_READ<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            tn<span class="token punctuation">.</span>addr_read <span class="token operator">|=</span> TLB_WATCHPOINT<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        tn<span class="token punctuation">.</span>addr_read <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 设置可执行的条目 */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>prot <span class="token operator">&amp;</span> PAGE_EXEC<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        tn<span class="token punctuation">.</span>addr_code <span class="token operator">=</span> address<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        tn<span class="token punctuation">.</span>addr_code <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 设置可写的条目 */</span>
+    tn<span class="token punctuation">.</span>addr_write <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>prot <span class="token operator">&amp;</span> PAGE_WRITE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        tn<span class="token punctuation">.</span>addr_write <span class="token operator">=</span> write_address<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>prot <span class="token operator">&amp;</span> PAGE_WRITE_INV<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            tn<span class="token punctuation">.</span>addr_write <span class="token operator">|=</span> TLB_INVALID_MASK<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>wp_flags <span class="token operator">&amp;</span> BP_MEM_WRITE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            tn<span class="token punctuation">.</span>addr_write <span class="token operator">|=</span> TLB_WATCHPOINT<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 更新 TLB 条目 */</span>
+    <span class="token function">copy_tlb_helper_locked</span><span class="token punctuation">(</span>te<span class="token punctuation">,</span> <span class="token operator">&amp;</span>tn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">tlb_n_used_entries_inc</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qemu_spin_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>tlb<span class="token operator">-></span>c<span class="token punctuation">.</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token function">tlb_set_page</span><span class="token punctuation">(</span>CPUState <span class="token operator">*</span>cpu<span class="token punctuation">,</span> target_ulong vaddr<span class="token punctuation">,</span>
+                  hwaddr paddr<span class="token punctuation">,</span> <span class="token keyword">int</span> prot<span class="token punctuation">,</span>
+                  <span class="token keyword">int</span> mmu_idx<span class="token punctuation">,</span> target_ulong size<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">tlb_set_page_with_attrs</span><span class="token punctuation">(</span>cpu<span class="token punctuation">,</span> vaddr<span class="token punctuation">,</span> paddr<span class="token punctuation">,</span> MEMTXATTRS_UNSPECIFIED<span class="token punctuation">,</span>
+                            prot<span class="token punctuation">,</span> mmu_idx<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="大页处理"><a href="#大页处理" class="headerlink" title="大页处理"></a>大页处理</h1><p>一个值得一提的内容是 QEMU TLB 对大页的处理，可能也是为了性能的权衡，QEMU 对此的策略就是不支持。</p>
+<p>当向 TLB 中填充页大小大于 <code>TARGET_PAGE_SIZE</code> 的条目时，QEMU 会调用 <code>tlb_add_large_page</code> 进行大页的记录，代码如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">tlb_add_large_page</span><span class="token punctuation">(</span>CPUArchState <span class="token operator">*</span>env<span class="token punctuation">,</span> <span class="token keyword">int</span> mmu_idx<span class="token punctuation">,</span>
+                               target_ulong vaddr<span class="token punctuation">,</span> target_ulong size<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    target_ulong lp_addr <span class="token operator">=</span> <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_addr<span class="token punctuation">;</span>
+    target_ulong lp_mask <span class="token operator">=</span> <span class="token operator">~</span><span class="token punctuation">(</span>size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lp_addr <span class="token operator">==</span> <span class="token punctuation">(</span>target_ulong<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 此前未记录大页  */</span>
+        lp_addr <span class="token operator">=</span> vaddr<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 扩展已存在的大页来将新的区域包含进去 */</span>
+        lp_mask <span class="token operator">&amp;=</span> <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_mask<span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>lp_addr <span class="token operator">^</span> vaddr<span class="token punctuation">)</span> <span class="token operator">&amp;</span> lp_mask<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            lp_mask <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">;</span>  <span class="token comment">// 扩大掩码直到覆盖新地址</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_addr <span class="token operator">=</span> lp_addr <span class="token operator">&amp;</span> lp_mask<span class="token punctuation">;</span>
+    <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>mmu_idx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_mask <span class="token operator">=</span> lp_mask<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>它的基本逻辑就是将本次访存的地址和大小记录下来，如果先前已经记录过大页，那么则将其记录的掩码进行扩大，以覆盖本次记录的大页的范围。</p>
+<p>具体来说，对于一个 2MB 大页，它在进行 TLB 填充时，每次只会填一个 4KB 小页。但是在 Guest 系统层，它认为存在这么一个 2MB 的大页，因此在它想要无效化大页条目时，我们需要将单独进行填充的若干个小页条目全部无效化，为此 QEMU 采取了一种保守做法：直接将该 <code>mmu_idx</code> 下的所有的 TLB 条目全部刷新。代码如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">tlb_flush_page_locked</span><span class="token punctuation">(</span>CPUArchState <span class="token operator">*</span>env<span class="token punctuation">,</span> <span class="token keyword">int</span> midx<span class="token punctuation">,</span>
+                                  target_ulong page<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    target_ulong lp_addr <span class="token operator">=</span> <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>midx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_addr<span class="token punctuation">;</span>
+    target_ulong lp_mask <span class="token operator">=</span> <span class="token function">env_tlb</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token operator">-></span>d<span class="token punctuation">[</span>midx<span class="token punctuation">]</span><span class="token punctuation">.</span>large_page_mask<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Check if we need to flush due to large pages.  */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>page <span class="token operator">&amp;</span> lp_mask<span class="token punctuation">)</span> <span class="token operator">==</span> lp_addr<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">tlb_debug</span><span class="token punctuation">(</span><span class="token string">"forcing full flush midx %d ("</span>
+                  TARGET_FMT_lx <span class="token string">"/"</span> TARGET_FMT_lx <span class="token string">")\n"</span><span class="token punctuation">,</span>
+                  midx<span class="token punctuation">,</span> lp_addr<span class="token punctuation">,</span> lp_mask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">tlb_flush_one_mmuidx_locked</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> midx<span class="token punctuation">,</span> <span class="token function">get_clock_realtime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">tlb_flush_entry_locked</span><span class="token punctuation">(</span><span class="token function">tlb_entry</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> midx<span class="token punctuation">,</span> page<span class="token punctuation">)</span><span class="token punctuation">,</span> page<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">tlb_n_used_entries_dec</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> midx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">tlb_flush_vtlb_page_locked</span><span class="token punctuation">(</span>env<span class="token punctuation">,</span> midx<span class="token punctuation">,</span> page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a href="https://wangzhou.github.io/qemu-tlb实现分析/">qemu tlb实现分析 | Sherlock’s blog</a></li>
+<li><a href="https://wangzhou.github.io/qemu-tcg访存指令模拟/">qemu tcg访存指令模拟 | Sherlock’s blog</a></li>
+<li><a href="https://martins3.github.io/qemu/softmmu.html">QEMU 的 softmmu 设计 | Deep Dark Fantasy</a></li>
+<li><a href="https://martins3.github.io/qemu/softmmu-functions.html">QEMU softmmu 访存 helper 整理 | Deep Dark Fantasy</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>虚拟内存</tag>
+        <tag>QEMU</tag>
+      </tags>
+  </entry>
 </search>
