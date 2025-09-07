@@ -16810,4 +16810,239 @@ $ <span class="token function">make</span> -j<span class="token variable"><span 
         <tag>虚拟化</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Linux内核initcall初始化机制</title>
+    <url>/2025/09/07/Linux%E5%86%85%E6%A0%B8initcall%E5%88%9D%E5%A7%8B%E5%8C%96%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<p>本文将介绍 Linux 内核的初始化函数结构，其通过 initcall 机制来实现，其核心是一系列优先级不同的宏，用于控制初始化函数的执行顺序。本文的实验的内核环境基于 Linux 5.10。</p>
+<span id="more"></span>
+<h1 id="initcall-的级别与执行顺序"><a href="#initcall-的级别与执行顺序" class="headerlink" title="initcall 的级别与执行顺序"></a>initcall 的级别与执行顺序</h1><p>Linux 内核定义了多个初始化级别（按照执行顺序从高到低排列）：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>宏定义</th>
+<th>级别名</th>
+<th>优先级值</th>
+<th>用途说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>early_initcall(fn)</code></td>
+<td>early</td>
+<td>-</td>
+<td>早期的初始化，在 SMP 初始化之前</td>
+</tr>
+<tr>
+<td><code>pure_initcall(fn)</code></td>
+<td>pure</td>
+<td>0</td>
+<td>用于初始化不能被静态初始化的变量</td>
+</tr>
+<tr>
+<td><code>core_initcall(fn)</code></td>
+<td>core</td>
+<td>1</td>
+<td>核心子系统初始化</td>
+</tr>
+<tr>
+<td><code>postcore_initcall(fn)</code></td>
+<td>postcore</td>
+<td>2</td>
+<td>核心子系统之后的初始化</td>
+</tr>
+<tr>
+<td><code>arch_initcall(fn)</code></td>
+<td>arch</td>
+<td>3</td>
+<td>架构相关初始化</td>
+</tr>
+<tr>
+<td><code>subsys_initcall(fn)</code></td>
+<td>subsys</td>
+<td>4</td>
+<td>子系统初始化</td>
+</tr>
+<tr>
+<td><code>fs_initcall(fn)</code></td>
+<td>fs</td>
+<td>5</td>
+<td>文件系统初始化</td>
+</tr>
+<tr>
+<td><code>rootfs_initcall(fn)</code></td>
+<td>rootfs</td>
+<td>-</td>
+<td>根文件系统初始化</td>
+</tr>
+<tr>
+<td><code>device_initcall(fn)</code></td>
+<td>device</td>
+<td>6</td>
+<td>设备驱动初始化（<strong>最常用</strong>）</td>
+</tr>
+<tr>
+<td><code>late_initcall(fn)</code></td>
+<td>late</td>
+<td>7</td>
+<td>晚期初始化（依赖其他子系统就绪）</td>
+</tr>
+<tr>
+<td><code>console_initcall(fn)</code></td>
+<td>console</td>
+<td>-</td>
+<td>终端初始化</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p>每个级别都有对应的 <code>_sync</code> 版本（如 <code>core_initcall_sync</code>），用于等待该级别所有异步初始化完成。</p>
+</blockquote>
+<p>为了直观的看到不同 initcall 的先后顺序，可以编写一个简单的测试程序加以验证。</p>
+<p>目标架构以 RISC-V 为例，新建一个 C 源文件 <code>arch/riscv/kernel/initcall_test.c</code>，代码如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/init.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/kernel.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;linux/module.h></span></span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">early_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] early_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">early_initcall</span><span class="token punctuation">(</span>early_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">pure_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] pure_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">pure_initcall</span><span class="token punctuation">(</span>pure_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">core_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] core_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">core_initcall</span><span class="token punctuation">(</span>core_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">postcore_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] postcore_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">postcore_initcall</span><span class="token punctuation">(</span>postcore_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">arch_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] arch_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">arch_initcall</span><span class="token punctuation">(</span>arch_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">subsys_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] subsys_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">subsys_initcall</span><span class="token punctuation">(</span>subsys_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">fs_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] fs_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">fs_initcall</span><span class="token punctuation">(</span>fs_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">rootfs_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] rootfs_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">rootfs_initcall</span><span class="token punctuation">(</span>rootfs_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">device_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] device_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">device_initcall</span><span class="token punctuation">(</span>device_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">late_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] late_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">late_initcall</span><span class="token punctuation">(</span>late_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">int</span> __init <span class="token function">console_test_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">printk</span><span class="token punctuation">(</span>KERN_INFO <span class="token string">"[RISC-V Initcall] console_initcall executed\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">console_initcall</span><span class="token punctuation">(</span>console_test_init<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>同时在 <code>arch/riscv/kernel/Makefile</code> 中新增该目标文件：</p>
+<pre class="language-diff" data-language="diff"><code class="language-diff"><span class="token coord">--- a/arch/riscv/kernel/Makefile</span>
+<span class="token coord">+++ b/arch/riscv/kernel/Makefile</span>
+@@ -29,6 +29,7 @@ obj-y += riscv_ksyms.o
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">obj-y  += stacktrace.o
+</span><span class="token prefix unchanged"> </span><span class="token line">obj-y  += cacheinfo.o
+</span><span class="token prefix unchanged"> </span><span class="token line">obj-y  += patch.o
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">obj-y  += initcall_test.o
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">obj-$(CONFIG_MMU) += vdso.o vdso/</span></span></code></pre>
+<p>修改完成后编译内核，并使用 QEMU 模拟器进行启动，内核启动的打印信息如下：</p>
+<pre class="language-none"><code class="language-none">...
+[    0.001681] [⭐RISC-V Initcall] console_initcall executed
+[    0.003134] Console: colour dummy device 80x25
+[    0.010536] printk: console [tty0] enabled
+[    0.013249] Calibrating delay loop (skipped), value calculated using timer frequency.. 20.00 BogoMIPS (lpj&#x3D;40000)
+[    0.013440] pid_max: default: 32768 minimum: 301
+[    0.014683] Mount-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.014842] Mountpoint-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.037256] [⭐RISC-V Initcall] early_initcall executed
+[    0.037908] rcu: Hierarchical SRCU implementation.
+[    0.039356] EFI services will not be available.
+[    0.041471] smp: Bringing up secondary CPUs ...
+[    0.049906] smp: Brought up 1 node, 4 CPUs
+[    0.061418] devtmpfs: initialized
+[    0.066783] [⭐RISC-V Initcall] pure_initcall executed
+[    0.068512] [⭐RISC-V Initcall] core_initcall executed
+[    0.070325] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.070544] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.074988] NET: Registered protocol family 16
+[    0.076708] [⭐RISC-V Initcall] postcore_initcall executed
+[    0.079466] [⭐RISC-V Initcall] arch_initcall executed
+[    0.088406] [⭐RISC-V Initcall] subsys_initcall executed
+[    0.128276] vgaarb: loaded
+[    0.129447] SCSI subsystem initialized
+[    0.131491] usbcore: registered new interface driver usbfs
+[    0.132061] usbcore: registered new interface driver hub
+[    0.132356] usbcore: registered new device driver usb
+[    0.139530] [⭐RISC-V Initcall] fs_initcall executed
+[    0.140768] clocksource: Switched to clocksource riscv_clocksource
+[    0.171715] NET: Registered protocol family 2
+...
+[    0.190188] PCI: CLS 0 bytes, default 64
+[    0.194343] [⭐RISC-V Initcall] rootfs_initcall executed
+[    0.194487] [⭐RISC-V Initcall] device_initcall executed
+[    0.196698] workingset: timestamp_bits&#x3D;62 max_order&#x3D;21 bucket_order&#x3D;0
+[    0.208411] NFS: Registering the id_resolver key type
+...
+[    0.561583] 9pnet: Installing 9P2000 support
+[    0.562203] Key type dns_resolver registered
+[    0.562514] [⭐RISC-V Initcall] late_initcall executed
+[    0.563478] debug_vm_pgtable: [debug_vm_pgtable         ]: Validating architecture page table helpers
+...</code></pre>
+<p>有关 Linux 内核如何实现这样的初始化机制，可以参考这篇文章：<a href="https://blog.csdn.net/enlaihe/article/details/123904759">Linux 各种 initcall 的调用原理-CSDN博客</a>。</p>
+<h1 id="初始化级别的选择"><a href="#初始化级别的选择" class="headerlink" title="初始化级别的选择"></a>初始化级别的选择</h1><p>选择 initcall 级别的核心原则是：<strong>你的初始化函数所依赖的子系统必须已经初始化完成</strong>。</p>
+<p>对于个人当前可能涉及到的内核开发工作来说，<code>device_initcall</code> 最常用，适用于大多数设备驱动程序的初始化，此时核心子系统、总线都已准备就绪。其次是 <code>arch_initcall</code>，进行处理器架构相关的初始化。如果初始化时机并不那么重要，又为了保险起见，可以选择 <code>late_initcall</code>，此时模块所依赖的子系统已经完全初始化完成。至于其他的一些初始化接口，可能一般不太会用到，等需要的时候再来研究吧。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
 </search>
