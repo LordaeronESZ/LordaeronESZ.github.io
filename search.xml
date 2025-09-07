@@ -16728,4 +16728,86 @@ m <span class="token operator">=</span> <span class="token string">""</span>
         <tag>QEMU</tag>
       </tags>
   </entry>
+  <entry>
+    <title>使用QEMU TCG模拟一个硬件虚拟化环境</title>
+    <url>/2025/09/07/%E4%BD%BF%E7%94%A8QEMU%E6%A8%A1%E6%8B%9F%E5%99%A8%E6%A8%A1%E6%8B%9F%E4%B8%80%E4%B8%AA%E7%A1%AC%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96%E7%8E%AF%E5%A2%83/</url>
+    <content><![CDATA[<p>本文将介绍如何使用 QEMU TCG 模拟的方式，构建一个支持硬件虚拟化的环境，使得能够在该模拟器环境下启动一个 KVM 虚拟机。</p>
+<span id="more"></span>
+<h1 id="编译最新-QEMU"><a href="#编译最新-QEMU" class="headerlink" title="编译最新 QEMU"></a>编译最新 QEMU</h1><p>首先需要下载并编译 QEMU，我们以 x86_64 架构为例，QEMU 选择使用最新版本。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 下载最新仓库</span>
+$ <span class="token function">git</span> clone https://git.qemu-project.org/qemu.git
+$ <span class="token builtin class-name">cd</span> qemu
+
+<span class="token comment"># 配置编译目标</span>
+$ ./configure --target-list<span class="token operator">=</span>x86_64-softmmu
+
+<span class="token comment"># 编译</span>
+$ <span class="token function">make</span> -j<span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span></code></pre>
+<h1 id="准备-Linux-内核（选用-6-12-0）"><a href="#准备-Linux-内核（选用-6-12-0）" class="headerlink" title="准备 Linux 内核（选用 6.12.0）"></a>准备 Linux 内核（选用 6.12.0）</h1><p>接下来，需要准备 Linux 内核，我这里选用的是 6.12.0 版本。硬件虚拟化技术使用 AMD-V，需要在 menuconfig 中启用 <code>KVM for AMD processor support</code>。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 下载 6.12 版本内核</span>
+$ <span class="token function">wget</span> https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.tar.xz
+$ <span class="token function">tar</span> -xvf linux-6.12.tar.xz
+
+<span class="token comment"># 配置选项</span>
+$ <span class="token builtin class-name">cd</span> linux-6.12
+$ <span class="token function">make</span> <span class="token assign-left variable">ARCH</span><span class="token operator">=</span>x86_64 defconfig
+$ <span class="token function">make</span> menuconfig
+<span class="token comment"># Virtualization</span>
+<span class="token comment">#   -> Kernel-based Virtual Machine (KVM) support</span>
+<span class="token comment">#        -> KVM for AMD processors support</span>
+
+<span class="token comment"># 编译</span>
+$ <span class="token function">make</span> -j<span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span></code></pre>
+<blockquote>
+<p>注意，在启用指定的 menuconfig 选项时，建议标记为 <code>Y</code> 直接包含进内核中，而非标记为 <code>M</code> 以模块形式动态加载。 </p>
+</blockquote>
+<h1 id="准备根文件系统（基于-Buildroot）"><a href="#准备根文件系统（基于-Buildroot）" class="headerlink" title="准备根文件系统（基于 Buildroot）"></a>准备根文件系统（基于 Buildroot）</h1><p>有了 QEMU 和 Linux 内核，还需要有根文件系统，才能够正常工作。这里我使用的是 Buildroot，只需要简单的配置，它就能够自动化构建一个根文件系统。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 下载 buildroot</span>
+https://buildroot.org/download.html
+
+<span class="token comment"># 配置选项</span>
+$ <span class="token function">make</span> menuconfig
+<span class="token comment"># Target options</span>
+<span class="token comment">#   -> Target Architecture (i386)</span>
+<span class="token comment">#        -> (X) x86_64</span>
+<span class="token comment"># Filesystem images</span>
+<span class="token comment">#   -> [*] ext2/3/4 root filesystem</span>
+
+<span class="token comment"># 编译</span>
+$ <span class="token function">make</span> -j<span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span></code></pre>
+<p>Buildroot 构建过程涉及联网下载对应的软件包，如果网络超时的情况，可以 <code>^c</code> 中断，<code>make clean</code> 后再重新编译。</p>
+<blockquote>
+<p>在 WSL2 环境下构建时，由于 PATH 环境变量包含了 Windows 下的某些软件，因此可能导致无法编译：</p>
+<pre class="language-none"><code class="language-none">Your PATH contains spaces, TABs, and&#x2F;or newline (\n) characters. This doesn&#39;t work. Fix you PATH.</code></pre>
+<p>此时可以使用命令 <code>export PATH=$(echo &quot;$PATH&quot; | tr -d &#39; \t\n&#39;)</code> 暂时将 PATH 路径的空格去除，再重新编译。</p>
+</blockquote>
+<h1 id="模拟器启动参数"><a href="#模拟器启动参数" class="headerlink" title="模拟器启动参数"></a>模拟器启动参数</h1><p>上述编译都完成后，将得到的内核 <code>bzImage</code> （位于 <code>arch/x86/boot/bzImage</code>）和根文件系统 <code>rootfs.ext2</code> （位于 <code>output/images/rootfs.ext2</code>）拷贝到同一目录下。</p>
+<p>QEMU 启动脚本示例如下所示：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">/your_path_of_qemu/build/qemu-system-x86_64 <span class="token punctuation">\</span>
+    -machine q35,accel<span class="token operator">=</span>tcg <span class="token punctuation">\</span>
+    -cpu EPYC-v4,+svm <span class="token punctuation">\</span>
+    -m 8G <span class="token punctuation">\</span>
+    -smp <span class="token number">4</span> <span class="token punctuation">\</span>
+    -kernel bzImage <span class="token punctuation">\</span>
+    -append <span class="token string">"rootwait root=/dev/vda ro console=ttyS0"</span> <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">file</span><span class="token operator">=</span>rootfs.ext2,format<span class="token operator">=</span>raw,id<span class="token operator">=</span>hd0,if<span class="token operator">=</span>none <span class="token punctuation">\</span>
+    -device virtio-blk-pci,drive<span class="token operator">=</span>hd0 <span class="token punctuation">\</span>
+    -nographic <span class="token punctuation">\</span></code></pre>
+<h1 id="KVM-虚拟机测试"><a href="#KVM-虚拟机测试" class="headerlink" title="KVM 虚拟机测试"></a>KVM 虚拟机测试</h1><p>在完成了虚拟化环境的构建后，便可以开始测试了。这里参考 <a href="https://arthurchiao.art/blog/kvm-host-in-a-few-lines-of-code-zh/">100 行 C 代码创建一个 KVM 虚拟机</a>，以很少的代码量构建一个最小的 hypervisor。</p>
+<p>将 kvm-vmm 和 guest 在本地编译好后放入 <code>rootfs.ext2</code> 中，启动模拟器运行，结果如下图所示：</p>
+<p><img src="/2025/09/07/%E4%BD%BF%E7%94%A8QEMU%E6%A8%A1%E6%8B%9F%E5%99%A8%E6%A8%A1%E6%8B%9F%E4%B8%80%E4%B8%AA%E7%A1%AC%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96%E7%8E%AF%E5%A2%83/vmm.png" alt></p>
+<blockquote>
+<p>在该模拟器中运行一个完整的 QEMU/KVM 虚拟机理论也是可行的，但是我使用的 buildroot 生成的根文件系统缺乏 QEMU 运行所需的完整的动态链接库。</p>
+<p>静态编译 QEMU 是一种选择，但是也比较繁琐，需要为本机准备大量的静态库，在此没有进行测试。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>操作系统</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
 </search>
