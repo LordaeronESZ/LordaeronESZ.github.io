@@ -17045,4 +17045,169 @@ $ <span class="token function">make</span> -j<span class="token variable"><span 
         <tag>Linux</tag>
       </tags>
   </entry>
+  <entry>
+    <title>AMD SEV机密虚拟机ASID管理</title>
+    <url>/2025/09/08/AMD%20SEV%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BAASID%E7%AE%A1%E7%90%86/</url>
+    <content><![CDATA[<p>本文将介绍 Linux 内核中，AMD SEV 机密虚拟机对虚拟机号 ASID 的管理设计，基于的内核版本为 Linux 5.10。</p>
+<span id="more"></span>
+<h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><p>AMD SEV 中对 ASID 管理的核心代码位于 <code>arch/x86/kvm/svm/sev.c</code> 中，以下是与之相关的数据结构定义：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* 定义保护位图的互斥锁 */</span>
+<span class="token keyword">static</span> <span class="token function">DEFINE_MUTEX</span><span class="token punctuation">(</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">/* SEV 同时支持的最大 ASID */</span>
+<span class="token keyword">unsigned</span> <span class="token keyword">int</span> max_sev_asid<span class="token punctuation">;</span>
+
+<span class="token comment">/* SEV 应该使用的最小的 ASID */</span>
+<span class="token keyword">static</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> min_sev_asid<span class="token punctuation">;</span>
+
+<span class="token comment">/* 待分配的 ASID 位图 */</span>
+<span class="token keyword">static</span> <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token operator">*</span>sev_asid_bitmap<span class="token punctuation">;</span>
+
+<span class="token comment">/* 回收的 ASID 位图 */</span>
+<span class="token keyword">static</span> <span class="token keyword">unsigned</span> <span class="token keyword">long</span> <span class="token operator">*</span>sev_reclaim_asid_bitmap<span class="token punctuation">;</span></code></pre>
+<p>AMD SEV 的 ASID 管理采用了 <strong>双位图</strong> 的设计，包含一张分配位图 <code>sev_asid_bitmap</code> 和一张回收位图 <code>sev_reclaim_asid_bitmap</code>。这样的设计有助于将分配和回收的操作尽可能分离来提升性能。</p>
+<h1 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h1><p>上述数据结构的初始化发生在 <code>sev_hardware_setup</code> 中，它的基本调用栈为：</p>
+<pre class="language-none"><code class="language-none">kvm_arch_hardware_setup
+	-&gt; .hardware_setup
+		-&gt; svm_hardware_setup
+			-&gt; sev_hardware_setup</code></pre>
+<p>具体初始化操作如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> __init <span class="token function">sev_hardware_setup</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">sev_user_data_status</span> <span class="token operator">*</span>status<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> rc<span class="token punctuation">;</span>
+
+	<span class="token comment">/* 通过硬件探测初始化最大 ASID */</span>
+	max_sev_asid <span class="token operator">=</span> <span class="token function">cpuid_ecx</span><span class="token punctuation">(</span><span class="token number">0x8000001F</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">svm_sev_enabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* 初始化最小 ASID */</span>
+	min_sev_asid <span class="token operator">=</span> <span class="token function">cpuid_edx</span><span class="token punctuation">(</span><span class="token number">0x8000001F</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* 初始化 ASID 位图 */</span>
+	sev_asid_bitmap <span class="token operator">=</span> <span class="token function">bitmap_zalloc</span><span class="token punctuation">(</span>max_sev_asid<span class="token punctuation">,</span> GFP_KERNEL<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>sev_asid_bitmap<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+	sev_reclaim_asid_bitmap <span class="token operator">=</span> <span class="token function">bitmap_zalloc</span><span class="token punctuation">(</span>max_sev_asid<span class="token punctuation">,</span> GFP_KERNEL<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>sev_reclaim_asid_bitmap<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* 后面为与 SEV 平台状态相关的初始化，我们在此不关注 */</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="分配与回收"><a href="#分配与回收" class="headerlink" title="分配与回收"></a>分配与回收</h1><h2 id="分配"><a href="#分配" class="headerlink" title="分配"></a>分配</h2><p>ASID 的分配主要发生在 SEV 虚拟机初始化函数 <code>sev_guest_init</code> 中，它的基本调用栈为：</p>
+<pre class="language-none"><code class="language-none">kvm_arch_vm_ioctl(ioctl: KVM_MEMORY_ENCRYPT_OP)
+	-&gt; .mem_enc_op
+		-&gt; svm_mem_enc_op(sev_cmd.id: KVM_SEV_INIT)
+			-&gt; sev_guest_init</code></pre>
+<p>它将调用 <code>sev_asid_new</code> 进行 ASID 号的分配：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">sev_guest_init</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">kvm</span> <span class="token operator">*</span>kvm<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">kvm_sev_cmd</span> <span class="token operator">*</span>argp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">kvm_sev_info</span> <span class="token operator">*</span>sev <span class="token operator">=</span> <span class="token operator">&amp;</span><span class="token function">to_kvm_svm</span><span class="token punctuation">(</span>kvm<span class="token punctuation">)</span><span class="token operator">-></span>sev_info<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> asid<span class="token punctuation">,</span> ret<span class="token punctuation">;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+	asid <span class="token operator">=</span> <span class="token function">sev_asid_new</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>asid <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> ret<span class="token punctuation">;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>分配 ASID 的具体操作如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">sev_asid_new</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	bool retry <span class="token operator">=</span> true<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+
+	<span class="token function">mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+again<span class="token operator">:</span>
+	<span class="token comment">/* 在位图 sev_asid_bitmap 中找 (min_sev_asid - 1, sev_asid_bitmap] 之间的空闲位 */</span>
+	pos <span class="token operator">=</span> <span class="token function">find_next_zero_bit</span><span class="token punctuation">(</span>sev_asid_bitmap<span class="token punctuation">,</span> max_sev_asid<span class="token punctuation">,</span> min_sev_asid <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>pos <span class="token operator">>=</span> max_sev_asid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">/* 无空闲位，尝试回收并重试 */</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>retry <span class="token operator">&amp;&amp;</span> <span class="token function">__sev_recycle_asids</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			retry <span class="token operator">=</span> false<span class="token punctuation">;</span>
+			<span class="token keyword">goto</span> again<span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token comment">/* 回收后仍然没有空闲位，释放锁后报错 */</span>
+		<span class="token function">mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> <span class="token operator">-</span>EBUSY<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">__set_bit</span><span class="token punctuation">(</span>pos<span class="token punctuation">,</span> sev_asid_bitmap<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* +1 是因为 ASID 从 1 开始（0 为 hypervisor 所有） */</span>
+	<span class="token keyword">return</span> pos <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="回收"><a href="#回收" class="headerlink" title="回收"></a>回收</h2><p>ASID 的回收主要发生在 SEV 虚拟机释放函数 <code>sev_asid_free</code> 中，它的基本调用栈如下：</p>
+<pre class="language-none"><code class="language-none">kvm_arch_destroy_vm
+    -&gt; .vm_destroy
+        -&gt; svm_vm_destroy
+            -&gt; sev_vm_destroy
+                -&gt; sev_asid_free</code></pre>
+<p>它并不是直接将分配位图 <code>sev_asid_bitmap</code> 中对应的位置为空闲，而是设置专门的回收位图 <code>sev_reclaim_asid_bitmap</code>。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">sev_asid_free</span><span class="token punctuation">(</span><span class="token keyword">int</span> asid<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">struct</span> <span class="token class-name">svm_cpu_data</span> <span class="token operator">*</span>sd<span class="token punctuation">;</span>
+	<span class="token keyword">int</span> cpu<span class="token punctuation">,</span> pos<span class="token punctuation">;</span>
+
+	<span class="token function">mutex_lock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* 将当前 ASID 对应的回收位图中对应的位置为 1 */</span>
+	pos <span class="token operator">=</span> asid <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span>
+	<span class="token function">__set_bit</span><span class="token punctuation">(</span>pos<span class="token punctuation">,</span> sev_reclaim_asid_bitmap<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token comment">/* 清除 vmcb 结构 */</span>
+	<span class="token function">for_each_possible_cpu</span><span class="token punctuation">(</span>cpu<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		sd <span class="token operator">=</span> <span class="token function">per_cpu</span><span class="token punctuation">(</span>svm_data<span class="token punctuation">,</span> cpu<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		sd<span class="token operator">-></span>sev_vmcbs<span class="token punctuation">[</span>pos<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+
+	<span class="token function">mutex_unlock</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sev_bitmap_lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>现在回到上面分配 ASID 时，在分配位图无空闲位的时候会调用的 <code>__sev_recycle_asids</code>：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> bool <span class="token function">__sev_recycle_asids</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+
+	pos <span class="token operator">=</span> <span class="token function">find_next_bit</span><span class="token punctuation">(</span>sev_reclaim_asid_bitmap<span class="token punctuation">,</span>
+			    max_sev_asid<span class="token punctuation">,</span> min_sev_asid <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">/* 如果回收位图为空，无需操作 */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>pos <span class="token operator">>=</span> max_sev_asid<span class="token punctuation">)</span>
+		<span class="token keyword">return</span> false<span class="token punctuation">;</span>
+
+	<span class="token comment">/* 刷新 TLB */</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">sev_flush_asids</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+		<span class="token keyword">return</span> false<span class="token punctuation">;</span>
+
+	<span class="token comment">/* 
+	 * 将回收位图合并到分配位图中
+	 * (分配：1, 回收：1) -> (分配：0)
+	 * (分配：1, 回收：0) -> (分配：1)
+	 */</span>
+	<span class="token function">bitmap_xor</span><span class="token punctuation">(</span>sev_asid_bitmap<span class="token punctuation">,</span> sev_asid_bitmap<span class="token punctuation">,</span> sev_reclaim_asid_bitmap<span class="token punctuation">,</span>
+		   max_sev_asid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">bitmap_zero</span><span class="token punctuation">(</span>sev_reclaim_asid_bitmap<span class="token punctuation">,</span> max_sev_asid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">return</span> true<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>其中有一个可能令人困惑的点：就是为什么要进行 TLB 的刷新？我的理解是：此时进行 TLB 刷新其实是一种 <strong>懒刷新</strong> （或者说批量刷新）的设计。</p>
+<p>一种直观的想法是，在 SEV 虚拟机释放时（<code>sev_asid_free</code>），TLB 中残存的 TLB 条目已经是冗余的，应该进行 TLB 的刷新。但是这会使得每次虚拟机释放都伴随着一次 TLB 的刷新，效率相对较低。事实上，此时即便不进行刷新也并不会影响虚拟地址转换的正确进行，因为在分配位图中，该 ASID 还是处于被占用的状态，它不会被分配给新的虚拟机，因此也就不会发生新创建的虚拟机通过 TLB 残存条目完成错误地址转换的情况。这样安全的状态将持续到回收位图合并到分配位图前，在此之后，新分配的虚拟机将可能被分配得到具有残存 TLB 表项的 ASID 号，因此在此之前需要将 TLB 进行刷新。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>机密计算</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
 </search>
