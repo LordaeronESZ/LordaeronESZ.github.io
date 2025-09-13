@@ -17210,4 +17210,103 @@ again<span class="token operator">:</span>
         <tag>虚拟化</tag>
       </tags>
   </entry>
+  <entry>
+    <title>关于Linux信号的一些思考</title>
+    <url>/2025/09/13/%E5%85%B3%E4%BA%8ELinux%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/</url>
+    <content><![CDATA[<p>今天偶然间看到一个介绍 Linux 信号的视频：<a href="https://www.bilibili.com/video/BV1xLbxzgEQL/?spm_id_from=333.1387.upload.video_card.click&amp;vd_source=8cf6c757d07cf014cd9ca13a60132b66">别再杀进程了！让 Ctrl+C 变成“喵”…（用信号实现）哔哩哔哩_bilibili</a> ，虽然讲的东西很基础，但同时也引发了我思考一些之间没有很关注的问题。在与 LLM “讨论” 一番过后，便想将这些思考记录下来，算是查漏补缺吧。</p>
+<span id="more"></span>
+<h1 id="信号的一面"><a href="#信号的一面" class="headerlink" title="信号的一面"></a>信号的一面</h1><p>有关信号的具体用法，不是本文关注的重点，这部分内容可以翻看《深入理解计算机系统》（CSAPP）的异常控制流章节，这也是最早建立对“信号”认识的地方。</p>
+<p>先下定义：信号的本质是操作系统提供的一种进程间通信（IPC）机制，其他两种主要的进程间通信进制为共享内存和消息传递。</p>
+<blockquote>
+<p>其中管道通常也被认为是一种特殊的消息传递机制，它们的核心设计都是不依赖于两个进程（以下称作 A 和 B）共享一段内存空间，而是将内核作为一个中间层，将数据代为转发，即 A -&gt; kernel -&gt; B。只不过常规的消息传递转发的是结构化的数据，而管道通常直接进行数据流的传递。</p>
+</blockquote>
+<p>与共享内存和消息传递不同，信号通常并不直接传送数据，而是传达一系列预设编号的通知，进程在收到通知后，根据通知类别的不同，进行分发处理。简单类比就像是进程与进程之间的 “syscall” 一样，很直觉的设计。</p>
+<h1 id="信号的另一面"><a href="#信号的另一面" class="headerlink" title="信号的另一面"></a>信号的另一面</h1><p>我这里更想要介绍的是，信号作为一个间接层，为操作系统的进程管理带来了更大的灵活性。具体我们可以看下面这个有趣的程序案例：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;stdio.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;signal.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+
+<span class="token comment">// 自定义 SIGFPE 信号处理函数</span>
+<span class="token keyword">void</span> <span class="token function">sigfpe_handler</span><span class="token punctuation">(</span><span class="token keyword">int</span> signum<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>msg <span class="token operator">=</span> <span class="token string">"Caught SIGFPE (Division by zero attempt)! Process continues.\n"</span><span class="token punctuation">;</span>
+    <span class="token function">write</span><span class="token punctuation">(</span>STDOUT_FILENO<span class="token punctuation">,</span> msg<span class="token punctuation">,</span> <span class="token number">55</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 设置 SIGFPE 的信号处理函数</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">signal</span><span class="token punctuation">(</span>SIGFPE<span class="token punctuation">,</span> sigfpe_handler<span class="token punctuation">)</span> <span class="token operator">==</span> SIG_ERR<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">perror</span><span class="token punctuation">(</span><span class="token string">"Error setting up SIGFPE handler"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Program started. Attempting division by zero...\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> b <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> c<span class="token punctuation">;</span>
+
+    <span class="token comment">// 触发除零异常</span>
+    c <span class="token operator">=</span> a <span class="token operator">/</span> b<span class="token punctuation">;</span>
+
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"This line might not be reached if the exception persists. c = %d\n"</span><span class="token punctuation">,</span> c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 保持程序运行以便观察</span>
+    <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述程序会在代码 <code>c = a / b;</code> 处触发除零异常，通常的想法可能是程序在此之后便会直接退出。我们尝试运行该程序，结果如下：</p>
+<p><img src="/2025/09/13/%E5%85%B3%E4%BA%8ELinux%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/fpe.png" alt></p>
+<p>程序将会反复收到 <code>SIGFPE</code> 信号，并调用相应的信号处理函数，而始终没有退出，直到我们手动按下键盘 <code>ctrl + c</code> 向进程发送 <code>SIGINT</code> 信号，由于进程没有对该信号的处理函数进行定义，使得其执行了默认例程——也就是退出。</p>
+<p>我们对程序运行的过程进行梳理：首先代码 <code>c = a / b;</code> 触发了除零异常，CPU 将自动设置其 PC 寄存器值，并跳转到内核的异常处理函数中执行，并对不同的异常类型进行分发处理。在确认本次异常的原因为算术异常，此时内核并不会选择直接将进程杀死，而是向其发送一个 <code>SIGFPE</code> 信号，随后在恢复到进程被中断指令处执行前，对待处理信号 <code>SIGFPE</code> 进行处理，即调用其自定义的信号处理函数：打印相关信息。在全部信号处理完成后，恢复到 <code>c = a / b</code> 处重新执行，然后再次触发除零异常，以此往复……</p>
+<p>根据上面的描述，可以看到之所以程序没有按照推测的那样直接退出，是因为内核在对该异常的处理没有选择直接杀死，选择了转发信号，告知进程“你刚刚触发了一个算术异常”，进程可以自行选择对该异常的处理方式，合理的做法自然是打印提示信息后退出程序，但是我们选择仅打印提示信息，这就导致反复触发该算术异常，造成“死循环”。</p>
+<p>可以看到，<strong>信号机制也可以看作是操作系统提供的一种将事件（包括异常和中断）处理“分发”给用户进程自行完成的机制</strong>。这样的设计改变了内核总揽全局的做法，赋予了进程更大的自主权，也带来了更大的灵活性。</p>
+<blockquote>
+<p>对于一些没有信号机制的操作系统，它们在遇到上述情况时的选择则是直接在内核的异常处理函数中进行统一处理，比如教学操作系统 xv6 中：</p>
+<pre class="language-c" data-language="c"><code class="language-c">uint64
+<span class="token function">usertrap</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token function">r_scause</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// system call</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token function">killed</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token function">kexit</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// sepc points to the ecall instruction,</span>
+    <span class="token comment">// but we want to return to the next instruction.</span>
+    p<span class="token operator">-></span>trapframe<span class="token operator">-></span>epc <span class="token operator">+=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// an interrupt will change sepc, scause, and sstatus,</span>
+    <span class="token comment">// so enable only now that we're done with those registers.</span>
+    <span class="token function">intr_on</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">syscall</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token punctuation">(</span>which_dev <span class="token operator">=</span> <span class="token function">devintr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token comment">// ok</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token function">r_scause</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">15</span> <span class="token operator">||</span> <span class="token function">r_scause</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">13</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+            <span class="token function">vmfault</span><span class="token punctuation">(</span>p<span class="token operator">-></span>pagetable<span class="token punctuation">,</span> <span class="token function">r_stval</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token function">r_scause</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">13</span><span class="token punctuation">)</span><span class="token operator">?</span> <span class="token number">1</span> <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// page fault on lazily-allocated page</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"usertrap(): unexpected scause 0x%lx pid=%d\n"</span><span class="token punctuation">,</span> <span class="token function">r_scause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> p<span class="token operator">-></span>pid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"            sepc=0x%lx stval=0x%lx\n"</span><span class="token punctuation">,</span> <span class="token function">r_sepc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">r_stval</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">setkilled</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>可以看到，它在遇到算术异常时的选择，就是直接将进程杀死。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>Linux</tag>
+        <tag>进程间通信</tag>
+      </tags>
+  </entry>
 </search>
