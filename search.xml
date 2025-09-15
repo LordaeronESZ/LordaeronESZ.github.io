@@ -17213,9 +17213,9 @@ again<span class="token operator">:</span>
   <entry>
     <title>关于Linux信号的一些思考</title>
     <url>/2025/09/13/%E5%85%B3%E4%BA%8ELinux%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/</url>
-    <content><![CDATA[<p>今天偶然间看到一个介绍 Linux 信号的视频：<a href="https://www.bilibili.com/video/BV1xLbxzgEQL/?spm_id_from=333.1387.upload.video_card.click&amp;vd_source=8cf6c757d07cf014cd9ca13a60132b66">别再杀进程了！让 Ctrl+C 变成“喵”…（用信号实现）哔哩哔哩_bilibili</a> ，虽然讲的东西很基础，但同时也引发了我思考一些之间没有很关注的问题。在与 LLM “讨论” 一番过后，便想将这些思考记录下来，算是查漏补缺吧。</p>
+    <content><![CDATA[<p>今天偶然间看到一个介绍 Linux 信号的视频：<a href="https://www.bilibili.com/video/BV1xLbxzgEQL/?spm_id_from=333.1387.upload.video_card.click&amp;vd_source=8cf6c757d07cf014cd9ca13a60132b66">别再杀进程了！让 Ctrl+C 变成“喵”…（用信号实现）哔哩哔哩_bilibili</a> ，虽然讲的东西很基础，但也引发了我思考一些之间没有很关注的问题。在与 LLM “讨论” 一番过后，便想将这些思考记录下来，算是查漏补缺吧。</p>
 <span id="more"></span>
-<h1 id="信号的一面"><a href="#信号的一面" class="headerlink" title="信号的一面"></a>信号的一面</h1><p>有关信号的具体用法，不是本文关注的重点，这部分内容可以翻看《深入理解计算机系统》（CSAPP）的异常控制流章节，这也是最早建立对“信号”认识的地方。</p>
+<h1 id="信号的一面"><a href="#信号的一面" class="headerlink" title="信号的一面"></a>信号的一面</h1><p>有关信号的具体用法，不是本文关注的重点，这部分内容可以翻看《深入理解计算机系统》（CSAPP）的异常控制流章节，这也是我最早建立对“信号”认识的地方。</p>
 <p>先下定义：信号的本质是操作系统提供的一种进程间通信（IPC）机制，其他两种主要的进程间通信进制为共享内存和消息传递。</p>
 <blockquote>
 <p>其中管道通常也被认为是一种特殊的消息传递机制，它们的核心设计都是不依赖于两个进程（以下称作 A 和 B）共享一段内存空间，而是将内核作为一个中间层，将数据代为转发，即 A -&gt; kernel -&gt; B。只不过常规的消息传递转发的是结构化的数据，而管道通常直接进行数据流的传递。</p>
@@ -17307,6 +17307,248 @@ again<span class="token operator">:</span>
         <tag>操作系统</tag>
         <tag>Linux</tag>
         <tag>进程间通信</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>QEMU内存后端文件的用法及分析</title>
+    <url>/2025/09/15/QEMU%E5%86%85%E5%AD%98%E5%90%8E%E7%AB%AF%E6%96%87%E4%BB%B6%E7%9A%84%E7%94%A8%E6%B3%95%E5%8F%8A%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<p>本文将介绍 QEMU 中内存后端文件参数用法和代码实现，基于的版本为 QEMU 6.2。</p>
+<span id="more"></span>
+<h1 id="参数用法"><a href="#参数用法" class="headerlink" title="参数用法"></a>参数用法</h1><p>首先是参数的用法，下面是 <a href="https://www.qemu.org/docs/master/system/invocation.html">官方文档</a> 中对此的说明：</p>
+<blockquote>
+<p><strong>memory-backend=’id’</strong></p>
+<p>An alternative to legacy <code>-mem-path</code> and <code>mem-prealloc</code> options. Allows to use a memory backend as main RAM.</p>
+<p>For example:</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">-object memory-backend-file,id<span class="token operator">=</span>pc.ram,size<span class="token operator">=</span>512M,mem-path<span class="token operator">=</span>/hugetlbfs,prealloc<span class="token operator">=</span>on,share<span class="token operator">=</span>on
+-machine memory-backend<span class="token operator">=</span>pc.ram
+-m 512M</code></pre>
+</blockquote>
+<p>接下来我们做一个测试，首先创建一个空文件 <code>mem</code>，使用 <code>du</code> 查看其空间占用大小：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">du</span> -sh mem
+<span class="token number">0</span>       mem</code></pre>
+<p>然后利用参数指定该文件为内存后端文件，并启动一个模拟器，启动参数如下：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">qemu-system-riscv64 <span class="token punctuation">\</span>
+    -cpu rv64 <span class="token punctuation">\</span>
+    -object memory-backend-file,id<span class="token operator">=</span>pc.ram,size<span class="token operator">=</span>512M,mem-path<span class="token operator">=</span>mem,prealloc<span class="token operator">=</span>on,share<span class="token operator">=</span>on <span class="token punctuation">\</span>
+    -machine virt,memory-backend<span class="token operator">=</span>pc.ram <span class="token punctuation">\</span>
+    -m 512M <span class="token punctuation">\</span>
+    -smp <span class="token number">4</span> <span class="token punctuation">\</span>
+    -kernel Image <span class="token punctuation">\</span>
+    -append <span class="token string">"rootwait root=/dev/vda ro"</span> <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">file</span><span class="token operator">=</span>rootfs.ext4,format<span class="token operator">=</span>raw,id<span class="token operator">=</span>hd0 -device virtio-blk-device,drive<span class="token operator">=</span>hd0 <span class="token punctuation">\</span>
+    -nographic <span class="token punctuation">\</span></code></pre>
+<p>模拟器启动后关闭再次查看其空间占用大小：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">du</span> -sh mem
+512M    mem</code></pre>
+<p>可以看到，该文件大小已经增长为了 512M，即我们指定的模拟器内存空间大小，说明 QEMU 的确将该文件作为了内存的后端，且由于我们启动了 <code>share=on</code>，模拟器运行中带来的内存数据的更改将同步到内存后端文件 <code>mem</code> 中。</p>
+<p>我们还可以进行进一步的测试，首先使用 <code>shasum</code> 计算文件 <code>mem</code> 的哈希值：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ shasum mem
+ed1d4cf3845092b3e409acc5c3c1c75a387ed23a  mem</code></pre>
+<p>然后重新启动模拟器运行，并执行一些命令，造成内存数据的更改，然后重新使用 <code>shasum</code> 计算文件 <code>mem</code> 的哈希值：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ shasum <span class="token function">sum</span>
+5e2d5106d36f10a81d597b99c27071ebb353fa66 mem</code></pre>
+<p>可以看到，文件的哈希值发生了更改，说明文件的数据发生了变化。</p>
+<h1 id="代码实现分析"><a href="#代码实现分析" class="headerlink" title="代码实现分析"></a>代码实现分析</h1><p>接下来我们具体分析 QEMU 中是如何实现这样的内存后端文件机制的。首先是函数的调用栈，从对象 <code>mem-backend-file</code> 的创建开始看，其调用栈如下：</p>
+<pre class="language-none"><code class="language-none">(struct UserCreatableClass).complete
+    -&gt; host_memory_backend_memory_complete
+        -&gt; (struct HostMemoryBackendClass).alloc
+            -&gt; file_backend_memory_alloc
+                -&gt; memory_region_init_ram_from_file
+                    -&gt; qemu_ram_alloc_from_file
+                        -&gt; qemu_ram_alloc_from_fd
+                            -&gt; file_ram_alloc
+                                -&gt; qemu_ram_mmap</code></pre>
+<p>以下是各具体代码片段的分析：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* backends/hostmem.c */</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span>
+<span class="token function">host_memory_backend_memory_complete</span><span class="token punctuation">(</span>UserCreatable <span class="token operator">*</span>uc<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    HostMemoryBackend <span class="token operator">*</span>backend <span class="token operator">=</span> <span class="token function">MEMORY_BACKEND</span><span class="token punctuation">(</span>uc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    HostMemoryBackendClass <span class="token operator">*</span>bc <span class="token operator">=</span> <span class="token function">MEMORY_BACKEND_GET_CLASS</span><span class="token punctuation">(</span>uc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Error <span class="token operator">*</span>local_err <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>ptr<span class="token punctuation">;</span>
+    <span class="token class-name">uint64_t</span> sz<span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bc<span class="token operator">-></span>alloc<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">/* 调用 alloc 根据内存后端的类型进行内存数据结构初始化 */</span>
+        bc<span class="token operator">-></span><span class="token function">alloc</span><span class="token punctuation">(</span>backend<span class="token punctuation">,</span> <span class="token operator">&amp;</span>local_err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>local_err<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">goto</span> out<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        ptr <span class="token operator">=</span> <span class="token function">memory_region_get_ram_ptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>backend<span class="token operator">-></span>mr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        sz <span class="token operator">=</span> <span class="token function">memory_region_size</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>backend<span class="token operator">-></span>mr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    <span class="token punctuation">&#125;</span>
+out<span class="token operator">:</span>
+    <span class="token function">error_propagate</span><span class="token punctuation">(</span>errp<span class="token punctuation">,</span> local_err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数的主要作用是调用一个统一的回调函数 <code>alloc</code>，对各不同的内存后端（ram, file, memfd）进行分别的内存初始化。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* backends/hostmem-file.c */</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span>
+<span class="token function">file_backend_memory_alloc</span><span class="token punctuation">(</span>HostMemoryBackend <span class="token operator">*</span>backend<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    HostMemoryBackendFile <span class="token operator">*</span>fb <span class="token operator">=</span> <span class="token function">MEMORY_BACKEND_FILE</span><span class="token punctuation">(</span>backend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> ram_flags<span class="token punctuation">;</span>
+    gchar <span class="token operator">*</span>name<span class="token punctuation">;</span>
+
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    name <span class="token operator">=</span> <span class="token function">host_memory_backend_get_name</span><span class="token punctuation">(</span>backend<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ram_flags <span class="token operator">=</span> backend<span class="token operator">-></span>share <span class="token operator">?</span> RAM_SHARED <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    ram_flags <span class="token operator">|=</span> backend<span class="token operator">-></span>reserve <span class="token operator">?</span> <span class="token number">0</span> <span class="token operator">:</span> RAM_NORESERVE<span class="token punctuation">;</span>
+    ram_flags <span class="token operator">|=</span> fb<span class="token operator">-></span>is_pmem <span class="token operator">?</span> RAM_PMEM <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token comment">/* 根据文件后端文件来创建 MR */</span>
+    <span class="token function">memory_region_init_ram_from_file</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>backend<span class="token operator">-></span>mr<span class="token punctuation">,</span> <span class="token function">OBJECT</span><span class="token punctuation">(</span>backend<span class="token punctuation">)</span><span class="token punctuation">,</span> name<span class="token punctuation">,</span>
+                                     backend<span class="token operator">-></span>size<span class="token punctuation">,</span> fb<span class="token operator">-></span>align<span class="token punctuation">,</span> ram_flags<span class="token punctuation">,</span>
+                                     fb<span class="token operator">-></span>mem_path<span class="token punctuation">,</span> fb<span class="token operator">-></span>readonly<span class="token punctuation">,</span> errp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">g_free</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数则是针对后端为一个文件（命名文件）的情况，进行内存数据结构 <code>memory_region</code> 的初始化。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* softmmu/memory.c */</span>
+
+<span class="token keyword">void</span> <span class="token function">memory_region_init_ram_from_file</span><span class="token punctuation">(</span>MemoryRegion <span class="token operator">*</span>mr<span class="token punctuation">,</span>
+                                      Object <span class="token operator">*</span>owner<span class="token punctuation">,</span>
+                                      <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>name<span class="token punctuation">,</span>
+                                      <span class="token class-name">uint64_t</span> size<span class="token punctuation">,</span>
+                                      <span class="token class-name">uint64_t</span> align<span class="token punctuation">,</span>
+                                      <span class="token class-name">uint32_t</span> ram_flags<span class="token punctuation">,</span>
+                                      <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>path<span class="token punctuation">,</span>
+                                      bool readonly<span class="token punctuation">,</span>
+                                      Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    Error <span class="token operator">*</span>err <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token comment">/* 初始化 MR */</span>
+    <span class="token function">memory_region_init</span><span class="token punctuation">(</span>mr<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> name<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    mr<span class="token operator">-></span>ram <span class="token operator">=</span> true<span class="token punctuation">;</span>
+    mr<span class="token operator">-></span>readonly <span class="token operator">=</span> readonly<span class="token punctuation">;</span>
+    mr<span class="token operator">-></span>terminates <span class="token operator">=</span> true<span class="token punctuation">;</span>
+    mr<span class="token operator">-></span>destructor <span class="token operator">=</span> memory_region_destructor_ram<span class="token punctuation">;</span>
+    mr<span class="token operator">-></span>align <span class="token operator">=</span> align<span class="token punctuation">;</span>
+    <span class="token comment">/* MR 的 ram_block 根据内存后端文件来创建 */</span>
+    mr<span class="token operator">-></span>ram_block <span class="token operator">=</span> <span class="token function">qemu_ram_alloc_from_file</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> mr<span class="token punctuation">,</span> ram_flags<span class="token punctuation">,</span> path<span class="token punctuation">,</span>
+                                             readonly<span class="token punctuation">,</span> <span class="token operator">&amp;</span>err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数初始化了 <code>memory_region</code> 的一系列元数据属性（是否只读、对齐规则等），最后调用 <code>qemu_ram_alloc_from_file</code> 创建其内存块结构 <code>ram_block</code>。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* softmmu/physmem.c */</span>
+
+RAMBlock <span class="token operator">*</span><span class="token function">qemu_ram_alloc_from_file</span><span class="token punctuation">(</span><span class="token class-name">ram_addr_t</span> size<span class="token punctuation">,</span> MemoryRegion <span class="token operator">*</span>mr<span class="token punctuation">,</span>
+                                   <span class="token class-name">uint32_t</span> ram_flags<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>mem_path<span class="token punctuation">,</span>
+                                   bool readonly<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> fd<span class="token punctuation">;</span>
+    bool created<span class="token punctuation">;</span>
+    RAMBlock <span class="token operator">*</span>block<span class="token punctuation">;</span>
+
+    <span class="token comment">/* 打开内存后端文件 */</span>
+    fd <span class="token operator">=</span> <span class="token function">file_ram_open</span><span class="token punctuation">(</span>mem_path<span class="token punctuation">,</span> <span class="token function">memory_region_name</span><span class="token punctuation">(</span>mr<span class="token punctuation">)</span><span class="token punctuation">,</span> readonly<span class="token punctuation">,</span> <span class="token operator">&amp;</span>created<span class="token punctuation">,</span>
+                       errp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    <span class="token comment">/* 根据内存后端文件来创建 ram_block */</span>
+    block <span class="token operator">=</span> <span class="token function">qemu_ram_alloc_from_fd</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> mr<span class="token punctuation">,</span> ram_flags<span class="token punctuation">,</span> fd<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> readonly<span class="token punctuation">,</span> errp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    <span class="token keyword">return</span> block<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数则是一个进一步的封装，划分为打开文件得到文件描述符 fd 和根据 fd 进行 <code>ram_block</code> 的创建两步。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* softmmu/physmem.c */</span>
+
+RAMBlock <span class="token operator">*</span><span class="token function">qemu_ram_alloc_from_fd</span><span class="token punctuation">(</span><span class="token class-name">ram_addr_t</span> size<span class="token punctuation">,</span> MemoryRegion <span class="token operator">*</span>mr<span class="token punctuation">,</span>
+                                 <span class="token class-name">uint32_t</span> ram_flags<span class="token punctuation">,</span> <span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token class-name">off_t</span> offset<span class="token punctuation">,</span>
+                                 bool readonly<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    RAMBlock <span class="token operator">*</span>new_block<span class="token punctuation">;</span>
+    Error <span class="token operator">*</span>local_err <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token class-name">int64_t</span> file_size<span class="token punctuation">,</span> file_align<span class="token punctuation">;</span>
+
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    
+    size <span class="token operator">=</span> <span class="token function">HOST_PAGE_ALIGN</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    file_size <span class="token operator">=</span> <span class="token function">get_file_size</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>file_size <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> file_size <span class="token operator">&lt;</span> size<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">error_setg</span><span class="token punctuation">(</span>errp<span class="token punctuation">,</span> <span class="token string">"backing store size 0x%"</span> PRIx64
+                   <span class="token string">" does not match 'size' option 0x"</span> RAM_ADDR_FMT<span class="token punctuation">,</span>
+                   file_size<span class="token punctuation">,</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    file_align <span class="token operator">=</span> <span class="token function">get_file_align</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>file_align <span class="token operator">></span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> file_align <span class="token operator">></span> mr<span class="token operator">-></span>align<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">error_setg</span><span class="token punctuation">(</span>errp<span class="token punctuation">,</span> <span class="token string">"backing store align 0x%"</span> PRIx64
+                   <span class="token string">" is larger than 'align' option 0x%"</span> PRIx64<span class="token punctuation">,</span>
+                   file_align<span class="token punctuation">,</span> mr<span class="token operator">-></span>align<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    new_block <span class="token operator">=</span> <span class="token function">g_malloc0</span><span class="token punctuation">(</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>new_block<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    new_block<span class="token operator">-></span>mr <span class="token operator">=</span> mr<span class="token punctuation">;</span>
+    new_block<span class="token operator">-></span>used_length <span class="token operator">=</span> size<span class="token punctuation">;</span>
+    new_block<span class="token operator">-></span>max_length <span class="token operator">=</span> size<span class="token punctuation">;</span>
+    new_block<span class="token operator">-></span>flags <span class="token operator">=</span> ram_flags<span class="token punctuation">;</span>
+    <span class="token comment">/* ram_block 的宿主机地址根据内存后端文件分配 */</span>
+    new_block<span class="token operator">-></span>host <span class="token operator">=</span> <span class="token function">file_ram_alloc</span><span class="token punctuation">(</span>new_block<span class="token punctuation">,</span> size<span class="token punctuation">,</span> fd<span class="token punctuation">,</span> readonly<span class="token punctuation">,</span>
+                                     <span class="token operator">!</span>file_size<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> errp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>new_block<span class="token operator">-></span>host<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">g_free</span><span class="token punctuation">(</span>new_block<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/* 进行 ram_block 的新增 */</span>
+    <span class="token function">ram_block_add</span><span class="token punctuation">(</span>new_block<span class="token punctuation">,</span> <span class="token operator">&amp;</span>local_err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>local_err<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">g_free</span><span class="token punctuation">(</span>new_block<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">error_propagate</span><span class="token punctuation">(</span>errp<span class="token punctuation">,</span> local_err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> new_block<span class="token punctuation">;</span>
+
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数根据 fd 所指向的文件属性创建 <code>ram_block</code> 结构，最核心的操作为调用 <code>file_ram_alloc</code> 分配宿主机的一片内存空间，并将该空间起始地址赋值给 <code>host</code> 字段，<code>ram_block</code> 创建完成后，插入 <code>memory_region</code> 中进行更新。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* softmmu/physmem.c */</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">file_ram_alloc</span><span class="token punctuation">(</span>RAMBlock <span class="token operator">*</span>block<span class="token punctuation">,</span>
+                            <span class="token class-name">ram_addr_t</span> memory<span class="token punctuation">,</span>
+                            <span class="token keyword">int</span> fd<span class="token punctuation">,</span>
+                            bool readonly<span class="token punctuation">,</span>
+                            bool truncate<span class="token punctuation">,</span>
+                            <span class="token class-name">off_t</span> offset<span class="token punctuation">,</span>
+                            Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">uint32_t</span> qemu_map_flags<span class="token punctuation">;</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>area<span class="token punctuation">;</span>
+
+    <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    qemu_map_flags <span class="token operator">=</span> readonly <span class="token operator">?</span> QEMU_MAP_READONLY <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    qemu_map_flags <span class="token operator">|=</span> <span class="token punctuation">(</span>block<span class="token operator">-></span>flags <span class="token operator">&amp;</span> RAM_SHARED<span class="token punctuation">)</span> <span class="token operator">?</span> QEMU_MAP_SHARED <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    qemu_map_flags <span class="token operator">|=</span> <span class="token punctuation">(</span>block<span class="token operator">-></span>flags <span class="token operator">&amp;</span> RAM_PMEM<span class="token punctuation">)</span> <span class="token operator">?</span> QEMU_MAP_SYNC <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    qemu_map_flags <span class="token operator">|=</span> <span class="token punctuation">(</span>block<span class="token operator">-></span>flags <span class="token operator">&amp;</span> RAM_NORESERVE<span class="token punctuation">)</span> <span class="token operator">?</span> QEMU_MAP_NORESERVE <span class="token operator">:</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token comment">/* 宿主机内存区域根据内存后端文件 mmap 得到 */</span>
+    area <span class="token operator">=</span> <span class="token function">qemu_ram_mmap</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> memory<span class="token punctuation">,</span> block<span class="token operator">-></span>mr<span class="token operator">-></span>align<span class="token punctuation">,</span> qemu_map_flags<span class="token punctuation">,</span> offset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>area <span class="token operator">==</span> MAP_FAILED<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">error_setg_errno</span><span class="token punctuation">(</span>errp<span class="token punctuation">,</span> errno<span class="token punctuation">,</span>
+                         <span class="token string">"unable to map backing store for guest RAM"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    block<span class="token operator">-></span>fd <span class="token operator">=</span> fd<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> area<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>上述函数则是如何根据 fd 所指向的文件创建一片内存空间，可以看到，核心操作就是 <code>mmap</code> 文件映射。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>QEMU</tag>
       </tags>
   </entry>
 </search>
