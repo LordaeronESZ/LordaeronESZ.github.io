@@ -17563,7 +17563,7 @@ RAMBlock <span class="token operator">*</span><span class="token function">qemu_
 <p>这里最好也加上 <code>--disable-docs</code>，因为编译文档的工具链同样容易由于版本问题导致编译失败。</p>
 </blockquote>
 <p>文件系统方面，我当前的需求是需要实现一个最简的堆叠式加密文件系统，无需关注具体的加密算法是什么。一般来说，有两种方案：内核文件系统和 FUSE。</p>
-<p>想要实现一个堆叠式的内核文件系统，可以参考 Wrapfs：<a href="https://wrapfs.filesystems.org/，这是一个经典的堆叠式文件系统模板，可以对其进行扩展，引入需要的特性（如加密）。目前最新已经适配到了">https://wrapfs.filesystems.org/，这是一个经典的堆叠式文件系统模板，可以对其进行扩展，引入需要的特性（如加密）。目前最新已经适配到了</a> 5.xx 的内核版本。</p>
+<p>想要实现一个堆叠式的内核文件系统，可以参考 <a href="https://wrapfs.filesystems.org/">Wrapfs</a>，这是一个经典的堆叠式文件系统模板，可以对其进行扩展，引入需要的特性（如加密）。目前最新已经适配到了 5.xx 的内核版本。</p>
 <p>但是由于内核 API 接口变动快且复杂，难以学习和移植，而我的工作对性能又没有什么要求，因此便想要采用第二种方案——也就是 FUSE。有关如何基于 FUSE 实现一个堆叠式文件系统，不是本文的重点，后面有时间可以整理一下分享出来。</p>
 <h1 id="模拟器启动"><a href="#模拟器启动" class="headerlink" title="模拟器启动"></a>模拟器启动</h1><p>在将需要的环境准备好后，便编写 QEMU 的启动命令：</p>
 <pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
@@ -17585,14 +17585,14 @@ RAMBlock <span class="token operator">*</span><span class="token function">qemu_
     -nographic</code></pre>
 <p>可以看到，我将 QEMU 模拟器的内存后端指定为 <code>mnt</code> 目录下的文件 <code>mem</code>，其中 <code>mnt</code> 目录即为我基于 FUSE 实现的堆叠式文件系统的挂载点。</p>
 <p>但是执行上述脚本，尝试运行时，却一直卡住，没有任何提示信息。而不使用内存后端文件，则能够正常启动。</p>
-<p>尝试更换其他的堆叠式文件系统，如 eCryptfs，发现能够正常启动，因此推测是 FUSE 的问题，可能是某些接口没有实现导致的，但是在 LLM 的帮助下，我将可能出现问题的 FUSE 接口均实现了一遍，发现问题仍旧存在。</p>
+<p>尝试更换其他的堆叠式文件系统，如 eCryptfs，发现能够正常启动，因此推测是 FUSE 的问题——可能是某些接口没有实现导致的。但是在 LLM 的帮助下，我将可能出现问题的 FUSE 接口均实现了一遍，发现问题仍旧存在。</p>
 <p>最终不得已改用其他版本的 QEMU 进行尝试，先是尝试了安装在我本机的 QEMU 8.2.2，发现能够正常启动。随后又陆续尝试了其他版本：7.0.0、8.0.0 等等。最终简单定位到 QEMU 版本在 7.1.0 时无法启动，在 7.2.0 时能够启动，应该是两个版本之间的某次 commit 修复了这个与 FUSE 不兼容的问题。</p>
 <h1 id="commit-定位"><a href="#commit-定位" class="headerlink" title="commit 定位"></a>commit 定位</h1><p>但是 7.1.0 到 7.2.0 之间也有上千次的 commit，应该如何定位到那个关键提交呢？</p>
 <p>最开始我采用的是关键词搜索的方式，先将 7.1.0 到 7.2.0 之间的所有 commit 信息保存到日志文件中：</p>
 <pre class="language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">git</span> log v7.1.0<span class="token punctuation">..</span>v7.2.0 <span class="token operator">></span> output.log</code></pre>
 <p>然后再 <code>grep</code> 该日志文件，搜索 <code>fuse</code>, <code>mmap</code>, <code>memory-backend</code> 等关键字。</p>
-<p>这种方法效率很低，而且最终也没有找到合适的提交。在 LLM 的提示下，我尝试采用一种新的方法，即二分法验证。</p>
-<h2 id="二分法验证（git-bisect）"><a href="#二分法验证（git-bisect）" class="headerlink" title="二分法验证（git bisect）"></a>二分法验证（git bisect）</h2><p>在进行搜索前，需要确定两个关键提交，这两个关键提交需要在一条线上，根据从左到右的顺序分别称之为“左端点”和“右端点”，左端点为 good 状态，右断点为 bad 状态。</p>
+<p>这种方法效率很低，而且最终也没能帮助我找到合适的提交。在 LLM 的提示下，我尝试采用一种新的方法，即二分法验证。</p>
+<h2 id="二分法验证（git-bisect）"><a href="#二分法验证（git-bisect）" class="headerlink" title="二分法验证（git bisect）"></a>二分法验证（git bisect）</h2><p>在进行搜索前，需要确定两个关键提交，这两个关键提交需要在一条时间线上，根据从左到右的顺序分别称之为“左端点”和“右端点”，左端点为 good 状态，右断点为 bad 状态。</p>
 <blockquote>
 <p>这里的所谓 “good” 和 “bad” 需要依场景而定，由于 git bisect 原本设计是用来查找“最早引入 bug 的提交”的，因此左端点认为是好的状态 good（如能够正常编译），右端点认为是不好的状态 bad（如无法正常编译）。</p>
 <p>但是我们这里是想要找出“最早修复 bug 的提交”，因此对于 good 和 bad 的定义需要转变一下：<strong>无法正常启动模拟器为 good 状态，能够正常启动模拟器为 bad 状态。</strong></p>
@@ -17612,7 +17612,7 @@ $ <span class="token function">git</span> bisect good refs/tags/v7.1.0
 
 <span class="token comment"># 标记“坏”的版本</span>
 $ <span class="token function">git</span> bisect bad refs/tags/v7.2.0</code></pre>
-<p>此时本地代码仓库便会自动切换到左右两端点之间的一次提交，将代码重新进行 configure 并编译，尝试能否成功启动模拟器：如果能，标记为 bad；如果不能，标记为 good。</p>
+<p>此时本地代码仓库便会自动切换到左右两端点中间的提交，将代码重新进行 configure 并编译，尝试能否成功启动模拟器：如果能，标记为 bad；如果不能，标记为 good。以此循环往复：</p>
 <pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 配置 &amp; 编译</span>
 $ ./configure --target-list<span class="token operator">=</span>x86_64-softmmu <span class="token punctuation">..</span>.
 $ <span class="token function">make</span> -j<span class="token variable"><span class="token variable">$(</span>nproc<span class="token variable">)</span></span>
@@ -17628,7 +17628,7 @@ $ <span class="token function">git</span> bisect good   <span class="token comme
 Bisecting: <span class="token number">0</span> revisions left to <span class="token builtin class-name">test</span> after this <span class="token punctuation">(</span>roughly <span class="token number">0</span> steps<span class="token punctuation">)</span>
 <span class="token punctuation">[</span>ab1b2ba9c9e9871bb622b0f14a1b2e3f4adaa68f<span class="token punctuation">]</span> update seabios <span class="token builtin class-name">source</span> from <span class="token number">1.16</span>.0 to <span class="token number">1.16</span>.1</code></pre>
 <p>发现该提交并没有 QEMU 代码的更新，只是将 seabios 的版本从 1.16.0 更新到了 1.16.1。</p>
-<p>最终尝试用新版本的 BIOS（目录为 <code>pc-bios/bios-256k.bin</code>）替换 QEMU 6.2 中旧版本的 BIOS 后，模拟器能够成功启动。</p>
+<p>最终尝试用新版本的 BIOS（目录为 <code>pc-bios/bios-256k.bin</code>）替换 QEMU 6.2 中旧版本的 BIOS 后，模拟器能够成功启动，问题解决。</p>
 ]]></content>
       <categories>
         <category>操作系统</category>
