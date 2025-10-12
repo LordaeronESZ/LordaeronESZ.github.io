@@ -17722,4 +17722,146 @@ Bisecting: <span class="token number">0</span> revisions left to <span class="to
         <tag>OpenHarmony</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Linux内核物理内存管理器的建立过程</title>
+    <url>/2025/10/12/Linux%E5%86%85%E6%A0%B8%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%99%A8%E7%9A%84%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B/</url>
+    <content><![CDATA[<p>本文将介绍 Linux 内核中物理内存管理结构的建立过程，主要分为获取物理内存布局、早期内存管理器和最终内存管理器三个阶段，本文将以 x86_64 架构为例，内核代码基于 Linux 5.10 版本来介绍。</p>
+<span id="more"></span>
+<h1 id="获取物理内存布局"><a href="#获取物理内存布局" class="headerlink" title="获取物理内存布局"></a>获取物理内存布局</h1><p>当 x86_64 系统启动，BIOS 将控制权交给 Bootloader（如 GRUB） 之后，此时 CPU 模式还处于 <strong>实模式</strong> 下，可以进行 BIOS 中断调用，Bootloader 将会通过反复调用（每次只能获取一段内存区域的信息） <code>int 0x15 eax=0xE820</code> 这个中断来获取计算机的物理内存布局。</p>
+<blockquote>
+<p><code>0x15</code> 号中断还有 <code>0xE801</code>, <code>0x88</code> 的功能号，都用于获取物理内存布局，只不过功能更简单。</p>
+</blockquote>
+<p>存储获取到的每段内存区域信息的数据结构如下，包括起始地址、大小、类型。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* arch/x86/include/uapi/asm/bootparam.h */</span>
+<span class="token keyword">struct</span> <span class="token class-name">boot_e820_entry</span> <span class="token punctuation">&#123;</span>
+	__u64 addr<span class="token punctuation">;</span>
+	__u64 size<span class="token punctuation">;</span>
+	__u32 type<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">__attribute__</span><span class="token punctuation">(</span><span class="token punctuation">(</span>packed<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Bootloader 会在将控制权交给内核前，将获取到的 e820 条目传给内核，存储在内核的 <code>boot_params.e820_table</code> 数据结构中。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* arch/x86/include/uapi/asm/bootparam.h */</span>
+<span class="token keyword">struct</span> <span class="token class-name">boot_params</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	__u8  e820_entries<span class="token punctuation">;</span>  <span class="token comment">// 条目数量</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	<span class="token keyword">struct</span> <span class="token class-name">boot_e820_entry</span> e820_table<span class="token punctuation">[</span>E820_MAX_ENTRIES_ZEROPAGE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">__attribute__</span><span class="token punctuation">(</span><span class="token punctuation">(</span>packed<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>内核早期函数 <code>e820__memory_setup()</code> 会复制并整理这张表，生成三份：</p>
+<ul>
+<li><code>e820_table</code>：主表，供内核使用。</li>
+<li><code>e820_table_firmware</code>：原始 BIOS 数据备份。</li>
+<li><code>e820_table_kexec</code>：供 kexec 热重启使用。</li>
+</ul>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* arch/x86/kernel/e820.c */</span>
+<span class="token keyword">void</span> __init <span class="token function">e820__memory_setup</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token keyword">char</span> <span class="token operator">*</span>who<span class="token punctuation">;</span>
+
+	<span class="token comment">/* This is a firmware interface ABI - make sure we don't break it: */</span>
+	<span class="token function">BUILD_BUG_ON</span><span class="token punctuation">(</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">boot_e820_entry</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	who <span class="token operator">=</span> x86_init<span class="token punctuation">.</span>resources<span class="token punctuation">.</span><span class="token function">memory_setup</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">memcpy</span><span class="token punctuation">(</span>e820_table_kexec<span class="token punctuation">,</span> e820_table<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>e820_table_kexec<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">memcpy</span><span class="token punctuation">(</span>e820_table_firmware<span class="token punctuation">,</span> e820_table<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token operator">*</span>e820_table_firmware<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">pr_info</span><span class="token punctuation">(</span><span class="token string">"BIOS-provided physical RAM map:\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token function">e820__print_table</span><span class="token punctuation">(</span>who<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>至此，内核中已经保存有关于机器各物理内存区域的布局信息。最后，调用 <code>e820__print_table</code> 将其打印出来。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x0000000000000000-0x000000000009fbff<span class="token punctuation">]</span> usable
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x000000000009fc00-0x000000000009ffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x00000000000f0000-0x00000000000fffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x0000000000100000-0x000000001ffdbfff<span class="token punctuation">]</span> usable
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x000000001ffdc000-0x000000001fffffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x00000000b0000000-0x00000000bfffffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x00000000fed1c000-0x00000000fed1ffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">[</span>    <span class="token number">0.000000</span><span class="token punctuation">]</span> BIOS-e820: <span class="token punctuation">[</span>mem 0x00000000fffc0000-0x00000000ffffffff<span class="token punctuation">]</span> reserved
+<span class="token punctuation">..</span>.</code></pre>
+<h1 id="早期内存管理器"><a href="#早期内存管理器" class="headerlink" title="早期内存管理器"></a>早期内存管理器</h1><p>内核中有了物理内存的布局信息，便可以开始建立和初始化物理内存管理的数据结构了。但是事实上，这个内存管理器的建立其实也要分两个阶段来进行——从早期内存管理器过渡到最终内存管理器。之所以要经历这样貌似“多余”的步骤，原因其实很简单，Linux 的最终物理内存管理器的数据结构 <strong>足够复杂</strong> ，需要用到动态内存分配机制，但是本身动态内存分配机制就要有内存管理器的支持，因此引入一个临时的、简单的、仅依赖静态内存分配的内存管理器就很顺理成章了。</p>
+<p>有关 Linux 内核中早期内存管理器的发展历史，可以参考这篇文章：<a href="https://lwn.net/Articles/761215/">A quick history of early-boot memory allocators</a>。</p>
+<p>现在 Linux 所采用的早期内存管理器为 <code>memblock</code>，其数据结构定义如下所示：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* include/linux/memblock.h */</span>
+<span class="token keyword">struct</span> <span class="token class-name">memblock_region</span> <span class="token punctuation">&#123;</span>
+	<span class="token class-name">phys_addr_t</span> base<span class="token punctuation">;</span>           <span class="token comment">// 内存区域基址</span>
+	<span class="token class-name">phys_addr_t</span> size<span class="token punctuation">;</span>           <span class="token comment">// 内存区域大小</span>
+	<span class="token keyword">enum</span> <span class="token class-name">memblock_flags</span> flags<span class="token punctuation">;</span>  <span class="token comment">// 内存区域特性</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">ifdef</span> <span class="token expression">CONFIG_NEED_MULTIPLE_NODES</span></span>
+	<span class="token keyword">int</span> nid<span class="token punctuation">;</span>                    <span class="token comment">// NUMA结点号</span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">endif</span></span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token class-name">memblock_type</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">long</span> cnt<span class="token punctuation">;</span>                <span class="token comment">// 内存区域数量</span>
+	<span class="token keyword">unsigned</span> <span class="token keyword">long</span> max<span class="token punctuation">;</span>                <span class="token comment">// 内存区域数组的大小</span>
+	<span class="token class-name">phys_addr_t</span> total_size<span class="token punctuation">;</span>           <span class="token comment">// 内存区域的总大小</span>
+	<span class="token keyword">struct</span> <span class="token class-name">memblock_region</span> <span class="token operator">*</span>regions<span class="token punctuation">;</span>  <span class="token comment">// 内存区域数组</span>
+	<span class="token keyword">char</span> <span class="token operator">*</span>name<span class="token punctuation">;</span>                       <span class="token comment">// 内存区域名</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token class-name">memblock</span> <span class="token punctuation">&#123;</span>
+	bool bottom_up<span class="token punctuation">;</span>                 <span class="token comment">// 是否是自底向上的方向?</span>
+	<span class="token class-name">phys_addr_t</span> current_limit<span class="token punctuation">;</span>      <span class="token comment">// 地址分配的界限</span>
+	<span class="token keyword">struct</span> <span class="token class-name">memblock_type</span> memory<span class="token punctuation">;</span>    <span class="token comment">// 可用的内存区域</span>
+	<span class="token keyword">struct</span> <span class="token class-name">memblock_type</span> reserved<span class="token punctuation">;</span>  <span class="token comment">// 保留的内存区域</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+<p>值得一提的一个细节是，<code>memblock_type</code> 的内存区域数组字段 <code>regions</code> 为指针类型，可能会下意识地认为这是一个需要用到动态内存分配的动态数组，与前面提到的”仅依赖静态内存分配“的要求相悖，但事实并非如此。</p>
+<p>下面是内核中 <code>memblock</code> 全局变量的初始化，可以看到，<code>memory</code> 和 <code>reserved</code> 的 <code>regions</code> 字段其实都指向的分别为一个长度为 <code>INIT_MEMBLOCK_REGIONS</code> 和 <code>INIT_MEMBLOCK_RESERVED_REGIONS</code> 的定长数组。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* mm/memblock.c */</span>
+<span class="token keyword">static</span> <span class="token keyword">struct</span> <span class="token class-name">memblock_region</span> memblock_memory_init_regions<span class="token punctuation">[</span>INIT_MEMBLOCK_REGIONS<span class="token punctuation">]</span> __initdata_memblock<span class="token punctuation">;</span>
+<span class="token keyword">static</span> <span class="token keyword">struct</span> <span class="token class-name">memblock_region</span> memblock_reserved_init_regions<span class="token punctuation">[</span>INIT_MEMBLOCK_RESERVED_REGIONS<span class="token punctuation">]</span> __initdata_memblock<span class="token punctuation">;</span>
+
+<span class="token keyword">struct</span> <span class="token class-name">memblock</span> memblock __initdata_memblock <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span>memory<span class="token punctuation">.</span>regions		<span class="token operator">=</span> memblock_memory_init_regions<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>memory<span class="token punctuation">.</span>cnt		<span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>	<span class="token comment">/* empty dummy entry */</span>
+	<span class="token punctuation">.</span>memory<span class="token punctuation">.</span>max		<span class="token operator">=</span> INIT_MEMBLOCK_REGIONS<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>memory<span class="token punctuation">.</span>name		<span class="token operator">=</span> <span class="token string">"memory"</span><span class="token punctuation">,</span>
+
+	<span class="token punctuation">.</span>reserved<span class="token punctuation">.</span>regions	<span class="token operator">=</span> memblock_reserved_init_regions<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>reserved<span class="token punctuation">.</span>cnt		<span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>	<span class="token comment">/* empty dummy entry */</span>
+	<span class="token punctuation">.</span>reserved<span class="token punctuation">.</span>max		<span class="token operator">=</span> INIT_MEMBLOCK_RESERVED_REGIONS<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>reserved<span class="token punctuation">.</span>name		<span class="token operator">=</span> <span class="token string">"reserved"</span><span class="token punctuation">,</span>
+
+	<span class="token punctuation">.</span>bottom_up		<span class="token operator">=</span> false<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>current_limit		<span class="token operator">=</span> MEMBLOCK_ALLOC_ANYWHERE<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+<p>之所以要用指针类型而不是直接在 <code>memblock_type</code> 中内嵌数组，个人认为可能是为了后续可能的动态扩展的需求。当然这样的动态扩展也是要基于内存管理器来完成的，这部分内容不在本文的讨论范围内。</p>
+<p>下列代码就是根据 E820 表对 <code>memblock</code> 数据结构进行填充的过程：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* arch/x86/kernel/e820.c */</span>
+<span class="token keyword">void</span> __init <span class="token function">e820__memblock_setup</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	<span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> e820_table<span class="token operator">-></span>nr_entries<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">struct</span> <span class="token class-name">e820_entry</span> <span class="token operator">*</span>entry <span class="token operator">=</span> <span class="token operator">&amp;</span>e820_table<span class="token operator">-></span>entries<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+		end <span class="token operator">=</span> entry<span class="token operator">-></span>addr <span class="token operator">+</span> entry<span class="token operator">-></span>size<span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>end <span class="token operator">!=</span> <span class="token punctuation">(</span><span class="token class-name">resource_size_t</span><span class="token punctuation">)</span>end<span class="token punctuation">)</span>
+			<span class="token keyword">continue</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>entry<span class="token operator">-></span>type <span class="token operator">==</span> E820_TYPE_SOFT_RESERVED<span class="token punctuation">)</span>
+			<span class="token function">memblock_reserve</span><span class="token punctuation">(</span>entry<span class="token operator">-></span>addr<span class="token punctuation">,</span> entry<span class="token operator">-></span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>entry<span class="token operator">-></span>type <span class="token operator">!=</span> E820_TYPE_RAM <span class="token operator">&amp;&amp;</span> entry<span class="token operator">-></span>type <span class="token operator">!=</span> E820_TYPE_RESERVED_KERN<span class="token punctuation">)</span>
+			<span class="token keyword">continue</span><span class="token punctuation">;</span>
+
+		<span class="token function">memblock_add</span><span class="token punctuation">(</span>entry<span class="token operator">-></span>addr<span class="token punctuation">,</span> entry<span class="token operator">-></span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h1 id="最终内存管理器"><a href="#最终内存管理器" class="headerlink" title="最终内存管理器"></a>最终内存管理器</h1><p>最终，在有了完整的 <code>memblock</code> 结构之后，将开始向最终内存管理器的过渡过程。这部分的内容比较复杂，我也没有仔细研究，等有需要可以考虑单开一篇文章来介绍，下面只是简单的总结。</p>
+<ol>
+<li><strong>初始化页表与内核直接映射</strong>：<code>init_mem_mapping</code> 会建立完整的内核页表，最关键的是建立对全部物理内存的<strong>直接映射（Direct Map）</strong>。这意味着所有的物理内存都被线性地映射到一个固定的内核虚拟地址空间（例如，从 <code>0xffff800000000000</code> 开始），使得内核可以方便地访问任何物理地址。</li>
+<li><strong>伙伴系统</strong>：<code>mem_init</code> 函数中会释放所有由 <code>memblock</code> 管理的可用内存给伙伴系统（Buddy System）。伙伴系统是内核管理物理页帧（通常为 4KB）的核心分配器，负责处理 <strong>高阶连续物理内存的分配和释放</strong> 。此时，<code>memblock</code> 分配器的任务基本完成，内核后续的物理内存分配将由伙伴系统接管。</li>
+<li><strong>精细化管理</strong>：在伙伴系统之上，内核还会初始化 <code>kmem_cache</code> 等机制，用于高效分配内核中常用的小对象（如 <code>task_struct</code>），以减轻伙伴系统的负担并减少内存碎片。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
 </search>
