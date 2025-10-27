@@ -17864,4 +17864,570 @@ Bisecting: <span class="token number">0</span> revisions left to <span class="to
         <tag>Linux</tag>
       </tags>
   </entry>
+  <entry>
+    <title>QEMU训练营2025专业阶段实验解析</title>
+    <url>/2025/10/28/QEMU%E8%AE%AD%E7%BB%83%E8%90%A52025%E4%B8%93%E4%B8%9A%E9%98%B6%E6%AE%B5%E5%AE%9E%E9%AA%8C%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<p>本人的研究方向主要是操作系统与虚拟化，平时接触最多的开源项目除了 Linux 内核外，便是 QEMU 了，不只是将它作为一个全系统模拟器和 VMM 来使用，还涉及到基于它的增量开发的工作。但这些基本都还是边做边学的，主要原因在于市面上一直缺乏系统性介绍 QEMU 的书籍和资料（我知道的仅有一本《QEMU/KVM 源码解析与应用》，但其主要专注于 QEMU 的 VMM 用途，对模拟器的介绍不是重点）。得知 OpenCamp 将举办 QEMU 训练营，我也是在持续关注，并且在第一时间报名并开展了学习。</p>
+<p>截至现在，我已经完成了基础阶段和专业阶段的学习，正在等待项目阶段的开放。本文将分享我专业阶段实验的解题思路和方法，作为个人的一个记录，也为后续参与训练营的同学提供参考。</p>
+<span id="more"></span>
+<h1 id="实验概述"><a href="#实验概述" class="headerlink" title="实验概述"></a>实验概述</h1><p>专业阶段的实验平台是由训练营主办方专门设计的一个简易的教学用板卡 G233，对它的介绍可以参考文档：<a href="https://gevico.github.io/learning-qemu-docs/ch4/g233-board-datasheet/#_3">b. G233 Datasheet - Learning QEMU Docs</a>。</p>
+<p>实验共有十个，归类下来总共有三类：lab1 主要是根据手册的说明，补全对 G233 板卡的模拟代码；lab2 ~ lab5 则是为 RISC-V 指令集新增自定义指令；lab6 ~ lab10 是为 G233 新增一个自定义的 SPI 控制器设备。下面我也将按照这样的归类，分三个部分来一一介绍。</p>
+<h1 id="lab1-G233-板卡模拟"><a href="#lab1-G233-板卡模拟" class="headerlink" title="lab1 G233 板卡模拟"></a>lab1 G233 板卡模拟</h1><p>lab1 目标是实现对 G233 板卡的模拟，但其实绝大部分的代码已经写好了，需要做的只是将部分缺失的代码补充完整，因此本实验的主要目的还是熟悉 QEMU 设备模拟相关流程和一些 API 接口的使用，实验过程中可以参考 QEMU 代码目录下其他板卡（比如我参考了 <code>xiangshan_kmh.c</code>）的代码实现，后面的 SPI 设备模拟也是同理。</p>
+<p>G233 板卡的组件构成如下：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">G233SoCState</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">/*&lt; private >*/</span>
+    DeviceState parent_obj<span class="token punctuation">;</span>
+
+    <span class="token comment">/*&lt; public >*/</span>
+    RISCVHartArrayState cpus<span class="token punctuation">;</span>
+    DeviceState <span class="token operator">*</span>plic<span class="token punctuation">;</span>
+    DeviceState <span class="token operator">*</span>uart0<span class="token punctuation">;</span>
+    DeviceState <span class="token operator">*</span>pwm0<span class="token punctuation">;</span>
+    SIFIVEGPIOState gpio<span class="token punctuation">;</span>
+    MemoryRegion mask_rom<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> G233SoCState<span class="token punctuation">;</span>
+
+<span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">G233MachineState</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">/*&lt; private >*/</span>
+    MachineState parent_obj<span class="token punctuation">;</span>
+
+    <span class="token comment">/*&lt; public >*/</span>
+    G233SoCState soc<span class="token punctuation">;</span>
+
+<span class="token punctuation">&#125;</span> G233MachineState<span class="token punctuation">;</span></code></pre>
+<p>需要自定义的类型有两个：G233 主板（<code>G233MachineState</code>）和 G233 的 SoC（<code>G233SocState</code>），其他的设备如 PLIC 和 UART 等都直接采用了 QEMU 代码库中的现有实现。我们下面直接以 SoC 为例介绍 QEMU 自定义类型的代码实现流程。</p>
+<p>下列代码就是常见的添加一个 QEMU 新类型的基本操作，基本上对于绝大部分的类型都适用，而其底层实现原理不在本文的讨论范围内。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">const</span> TypeInfo g233_soc_type_info <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token punctuation">.</span>name <span class="token operator">=</span> TYPE_RISCV_G233_SOC<span class="token punctuation">,</span>
+    <span class="token punctuation">.</span>parent <span class="token operator">=</span> TYPE_DEVICE<span class="token punctuation">,</span>
+    <span class="token punctuation">.</span>instance_size <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>G233SoCState<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">.</span>instance_init <span class="token operator">=</span> g233_soc_init<span class="token punctuation">,</span>
+    <span class="token punctuation">.</span>class_init <span class="token operator">=</span> g233_soc_class_init<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_soc_register_types</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token function">type_register_static</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>g233_soc_type_info<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token function">type_init</span><span class="token punctuation">(</span>g233_soc_register_types<span class="token punctuation">)</span></code></pre>
+<p><code>.name</code>、<code>.parent</code>、<code>instance_size</code> 这些字段想必不用过多介绍了，我们主要关注 <code>class_init</code> 和 <code>instance_init</code> 接口的实现。</p>
+<p>这两个函数接口的区别顾名思义，一个用于类的初始化，一个用于实例（对象）的初始化。如果用 C++ 这样面向对象的编程语言的概念来套的话，可以理解为：<code>class_init</code> 用于完成 <strong>类的每个对象所共有属性和状态</strong> 的初始化，如成员函数、静态成员变量等；而 <code>instance_init</code> 则用于完成 <strong>类的每个对象所私有属性和状态</strong> 的初始化，如非静态成员变量，更直接一点说，<code>instance_init</code> 接口其实就相当于类的构造函数。</p>
+<p>相信有了上面的认识，要理解 G233 SoC 的初始化代码也不那么困难了。G233 的 <code>class_init</code> 接口完成的工作就是设置其父类 <code>DeviceClass</code> 的 <code>realize</code> 接口为 G233 SoC 类特定的接口 <code>g233_soc_realize</code>，这样运行时动态绑定的过程是不是很熟悉？没错，这其实就是 QOM 实现的类似 <strong>C++ 虚函数</strong> 的功能，子类在程序运行时动态绑定父类的函数接口，从而实现 <strong>运行时多态</strong> 。因此，我们在理解代码时不妨将 <code>class_init</code> 接口看作是一个间接层，它只是进行一系列的动态绑定操作，实际需要关注的则是子类对父类接口的特定实现，在 G233 SoC 中，它只实现了 <code>realize</code> 接口。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_soc_class_init</span><span class="token punctuation">(</span>ObjectClass <span class="token operator">*</span>oc<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">void</span> <span class="token operator">*</span>data<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    DeviceClass <span class="token operator">*</span>dc <span class="token operator">=</span> <span class="token function">DEVICE_CLASS</span><span class="token punctuation">(</span>oc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    dc<span class="token operator">-></span>realize <span class="token operator">=</span> g233_soc_realize<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>我们接下来具体分析 <code>realize</code> 接口的实现，其中新增的代码用 <code>//+</code> 来进行标识。</p>
+<p>我们需要新增的代码是 CPU 的实例化，实例化的过程是先设置设备一些属性（property）：</p>
+<ul>
+<li><code>num-harts</code> 表示 CPU 的核心数量，通常通过 QEMU 的启动参数 <code>-smp</code> 来指定，由于 <code>g233_machine_class_init</code> 中将最大 CPU 数量设置为了 1，因此这里我们直接指定为 1.</li>
+<li><code>hartid-base</code> 表示 CPU 核心（HART）的起始编号，通常指定为 0 即可。</li>
+<li><code>cpu-type</code> 表示 CPU 的类型，实验代码已经在 <code>target/riscv/cpu-qom.h</code> 中声明好了，直接添加即可。</li>
+<li><code>resetvec</code> 需要重点关注，它表示 CPU 在上电或复位后 PC 指向的指令地址，<code>g233_soc_init</code> 中的注释也提到了它为 <code>0x1004</code>，即 ROM 中的固件代码，用于实际跳转到程序中开始执行。</li>
+</ul>
+<blockquote>
+<p> 关于 <code>RISCVHartArrayState</code> 有哪些属性可以查看代码 <code>hw/riscv/riscv_hart.c:riscv_harts_props</code> 处的内容。</p>
+</blockquote>
+<p>最后调用 <code>qdev_realize</code> 的封装函数 <code>sysbus_realize</code> 完成实例化。</p>
+<p>后面的一系列代码通过调用 plic 和 uart 等设备的特定接口，进行设备的创建，并将设备寄存器映射到物理地址空间中，也就是 MMIO。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_soc_realize</span><span class="token punctuation">(</span>DeviceState <span class="token operator">*</span>dev<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    MachineState <span class="token operator">*</span>ms <span class="token operator">=</span> <span class="token function">MACHINE</span><span class="token punctuation">(</span><span class="token function">qdev_get_machine</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    G233SoCState <span class="token operator">*</span>s <span class="token operator">=</span> <span class="token function">RISCV_G233_SOC</span><span class="token punctuation">(</span>dev<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    MemoryRegion <span class="token operator">*</span>sys_mem <span class="token operator">=</span> <span class="token function">get_system_memory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> MemMapEntry <span class="token operator">*</span>memmap <span class="token operator">=</span> g233_memmap<span class="token punctuation">;</span>
+    <span class="token comment">//+ uint32_t num_harts = ms->smp.cpus;</span>
+
+    <span class="token comment">/* CPUs realize */</span>
+    <span class="token comment">//+ qdev_prop_set_uint32(DEVICE(&amp;s->cpus), "num-harts", num_harts);</span>
+    <span class="token comment">//+ qdev_prop_set_uint32(DEVICE(&amp;s->cpus), "hartid-base", 0);</span>
+    <span class="token comment">//+ qdev_prop_set_string(DEVICE(&amp;s->cpus), "cpu-type",</span>
+    <span class="token comment">//+                 TYPE_RISCV_CPU_GEVICO_G233);</span>
+    <span class="token comment">//+ qdev_prop_set_uint64(DEVICE(&amp;s->cpus), "resetvec",</span>
+    <span class="token comment">//+                 memmap[G233_DEV_MROM].base + 0x4);</span>
+    <span class="token comment">//+ sysbus_realize(SYS_BUS_DEVICE(&amp;s->cpus), &amp;error_fatal);</span>
+
+    <span class="token comment">/* Mask ROM */</span>
+    <span class="token function">memory_region_init_rom</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>mask_rom<span class="token punctuation">,</span> <span class="token function">OBJECT</span><span class="token punctuation">(</span>dev<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"riscv.g233.mrom"</span><span class="token punctuation">,</span>
+                           memmap<span class="token punctuation">[</span>G233_DEV_MROM<span class="token punctuation">]</span><span class="token punctuation">.</span>size<span class="token punctuation">,</span> <span class="token operator">&amp;</span>error_fatal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">memory_region_add_subregion</span><span class="token punctuation">(</span>sys_mem<span class="token punctuation">,</span> memmap<span class="token punctuation">[</span>G233_DEV_MROM<span class="token punctuation">]</span><span class="token punctuation">.</span>base<span class="token punctuation">,</span>
+                                <span class="token operator">&amp;</span>s<span class="token operator">-></span>mask_rom<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* MMIO */</span>
+    s<span class="token operator">-></span>plic <span class="token operator">=</span> <span class="token function">sifive_plic_create</span><span class="token punctuation">(</span>memmap<span class="token punctuation">[</span>G233_DEV_PLIC<span class="token punctuation">]</span><span class="token punctuation">.</span>base<span class="token punctuation">,</span>
+                                 <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span>G233_PLIC_HART_CONFIG<span class="token punctuation">,</span> ms<span class="token operator">-></span>smp<span class="token punctuation">.</span>cpus<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span>
+                                 G233_PLIC_NUM_SOURCES<span class="token punctuation">,</span>
+                                 G233_PLIC_NUM_PRIORITIES<span class="token punctuation">,</span>
+                                 G233_PLIC_PRIORITY_BASE<span class="token punctuation">,</span>
+                                 G233_PLIC_PENDING_BASE<span class="token punctuation">,</span>
+                                 G233_PLIC_ENABLE_BASE<span class="token punctuation">,</span>
+                                 G233_PLIC_ENABLE_STRIDE<span class="token punctuation">,</span>
+                                 G233_PLIC_CONTEXT_BASE<span class="token punctuation">,</span>
+                                 G233_PLIC_CONTEXT_STRIDE<span class="token punctuation">,</span>
+                                 memmap<span class="token punctuation">[</span>G233_DEV_PLIC<span class="token punctuation">]</span><span class="token punctuation">.</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">riscv_aclint_swi_create</span><span class="token punctuation">(</span>memmap<span class="token punctuation">[</span>G233_DEV_CLINT<span class="token punctuation">]</span><span class="token punctuation">.</span>base<span class="token punctuation">,</span>
+                            <span class="token number">0</span><span class="token punctuation">,</span> ms<span class="token operator">-></span>smp<span class="token punctuation">.</span>cpus<span class="token punctuation">,</span> false<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p><code>instance_init</code> 接口通常只用于完成在设备实例化前的必要工作，比如这里通过调用 <code>object_initialize_child</code> 初始化其内嵌的设备对象，并建立子对象与父对象之间的依赖关系。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_soc_init</span><span class="token punctuation">(</span>Object <span class="token operator">*</span>obj<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token comment">/*
+     * You can add more devices here(e.g. cpu, gpio)
+     * Attention: The cpu resetvec is 0x1004
+     */</span>
+    <span class="token comment">//+ G233SoCState *s = RISCV_G233_SOC(obj);</span>
+
+    <span class="token comment">//+ object_initialize_child(obj, "cpus", &amp;s->cpus, TYPE_RISCV_HART_ARRAY);</span>
+    <span class="token comment">//+ object_initialize_child(obj, "gpio", &amp;s->gpio, TYPE_SIFIVE_GPIO);</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>最后总结，下面是我根据个人理解，用 C++ 编写的一个简单的程序，用于表示 QOM 设备模型，只用于辅助理解，语义上并不一定和 QOM 等同。</p>
+<p>简单一点来说，上述三个函数接口执行的先后顺序为 <code>class_init -&gt; instance_init -&gt; realize</code>。<code>class_init</code> 完成类对象共享成员的初始化，由于本设备只涉及成员函数，而不涉及到类似静态成员变量的概念，因此这部分在 C++ 中直接通过虚函数在语言层面便完成了实现。<code>instance_init</code> 可以看作是类的构造函数，且该构造函数应该 <strong>尽可能精简</strong> ，精简到只调用其内嵌类型成员的无参构造函数。<code>realize</code> 成员函数则用于完成设备的完整实例化，包括动态创建指针类型成员和设置内嵌类型成员的成员变量（属性）。</p>
+<pre class="language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;iostream></span></span>
+
+<span class="token keyword">class</span> <span class="token class-name">GpioController</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+    std<span class="token double-colon punctuation">::</span>string name<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token function">GpioController</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"GPIO 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被构造"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token operator">~</span><span class="token function">GpioController</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"GPIO 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被析构"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">set_name</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string <span class="token operator">&amp;</span>name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token operator">-></span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"GPIO 名称被设置为 "</span> <span class="token operator">&lt;&lt;</span> name <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">CpuCluster</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+    <span class="token keyword">int</span> num_cores<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token function">CpuCluster</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"CPU 集群在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被构造"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token operator">~</span><span class="token function">CpuCluster</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"CPU 集群在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被析构"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">set_num_cores</span><span class="token punctuation">(</span><span class="token keyword">int</span> num_cores<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token operator">-></span>num_cores <span class="token operator">=</span> num_cores<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"CPU 核心数被设置为 "</span> <span class="token operator">&lt;&lt;</span> num_cores <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">SiFivePLIC</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token function">SiFivePLIC</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"SiFivePLIC 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被构造"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token operator">~</span><span class="token function">SiFivePLIC</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"SiFivePLIC 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被析构"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Device</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token function">Device</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Device 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被构造"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token operator">~</span><span class="token function">Device</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Device 在地址 "</span> <span class="token operator">&lt;&lt;</span> <span class="token keyword">this</span> <span class="token operator">&lt;&lt;</span> <span class="token string">" 处被析构"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">virtual</span> <span class="token keyword">void</span> <span class="token function">realize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"virtual realize"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">G233SoC</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Device</span></span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+    <span class="token comment">// 内嵌类型成员</span>
+    CpuCluster cpus<span class="token punctuation">;</span>
+    GpioController gpio<span class="token punctuation">;</span>
+    <span class="token comment">// 指针类型成员</span>
+    SiFivePLIC <span class="token operator">*</span>plic<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token comment">// 构造函数相当于 instance_init</span>
+    <span class="token function">G233SoC</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">cpus</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">gpio</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">plic</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// instance_init 应尽可能精简，且不允许失败</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"G233SoC 构造函数主体"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token operator">~</span><span class="token function">G233SoC</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">delete</span> plic<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 相当于 class_init，C++ 在语言层面实现了动态绑定</span>
+    <span class="token keyword">void</span> <span class="token function">realize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// QOM 设备模型通常在 realize 中进行属性设置等具体的实例化操作</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"开始 realize"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        plic <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">SiFivePLIC</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        gpio<span class="token punctuation">.</span><span class="token function">set_name</span><span class="token punctuation">(</span><span class="token string">"gpio0"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        cpus<span class="token punctuation">.</span><span class="token function">set_num_cores</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"realize 完成"</span> <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    G233SoC my_soc<span class="token punctuation">;</span>
+    my_soc<span class="token punctuation">.</span><span class="token function">realize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<blockquote>
+<p> 有关 <code>instance_init</code> 和 <code>realize</code> 的区别，以及如何实现它们的 best practice，可以参考文章：<a href="https://people.redhat.com/~thuth/blog/qemu/2018/09/10/instance-init-realize.html">QEMU’s instance_init() vs. realize()</a></p>
+</blockquote>
+<p>G233 Machine 的初始化也是类似，只不过实例化接口从 <code>realize</code> 变成了 <code>init</code>。还是采用上面提到的 best practice，在 <code>instance_init</code> 中只完成简单的 <code>object_initialize_child</code>，主要的实例化工作放到 <code>init</code> 中来完成，在此就不再介绍了。</p>
+<h1 id="lab2-lab5-新增自定义指令"><a href="#lab2-lab5-新增自定义指令" class="headerlink" title="lab2 ~ lab5 新增自定义指令"></a>lab2 ~ lab5 新增自定义指令</h1><p>lab2 ~ 5 和 G233 板卡基本没什么关联，主要是理解 QEMU RISC-V 模拟器指令从格式声明到功能定义的全过程。只要完成了一个，后面几个大部分的工作就只是复制粘贴了，下面我们以 lab2 的 dma 指令为例进行介绍。</p>
+<p>首先需要声明指令的格式，这部分需要首先理解 QEMU RISC-V 引入的 Decodetree 的使用方式，可以参考在线讲义中的内容：<a href="https://gevico.github.io/learning-qemu-docs/ch2/sec2/qemu-accel-tcg/tcg-add-guest-insn/">Decodetree - Learning QEMU Docs</a>。由于我们新增指令为 32 位，因此在 <code>target/riscv/insn32.decode</code> 中进行添加。</p>
+<pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/target/riscv/insn32.decode b/target/riscv/insn32.decode
+index cd23b1f..230f6ce 100644
+<span class="token coord">--- a/target/riscv/insn32.decode</span>
+<span class="token coord">+++ b/target/riscv/insn32.decode</span>
+<span class="token coord">@@ -111,6 +111,9 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line"># Formats 128:
+</span><span class="token prefix unchanged"> </span><span class="token line">@sh6       ...... ...... ..... ... ..... ....... &amp;shift shamt=%sh6 %rs1 %rd
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line"># *** Learning QEMU ***
+</span><span class="token prefix inserted">+</span><span class="token line">dma        0000110  ..... ..... 110 ..... 1111011 @r
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line"># *** Privileged Instructions ***
+</span><span class="token prefix unchanged"> </span><span class="token line">ecall       000000000000     00000 000 00000 1110011
+</span><span class="token prefix unchanged"> </span><span class="token line">ebreak      000000000001     00000 000 00000 111001</span></span></code></pre>
+<p>接下来，Decodetree 脚本将会根据指令的声明，自动生成对应的译码代码和相应的指令功能函数 <code>trans_&lt;insn_name&gt;</code> 的声明，同时在译码完成后对其进行调用，本指令名为“dma”，因此它会生成 <code>trans_dma</code> 的声明，我们需要将其实现。</p>
+<blockquote>
+<p>若想要观察 Decodetree 生成代码的具体内容，可以查看 <code>build/libqemu-riscv64-softmmu.a.p/decode-insn32.c.inc</code>。</p>
+</blockquote>
+<pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/target/riscv/insn_trans/trans_rvi.c.inc b/target/riscv/insn_trans/trans_rvi.c.inc
+index b9c7160..7283e02 100644
+<span class="token coord">--- a/target/riscv/insn_trans/trans_rvi.c.inc</span>
+<span class="token coord">+++ b/target/riscv/insn_trans/trans_rvi.c.inc</span>
+<span class="token coord">@@ -18,6 +18,17 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line"> * this program.  If not, see &lt;http://www.gnu.org/licenses/>.
+</span><span class="token prefix unchanged"> </span><span class="token line"> */
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">/* Learning QEMU */
+</span><span class="token prefix inserted">+</span><span class="token line">static bool trans_dma(DisasContext *ctx, arg_dma *a)
+</span><span class="token prefix inserted">+</span><span class="token line">&#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    TCGv dst = get_gpr(ctx, a->rd, EXT_NONE);
+</span><span class="token prefix inserted">+</span><span class="token line">    TCGv src = get_gpr(ctx, a->rs1, EXT_NONE);
+</span><span class="token prefix inserted">+</span><span class="token line">    TCGv grain = get_gpr(ctx, a->rs2, EXT_NONE);
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    gen_helper_dma(tcg_env, dst, src, grain);
+</span><span class="token prefix inserted">+</span><span class="token line">    return true;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span></span></code></pre>
+<blockquote>
+<p>这里的 trans_rvi.c.inc 是我随意选取的位置，并非指令实际的类型。</p>
+</blockquote>
+<p>由于 dma 指令的功能相对复杂，难以直接用 QEMU 的 TCG IR 来实现，因此需要借助于 helper 函数。helper 函数也分为声明和定义两部分，声明的格式可以参考 <code>target/riscv/helper.h</code> 中的其他实现。</p>
+<pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/target/riscv/helper.h b/target/riscv/helper.h
+index f712b1c..0b2294a 100644
+<span class="token coord">--- a/target/riscv/helper.h</span>
+<span class="token coord">+++ b/target/riscv/helper.h</span>
+<span class="token coord">@@ -1,3 +1,6 @@</span>
+<span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">/* Learninig QEMU */
+</span><span class="token prefix inserted">+</span><span class="token line">DEF_HELPER_4(dma, void, env, tl, tl, tl)
+</span><span class="token prefix inserted">+</span></span></code></pre>
+<p>最后便是对 helper 函数进行实现，实现部分就很简单了，当然若不想自己手动实现的话，也可以直接参考测试程序的写法。</p>
+<pre class="language-diff" data-language="diff"><code class="language-diff">diff --git a/target/riscv/op_helper.c b/target/riscv/op_helper.c
+index 110292e..b0e2407 100644
+<span class="token coord">--- a/target/riscv/op_helper.c</span>
+<span class="token coord">+++ b/target/riscv/op_helper.c</span>
+<span class="token coord">@@ -28,6 +28,30 @@</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">#include "exec/tlb-flags.h"
+</span><span class="token prefix unchanged"> </span><span class="token line">#include "trace.h"
+</span><span class="token prefix unchanged"> </span><span class="token line">
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">/* Learning QEMU */
+</span><span class="token prefix inserted">+</span><span class="token line">void helper_dma(CPURISCVState *env, uintptr_t dst,
+</span><span class="token prefix inserted">+</span><span class="token line">                uintptr_t src, target_ulong grain)
+</span><span class="token prefix inserted">+</span><span class="token line">&#123;
+</span><span class="token prefix inserted">+</span><span class="token line">    int n;
+</span><span class="token prefix inserted">+</span><span class="token line">    int i, j;
+</span><span class="token prefix inserted">+</span><span class="token line">    float val;
+</span><span class="token prefix inserted">+</span><span class="token line">    uintptr_t src_p, dst_p;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    if (grain > 2) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span><span class="token prefix inserted">+</span><span class="token line">    n = 1 &lt;&lt; (grain + 3);
+</span><span class="token prefix inserted">+</span><span class="token line">    for (i = 0; i &lt; n; ++i) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">        for (j = 0; j &lt; n; ++j) &#123;
+</span><span class="token prefix inserted">+</span><span class="token line">            src_p = src + (i * n + j) * sizeof(float);
+</span><span class="token prefix inserted">+</span><span class="token line">            dst_p = dst + (j * n + i) * sizeof(float);
+</span><span class="token prefix inserted">+</span><span class="token line">            val =  make_float32(cpu_ldl_data(env, src_p));
+</span><span class="token prefix inserted">+</span><span class="token line">            cpu_stl_data(env, dst_p, float32_val(val));
+</span><span class="token prefix inserted">+</span><span class="token line">        &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">    &#125;
+</span><span class="token prefix inserted">+</span><span class="token line">&#125;
+</span><span class="token prefix inserted">+</span><span class="token line">
+</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">/* Exceptions processing helpers */
+</span><span class="token prefix unchanged"> </span><span class="token line">G_NORETURN void riscv_raise_exception(CPURISCVState *env,
+</span><span class="token prefix unchanged"> </span><span class="token line">                                      RISCVException exception,</span></span></code></pre>
+<p>事实上，对于完整的指令新增流程而言，还需要在反汇编器 <code>disas/riscv.c</code> 中添加对应指令的逻辑，以便于调试。但是测试程序只关注指令的功能，因此我在此没有实现。</p>
+<p>剩余的几条指令实现方式和 dma 基本一致，在此就不过多赘述了。</p>
+<h1 id="lab6-lab10-扩展-SPI-设备"><a href="#lab6-lab10-扩展-SPI-设备" class="headerlink" title="lab6 ~ lab10 扩展 SPI 设备"></a>lab6 ~ lab10 扩展 SPI 设备</h1><p>lab6 ~ lab10 需要新增一个设备的模拟，并将其与 G233 主板连接起来，这也是三部分实验中最有挑战性的一个，这部分建议参考其他 SPI 设备比如 SiFiveSPI 的实现。由于涉及到的代码较多，下面我将选取一些关键点以及我在做实验的过程中感到有些困惑的地方进行介绍。</p>
+<h2 id="与-SoC-和从设备的连接"><a href="#与-SoC-和从设备的连接" class="headerlink" title="与 SoC 和从设备的连接"></a>与 SoC 和从设备的连接</h2><p>G233 SPI 设备作为一个独立的设备实现，要想起作用，必然要与我们的 G233 SoC 进行连接，具体分为以下几个操作：</p>
+<ul>
+<li>将 G233 SPI 的设备寄存器映射到系统内存（MMIO）中，通过调用 <code>sysbus_mmio_map</code> 函数实现。</li>
+<li>将 G233 SPI 的中断信号线连接到 G233 SoC 的中断控制器 PLIC，通过调用 <code>sysbus_connect_irq</code> 函数实现。</li>
+</ul>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_soc_realize</span><span class="token punctuation">(</span>DeviceState <span class="token operator">*</span>dev<span class="token punctuation">,</span> Error <span class="token operator">*</span><span class="token operator">*</span>errp<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    <span class="token comment">/* G233 SPI device */</span>
+    <span class="token function">sysbus_realize</span><span class="token punctuation">(</span><span class="token function">SYS_BUS_DEVICE</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> errp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sysbus_mmio_map</span><span class="token punctuation">(</span><span class="token function">SYS_BUS_DEVICE</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> memmap<span class="token punctuation">[</span>G233_DEV_SPI<span class="token punctuation">]</span><span class="token punctuation">.</span>base<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sysbus_connect_irq</span><span class="token punctuation">(</span><span class="token function">SYS_BUS_DEVICE</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span>
+                       <span class="token function">qdev_get_gpio_in</span><span class="token punctuation">(</span><span class="token function">DEVICE</span><span class="token punctuation">(</span>s<span class="token operator">-></span>plic<span class="token punctuation">)</span><span class="token punctuation">,</span> G233_SPI_IRQ<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>除了与 SoC 相连外，G233 SPI 设备还需要与两个 flash 芯片相连，具体分为以下几个操作：</p>
+<ul>
+<li>创建题目指定的 flash 设备，并与命令行参数中传入的 flash 文件后端相关联。</li>
+<li>将 flash 设备 与 SSI 总线相连，用于后续 G233 SPI 向该总线中写入数据与 flash 设备通信。</li>
+<li>将 G233 SPI 的中断信号线连接到 flash，从而实现片选。</li>
+</ul>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">G233SPIState</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    SSIBus <span class="token operator">*</span>spi<span class="token punctuation">;</span>
+
+    qemu_irq irq<span class="token punctuation">;</span>
+    qemu_irq <span class="token operator">*</span>cs_lines<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> G233SPIState<span class="token punctuation">;</span></code></pre>
+<p>需要注意的是手册中并没有给出运行测试程序时 QEMU 的启动参数，我们可以在执行 make 时启用详细输出（Verbose Mode）来看到：<code>make check-gevico-tcg V=1</code>，其参数如下：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">build/qemu-system-riscv64 <span class="token punctuation">\</span>
+    -M g233 <span class="token punctuation">\</span>
+    -m 2G <span class="token punctuation">\</span>
+    -display none <span class="token punctuation">\</span>
+    -semihosting <span class="token punctuation">\</span>
+    -serial stdio <span class="token punctuation">\</span>
+    -d int <span class="token punctuation">\</span>
+    -device loader,file<span class="token operator">=</span>test-xxx <span class="token punctuation">\</span>
+    -blockdev <span class="token assign-left variable">driver</span><span class="token operator">=</span>file,filename<span class="token operator">=</span>disk0.img,node-name<span class="token operator">=</span>flash0 <span class="token punctuation">\</span>
+    -blockdev <span class="token assign-left variable">driver</span><span class="token operator">=</span>file,filename<span class="token operator">=</span>disk1.img,node-name<span class="token operator">=</span>flash1</code></pre>
+<p>flash 文件后端通过 <code>node-name</code> 来标识，我们可以在代码中使用 <code>blk_by_name</code> 找到对应的 <code>BlockBackend</code> 对象，并通过 <code>qdev_prop_set_drive_err</code> 与将其与新建的 flash 设备对象进行关联。具体的代码如下所示：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_machine_init</span><span class="token punctuation">(</span>MachineState <span class="token operator">*</span>machine<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    BlockBackend <span class="token operator">*</span>blk0<span class="token punctuation">,</span> <span class="token operator">*</span>blk1<span class="token punctuation">;</span>
+    DeviceState <span class="token operator">*</span>flash_dev1<span class="token punctuation">,</span> <span class="token operator">*</span>flash_dev2<span class="token punctuation">;</span>
+    qemu_irq flash_cs1<span class="token punctuation">,</span> flash_cs2<span class="token punctuation">;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    <span class="token comment">/* Connect first flash to SPI */</span>
+    flash_dev1 <span class="token operator">=</span> <span class="token function">qdev_new</span><span class="token punctuation">(</span><span class="token string">"w25x16"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_prop_set_uint8</span><span class="token punctuation">(</span>flash_dev1<span class="token punctuation">,</span> <span class="token string">"cs"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    blk0 <span class="token operator">=</span> <span class="token function">blk_by_name</span><span class="token punctuation">(</span><span class="token string">"flash0"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_prop_set_drive_err</span><span class="token punctuation">(</span>flash_dev1<span class="token punctuation">,</span> <span class="token string">"drive"</span><span class="token punctuation">,</span> blk0<span class="token punctuation">,</span> <span class="token operator">&amp;</span>error_fatal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_realize_and_unref</span><span class="token punctuation">(</span>flash_dev1<span class="token punctuation">,</span> <span class="token function">BUS</span><span class="token punctuation">(</span>s<span class="token operator">-></span>soc<span class="token punctuation">.</span>spi<span class="token punctuation">.</span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>error_fatal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    flash_cs1 <span class="token operator">=</span> <span class="token function">qdev_get_gpio_in_named</span><span class="token punctuation">(</span>flash_dev1<span class="token punctuation">,</span> SSI_GPIO_CS<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sysbus_connect_irq</span><span class="token punctuation">(</span><span class="token function">SYS_BUS_DEVICE</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>soc<span class="token punctuation">.</span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> flash_cs1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Connect second flash to SPI */</span>
+    flash_dev2 <span class="token operator">=</span> <span class="token function">qdev_new</span><span class="token punctuation">(</span><span class="token string">"w25x32"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_prop_set_uint8</span><span class="token punctuation">(</span>flash_dev2<span class="token punctuation">,</span> <span class="token string">"cs"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    blk1 <span class="token operator">=</span> <span class="token function">blk_by_name</span><span class="token punctuation">(</span><span class="token string">"flash1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_prop_set_drive_err</span><span class="token punctuation">(</span>flash_dev2<span class="token punctuation">,</span> <span class="token string">"drive"</span><span class="token punctuation">,</span> blk1<span class="token punctuation">,</span> <span class="token operator">&amp;</span>error_fatal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">qdev_realize_and_unref</span><span class="token punctuation">(</span>flash_dev2<span class="token punctuation">,</span> <span class="token function">BUS</span><span class="token punctuation">(</span>s<span class="token operator">-></span>soc<span class="token punctuation">.</span>spi<span class="token punctuation">.</span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>error_fatal<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    flash_cs2 <span class="token operator">=</span> <span class="token function">qdev_get_gpio_in_named</span><span class="token punctuation">(</span>flash_dev2<span class="token punctuation">,</span> SSI_GPIO_CS<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">sysbus_connect_irq</span><span class="token punctuation">(</span><span class="token function">SYS_BUS_DEVICE</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token operator">-></span>soc<span class="token punctuation">.</span>spi<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> flash_cs2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>最终在创建完成后，可以通过 QEMU monitor 进行查看：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">QEMU <span class="token number">10.0</span>.93 monitor - <span class="token builtin class-name">type</span> <span class="token string">'help'</span> <span class="token keyword">for</span> <span class="token function">more</span> information
+<span class="token punctuation">(</span>qemu<span class="token punctuation">)</span> info qtree
+bus: main-system-bus
+  <span class="token builtin class-name">type</span> System
+  dev: g233.spi, <span class="token function">id</span> <span class="token string">""</span>
+    gpio-out <span class="token string">"sysbus-irq"</span> <span class="token number">5</span>
+    mmio 0000000010018000/0000000000001000
+    bus: spi
+      <span class="token builtin class-name">type</span> SSI
+      dev: w25x32, <span class="token function">id</span> <span class="token string">""</span>
+        gpio-in <span class="token string">"WP#"</span> <span class="token number">1</span>
+        gpio-in <span class="token string">"ssi-gpio-cs"</span> <span class="token number">1</span>
+        write-enable <span class="token operator">=</span> <span class="token boolean">false</span>
+        nonvolatile-cfg <span class="token operator">=</span> <span class="token number">36863</span> <span class="token punctuation">(</span>0x8fff<span class="token punctuation">)</span>
+        spansion-cr1nv <span class="token operator">=</span> <span class="token number">0</span> <span class="token punctuation">(</span>0x0<span class="token punctuation">)</span>
+        spansion-cr2nv <span class="token operator">=</span> <span class="token number">8</span> <span class="token punctuation">(</span>0x8<span class="token punctuation">)</span>
+        spansion-cr3nv <span class="token operator">=</span> <span class="token number">2</span> <span class="token punctuation">(</span>0x2<span class="token punctuation">)</span>
+        spansion-cr4nv <span class="token operator">=</span> <span class="token number">16</span> <span class="token punctuation">(</span>0x10<span class="token punctuation">)</span>
+        drive <span class="token operator">=</span> <span class="token string">""</span>
+        cs <span class="token operator">=</span> <span class="token number">1</span> <span class="token punctuation">(</span>0x1<span class="token punctuation">)</span>
+      dev: w25x16, <span class="token function">id</span> <span class="token string">""</span>
+        gpio-in <span class="token string">"WP#"</span> <span class="token number">1</span>
+        gpio-in <span class="token string">"ssi-gpio-cs"</span> <span class="token number">1</span>
+        write-enable <span class="token operator">=</span> <span class="token boolean">false</span>
+        nonvolatile-cfg <span class="token operator">=</span> <span class="token number">36863</span> <span class="token punctuation">(</span>0x8fff<span class="token punctuation">)</span>
+        spansion-cr1nv <span class="token operator">=</span> <span class="token number">0</span> <span class="token punctuation">(</span>0x0<span class="token punctuation">)</span>
+        spansion-cr2nv <span class="token operator">=</span> <span class="token number">8</span> <span class="token punctuation">(</span>0x8<span class="token punctuation">)</span>
+        spansion-cr3nv <span class="token operator">=</span> <span class="token number">2</span> <span class="token punctuation">(</span>0x2<span class="token punctuation">)</span>
+        spansion-cr4nv <span class="token operator">=</span> <span class="token number">16</span> <span class="token punctuation">(</span>0x10<span class="token punctuation">)</span>
+        drive <span class="token operator">=</span> <span class="token string">""</span>
+        cs <span class="token operator">=</span> <span class="token number">0</span> <span class="token punctuation">(</span>0x0<span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token punctuation">..</span>.<span class="token punctuation">]</span></code></pre>
+<h2 id="全双工同步数据传输的实现"><a href="#全双工同步数据传输的实现" class="headerlink" title="全双工同步数据传输的实现"></a>全双工同步数据传输的实现</h2><p>数据传输部分的实现，<code>sifive_spi.c</code> 和 <code>xilinx_spi.c</code> 等都纷纷采用了 QEMU 实现的一种数据结构 <code>Fifo8</code>，顾名思义，它是一个先进先出的缓冲区，很适合用来实现 SPI 这样的全双工串行数据通信。但是 G233 SPI 的 FIFO 容量只有 1（8-bit），因此直接用一个整型变量来表示更加简洁，本文接下来也直接采用这种方式。</p>
+<p>要实现 CPU 对 SPI 设备寄存器的访问，需要创建一个 SPI 设备的 <code>MemoryRegion</code>，并且实现该 MR 的 <code>read</code> 和 <code>write</code> 接口，根据传入的偏移量 <code>offset</code> 决定对哪个设备寄存器进行读写，最后将 MR 添加到系统内存中，实现 MMIO。MMIO 上一节已经介绍过，下面主要介绍如何实现 <code>read</code> 和 <code>write</code> 接口。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token class-name">G233SPIState</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">/*&lt; private >*/</span>
+    SysBusDevice parent_obj<span class="token punctuation">;</span>
+
+    <span class="token comment">/*&lt; public >*/</span>
+    MemoryRegion iomem<span class="token punctuation">;</span>
+
+    <span class="token class-name">uint32_t</span> cr1<span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> cr2<span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> sr<span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> dr<span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> csctrl<span class="token punctuation">;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span> G233SPIState<span class="token punctuation">;</span></code></pre>
+<p><code>read</code> 接口的实现基本没有什么需要注意的地方，主要是 DR 寄存器在读取数据后，需要设置 SR 寄存器，表示此时读缓冲区清空。</p>
+<blockquote>
+<p>这里我没有考虑读之前读缓冲区已为空的情况，而是认为读之前检查 SR 状态是设备驱动程序（即测试程序）考虑的事情。</p>
+</blockquote>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token class-name">uint64_t</span> <span class="token function">g233_spi_read</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>opaque<span class="token punctuation">,</span> hwaddr offset<span class="token punctuation">,</span>
+                              <span class="token keyword">unsigned</span> <span class="token keyword">int</span> size<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    G233SPIState <span class="token operator">*</span>s <span class="token operator">=</span> opaque<span class="token punctuation">;</span>
+    <span class="token class-name">uint32_t</span> val <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>offset<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    <span class="token keyword">case</span> G233_SPI_DR<span class="token operator">:</span>
+        val <span class="token operator">=</span> s<span class="token operator">-></span>dr<span class="token punctuation">;</span>
+        s<span class="token operator">-></span>sr <span class="token operator">&amp;=</span> <span class="token operator">~</span>SPI_SR_RXNE<span class="token punctuation">;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+    <span class="token keyword">return</span> val<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p><code>write</code> 接口相对来说要复杂一些。CR1 和 CR2 寄存器的写没有什么特别的地方，直接写入即可。</p>
+<p>DR 寄存器在写入之前，需要判断缓冲区是否已满，如果是则需要设置 SR 的溢出位表示触发溢出错误；否则将数据写入到 DR 寄存器中，并设置 SR 寄存器，表示此时写缓冲区已满。在此之后，SPI 控制器的作用便体现出来了：它将写缓冲区中的数据通过 SSI 总线送到片选打开的从设备中，再将接收到的返回数据存入读缓冲区中。这部分调用的是 <code>ssi_transfer</code> 函数，参数为 SSI 总线和发送的数据，返回值为返回的数据。由于缓冲区的大小只有 1，因此我们不需要循环，直接单次调用即可，在将返回的数据存入 DR 寄存器前，同样需要进行溢出检查，如果此时读缓冲区已满，那么设置 SR 的溢出位表示触发溢出错误。此外，需要在整个传输过程的前后设置和清除 BSY 位。</p>
+<blockquote>
+<p>关于 BSY 位设置的时机我也不是很清楚。</p>
+</blockquote>
+<p>最后，对 CSCTRL 寄存器的写入需要更新片选信号，这部分我们下一节再详细介绍。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_transfer_data</span><span class="token punctuation">(</span>G233SPIState <span class="token operator">*</span>s<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token class-name">uint32_t</span> retval<span class="token punctuation">;</span>
+
+    s<span class="token operator">-></span>sr <span class="token operator">|=</span> SPI_SR_BSY<span class="token punctuation">;</span>
+    
+    retval <span class="token operator">=</span> <span class="token function">ssi_transfer</span><span class="token punctuation">(</span>s<span class="token operator">-></span>spi<span class="token punctuation">,</span> s<span class="token operator">-></span>dr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token operator">-></span>sr <span class="token operator">&amp;</span> SPI_SR_RXNE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        s<span class="token operator">-></span>sr <span class="token operator">|=</span> SPI_SR_OVERRUN<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        s<span class="token operator">-></span>dr <span class="token operator">=</span> retval<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    s<span class="token operator">-></span>sr <span class="token operator">|=</span> SPI_SR_TXE<span class="token punctuation">;</span>
+    s<span class="token operator">-></span>sr <span class="token operator">|=</span> SPI_SR_RXNE<span class="token punctuation">;</span>
+
+    s<span class="token operator">-></span>sr <span class="token operator">&amp;=</span> <span class="token operator">~</span>SPI_SR_BSY<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_spi_write</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>opaque<span class="token punctuation">,</span> hwaddr offset<span class="token punctuation">,</span>
+                           <span class="token class-name">uint64_t</span> value<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> size<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    G233SPIState <span class="token operator">*</span>s <span class="token operator">=</span> opaque<span class="token punctuation">;</span>
+
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>offset<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+    <span class="token keyword">case</span> G233_SPI_SR<span class="token operator">:</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">&amp;</span> SPI_SR_OVERRUN<span class="token punctuation">)</span>
+            s<span class="token operator">-></span>sr <span class="token operator">&amp;=</span> <span class="token operator">~</span>SPI_SR_OVERRUN<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">&amp;</span> SPI_SR_UNDERRUN<span class="token punctuation">)</span>
+            s<span class="token operator">-></span>sr <span class="token operator">&amp;=</span> <span class="token operator">~</span>SPI_SR_UNDERRUN<span class="token punctuation">;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> G233_SPI_DR<span class="token operator">:</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>s<span class="token operator">-></span>sr <span class="token operator">&amp;</span> SPI_SR_TXE<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            s<span class="token operator">-></span>sr <span class="token operator">|=</span> SPI_SR_OVERRUN<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            s<span class="token operator">-></span>dr <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>value<span class="token punctuation">;</span>
+            s<span class="token operator">-></span>sr <span class="token operator">&amp;=</span> <span class="token operator">~</span>SPI_SR_TXE<span class="token punctuation">;</span>
+            <span class="token function">g233_transfer_data</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token keyword">case</span> G233_SPI_CSCTRL<span class="token operator">:</span>
+        s<span class="token operator">-></span>csctrl <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">uint32_t</span><span class="token punctuation">)</span>value<span class="token punctuation">;</span>
+        <span class="token function">g233_spi_update_cs</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+	<span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<h2 id="中断传递"><a href="#中断传递" class="headerlink" title="中断传递"></a>中断传递</h2><p>CPU 与 I/O 设备通信的方式通常有两种：轮询和中断。对本实验的 G233 SPI 设备而言，轮询方式就是 CPU 不断读取 SR 寄存器，确认读缓冲区和写缓冲区的状态，并决定是否从 DR 寄存器中读取数据或向其写入数据。而中断方式则是 CPU 注册相应的中断处理函数，SPI 设备当读缓冲区满或写缓冲区空时向 CPU 发起中断，CPU 自动跳转到对应的中断处理函数执行相应的操作：如从读缓冲区中读取数据，或向写缓冲区中写入数据。此外，某些错误发生时，SPI 设备也要向 CPU 发起中断请求处理，lab10 的溢出检测就是这种情况。</p>
+<p>发起中断的函数为 <code>qemu_set_irq</code>，我们可以专门编写一个函数，根据此时控制寄存器和状态寄存器的值决定是否要发起中断，代码如下所示，并在对设备寄存器进行读写操作时调用。</p>
+<blockquote>
+<p>在 <code>read</code>、<code>write</code> 接口处调用中断更新是因为对 G233 SPI 设备而言，CPU 对设备寄存器的读写是 <strong>唯一可能</strong> 使得 SPI 设备状态发生变化的情况。</p>
+</blockquote>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_spi_update_irq</span><span class="token punctuation">(</span>G233SPIState <span class="token operator">*</span>s<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> level <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Should trigger TX int ? */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cr2 <span class="token operator">&amp;</span> SPI_CR2_TXEIE<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>s<span class="token operator">-></span>sr <span class="token operator">&amp;</span> SPI_SR_TXE<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        level <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Should trigger RX int ? */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cr2 <span class="token operator">&amp;</span> SPI_CR2_RXNEIE<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>s<span class="token operator">-></span>sr <span class="token operator">&amp;</span> SPI_SR_RXNE<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        level <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/* Should trigger ERR int ? */</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cr2 <span class="token operator">&amp;</span> SPI_CR2_ERRIE<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>s<span class="token operator">-></span>sr <span class="token operator">&amp;</span> <span class="token punctuation">(</span>SPI_SR_OVERRUN <span class="token operator">|</span> SPI_SR_UNDERRUN<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        level <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token function">qemu_set_irq</span><span class="token punctuation">(</span>s<span class="token operator">-></span>irq<span class="token punctuation">,</span> level<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span></code></pre>
+<p>片选操作的实现也是类似，根据 CSCTRL 寄存器的值决定启用哪块 flash 芯片，代码如下所示，这个更新过程可以在 CSCTRL 寄存器被写入时进行，需要注意的是片选信号为 0 代表有效。</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name function">CSi_EN</span><span class="token expression"><span class="token punctuation">(</span>sr<span class="token punctuation">,</span> i<span class="token punctuation">)</span> </span><span class="token punctuation">\</span>
+    <span class="token expression"><span class="token punctuation">(</span> <span class="token punctuation">(</span> <span class="token punctuation">(</span>sr<span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span> <span class="token punctuation">)</span></span></span>
+
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name function">CSi_ACT</span><span class="token expression"><span class="token punctuation">(</span>sr<span class="token punctuation">,</span> i<span class="token punctuation">)</span> </span><span class="token punctuation">\</span>
+    <span class="token expression"><span class="token punctuation">(</span> <span class="token punctuation">(</span> <span class="token punctuation">(</span>sr<span class="token punctuation">)</span> <span class="token operator">>></span> <span class="token punctuation">(</span> <span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">4</span> <span class="token punctuation">)</span> <span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span></span></span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">g233_spi_update_cs</span><span class="token punctuation">(</span>G233SPIState <span class="token operator">*</span>s<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> i<span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> NUM_CS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">CSi_EN</span><span class="token punctuation">(</span>s<span class="token operator">-></span>csctrl<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">qemu_set_irq</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cs_lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">continue</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">CSi_ACT</span><span class="token punctuation">(</span>s<span class="token operator">-></span>csctrl<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">qemu_set_irq</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cs_lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">qemu_set_irq</span><span class="token punctuation">(</span>s<span class="token operator">-></span>cs_lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span></code></pre>]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>操作系统</tag>
+        <tag>QEMU</tag>
+      </tags>
+  </entry>
 </search>
