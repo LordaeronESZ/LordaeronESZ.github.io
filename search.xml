@@ -18430,4 +18430,142 @@ bus: main-system-bus
         <tag>QEMU</tag>
       </tags>
   </entry>
+  <entry>
+    <title>使用QEMU安装并启动一个Ubuntu发行版</title>
+    <url>/2025/10/31/%E4%BD%BF%E7%94%A8QEMU%E5%AE%89%E8%A3%85%E5%B9%B6%E5%90%AF%E5%8A%A8%E4%B8%80%E4%B8%AAUbuntu%E5%8F%91%E8%A1%8C%E7%89%88/</url>
+    <content><![CDATA[<p>之前自己编译 QEMU 跑模拟器/虚拟机基本都是跑的一个基于 buildroot 构建的小型根文件系统，虽然也能够完成一些基础的测试，但是功能完备性上相比发行版来说还是要差很多，而且如果想添加新的软件环境也比较麻烦。因此这两天花了点时间倒腾了一下环境，把 QEMU 安装和运行发行版的流程走通，便于后续的学习和研究。</p>
+<span id="more"></span>
+<h1 id="安装系统"><a href="#安装系统" class="headerlink" title="安装系统"></a>安装系统</h1><p>发行版我选择的是 Ubuntu，没有什么别的原因，只是因为用的最多。而已经安装好 Ubuntu 系统的磁盘镜像可能不太好找（官网只看到 RISC-V 架构有 pre-installed 版本），因此我选择下载 iso 镜像，然后手动安装。这里可以直接选择通过清华镜像源下载：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">wget</span> https://mirrors.tuna.tsinghua.edu.cn/ubuntu-releases/noble/ubuntu-24.04.3-live-server-amd64.iso</code></pre>
+<p>我下载的是较新的版本，因此 seabios 可能不支持，需要更现代的固件，虚拟机场景下通常是 OVMF，使用包管理工具安装一下：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> ovmf</code></pre>
+<p>找到安装好的 OVMF 固件，通常在目录 <code>/usr/share/OVMF</code> 目录下。</p>
+<p>最后创建一个 QEMU 的虚拟磁盘文件 QCOW2（大小自行选择，我的选择为 20G），用作虚拟机的磁盘，它相比传统文件类型的优势在于可以动态扩容。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">qemu-img create -f qcow2 ubuntu-vm.qcow2 20G</code></pre>
+<p>最后使用下面所示的 QEMU 启动参数进行启动：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">qemu-system-x86_64 <span class="token punctuation">\</span>
+    -machine q35,accel<span class="token operator">=</span>kvm <span class="token punctuation">\</span>
+    -cpu <span class="token function">host</span> <span class="token punctuation">\</span>
+    -m 8G <span class="token punctuation">\</span>
+    -smp <span class="token number">4</span> <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,readonly<span class="token operator">=</span>on,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_CODE_4M.fd <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_VARS_4M.fd <span class="token punctuation">\</span>
+    -cdrom ubuntu-24.04.3-live-server-amd64.iso <span class="token punctuation">\</span>
+    -boot <span class="token assign-left variable">order</span><span class="token operator">=</span>d <span class="token punctuation">\</span>
+    -hda ubuntu-vm.qcow2 <span class="token punctuation">\</span>
+    -netdev user,id<span class="token operator">=</span>net0,hostfwd<span class="token operator">=</span>tcp::2222-:22 <span class="token punctuation">\</span>
+    -device e1000,netdev<span class="token operator">=</span>net0 <span class="token punctuation">\</span>
+    -serial mon:stdio <span class="token punctuation">\</span>
+    -display none</code></pre>
+<p>其中的 <code>-cdrom</code> 参数相当于将装有操作系统镜像的光盘插入我们的虚拟机器 q35 上，<code>-boot order=d</code> 相当于系统上电进行引导时最先检查的存储设备为光盘，这个过程和我们现实中为一台裸机电脑安装操作系统如出一辙。</p>
+<p>由于我的本机 Linux 环境为 WSL2，因此选择纯命令行安装的方式，需要进行下列额外操作将安装器的输出显示在串口：</p>
+<ul>
+<li>启动后会出现 GRUB 菜单，选中 Try or Install Ubuntu Server，按 e 进入编辑模式。</li>
+<li>找到以 linux 开头的那一行，在末尾加上 <code>console=ttyS0</code>，如 <code>linux        /casper/vmlinuz  --- console=ttyS0</code>。</li>
+<li>按 Ctrl+X 或 F10 启动。</li>
+</ul>
+<h1 id="运行系统"><a href="#运行系统" class="headerlink" title="运行系统"></a>运行系统</h1><p>具体安装过程中的选项在此就不过多介绍了，安装完成后，下次启动时可以去掉 <code>cdrom</code> 和 <code>boot</code> 参数：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">qemu-system-x86_64 <span class="token punctuation">\</span>
+    -machine q35,accel<span class="token operator">=</span>kvm <span class="token punctuation">\</span>
+    -cpu <span class="token function">host</span> <span class="token punctuation">\</span>
+    -m 8G <span class="token punctuation">\</span>
+    -smp <span class="token number">4</span> <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,readonly<span class="token operator">=</span>on,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_CODE_4M.fd <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_VARS_4M.fd <span class="token punctuation">\</span>
+    -hda ubuntu-vm.qcow2 <span class="token punctuation">\</span>
+    -netdev user,id<span class="token operator">=</span>net0,hostfwd<span class="token operator">=</span>tcp::2222-:22 <span class="token punctuation">\</span>
+    -device e1000,netdev<span class="token operator">=</span>net0 <span class="token punctuation">\</span>
+    -serial mon:stdio <span class="token punctuation">\</span>
+    -display none</code></pre>
+<p>再次观察上述 QEMU 启动参数，我使用 <code>-netdev user</code> 指定使用用户模式网络，虚拟机能够直接通过宿主机来访问互联网。同时还通过 <code>hostfwd=tcp::2222-:22</code> 设置了端口转发，把宿主机的 TCP 2222 端口转发到虚拟机的 22 端口，宿主机可以通过 ssh 工具连接到虚拟机：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">ssh</span> -p <span class="token number">2222</span> <span class="token operator">&lt;</span>用户名<span class="token operator">></span>@localhost</code></pre>
+<p>同理，宿主机要想传输文件到虚拟机，也可以通过：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">scp</span> -P <span class="token number">2222</span> <span class="token operator">&lt;</span>要传输的文件<span class="token operator">></span> <span class="token operator">&lt;</span>用户名<span class="token operator">></span>@localhost:<span class="token operator">&lt;</span>目录<span class="token operator">></span></code></pre>
+<p>而虚拟机要想传输文件回宿主机，可以先为宿主机启用 ssh 服务（如果没有启用的话）：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">apt</span> update
+
+<span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> openssh-server
+
+<span class="token comment"># 启用 ssh 服务</span>
+<span class="token function">sudo</span> systemctl start <span class="token function">ssh</span>
+
+<span class="token comment"># 设置开机自动启动</span>
+<span class="token function">sudo</span> systemctl <span class="token builtin class-name">enable</span> <span class="token function">ssh</span>
+
+<span class="token comment"># 检查 ssh 服务运行状态</span>
+<span class="token function">sudo</span> systemctl status <span class="token function">ssh</span></code></pre>
+<p>此后，虚拟机也可以直接通过 scp 向宿主机进行文件传输（无 <code>-P 2222</code>）：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token function">scp</span> <span class="token operator">&lt;</span>要传输的文件<span class="token operator">></span> <span class="token operator">&lt;</span>用户名<span class="token operator">></span>@10.0.2.2:<span class="token operator">&lt;</span>目录<span class="token operator">></span></code></pre>
+<h1 id="使用自己编译的内核"><a href="#使用自己编译的内核" class="headerlink" title="使用自己编译的内核"></a>使用自己编译的内核</h1><p>如果只是进行应用程序的开发和测试的话，想必上面的环境已经够用了。但我毕竟是做操作系统相关工作的，难免要对内核代码进行修改并编译测试，因此这就涉及到另一个问题：如何在保留发行版丰富的开发环境的同时，使用自己编译的内核？这一块踩了不少坑，下面直接介绍完整流程：</p>
+<p>首先需要编译自己的内核，得到 bzImage，这一块想必不用再介绍了。</p>
+<p>然后是需要在内核源代码目录下生成和内核版本对应的 initramfs，得到文件 <code>initrd.img-5.10.0</code>：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">(</span>py312<span class="token punctuation">)</span> lordaeronesz@Snow:~/LWS/510-linux$ <span class="token function">sudo</span> mkinitramfs -o ./initrd.img-5.10.0 <span class="token number">5.10</span>.0
+
+W: Kernel configuration /boot/config-5.10.0 is missing, cannot check <span class="token keyword">for</span> zstd compression support <span class="token punctuation">(</span>CONFIG_RD_ZSTD<span class="token punctuation">)</span>
+W: missing /lib/modules/5.10.0
+W: Ensure all necessary drivers are built into the linux image<span class="token operator">!</span>
+depmod: ERROR: could not <span class="token function">open</span> directory /lib/modules/5.10.0: No such <span class="token function">file</span> or directory
+depmod: FATAL: could not search modules: No such <span class="token function">file</span> or directory
+/usr/sbin/mkinitramfs: <span class="token number">136</span>: linux-version: not found
+I: The initramfs will attempt to resume from /dev/sdb
+I: <span class="token punctuation">(</span>UUID<span class="token operator">=</span>f10066eb-414e-4970-a3c9-9a28c963f849<span class="token punctuation">)</span>
+I: Set the RESUME variable to override this.
+cat: /var/tmp/mkinitramfs_mpVlsQ/lib/modules/5.10.0/modules.builtin: No such <span class="token function">file</span> or directory
+depmod: WARNING: could not <span class="token function">open</span> modules.order at /var/tmp/mkinitramfs_mpVlsQ/lib/modules/5.10.0: No such <span class="token function">file</span> or directory
+depmod: WARNING: could not <span class="token function">open</span> modules.builtin at /var/tmp/mkinitramfs_mpVlsQ/lib/modules/5.10.0: No such <span class="token function">file</span> or directory
+depmod: WARNING: could not <span class="token function">open</span> modules.builtin.modinfo at /var/tmp/mkinitramfs_mpVlsQ/lib/modules/5.10.0: No such <span class="token function">file</span> or directory</code></pre>
+<blockquote>
+<p>看到上面这么多警告信息我还以为失败了，似乎是因为没有指定内核模块的缘故，这一块先不琢磨了，能得到 initrd 就行。</p>
+</blockquote>
+<p>由于后面要在 QEMU 启动参数中添加传递给内核的 cmdline，因此我们必须确定该发行版下根目录对应的是哪个设备目录，这里要先用 <strong>运行系统</strong> 章节介绍的启动参数启动 Ubuntu 自带的内核，查看 <code>df -h</code>：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">lordaeronesz@flame:~$ <span class="token function">df</span> -h
+
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              794M 1004K  793M   <span class="token number">1</span>% /run
+efivarfs                           256K  110K  142K  <span class="token number">44</span>% /sys/firmware/efi/efivars
+/dev/mapper/ubuntu--vg-ubuntu--lv  <span class="token number">9</span>.8G  <span class="token number">5</span>.5G  <span class="token number">3</span>.8G  <span class="token number">60</span>% /
+tmpfs                              <span class="token number">3</span>.9G     <span class="token number">0</span>  <span class="token number">3</span>.9G   <span class="token number">0</span>% /dev/shm
+tmpfs                              <span class="token number">5</span>.0M     <span class="token number">0</span>  <span class="token number">5</span>.0M   <span class="token number">0</span>% /run/lock
+tmpfs                              <span class="token number">3</span>.9G     <span class="token number">0</span>  <span class="token number">3</span>.9G   <span class="token number">0</span>% /run/qemu
+/dev/sda2                          <span class="token number">1</span>.7G  101M  <span class="token number">1</span>.5G   <span class="token number">7</span>% /boot
+/dev/sda1                          952M  <span class="token number">6</span>.2M  945M   <span class="token number">1</span>% /boot/efi
+tmpfs                              794M   16K  794M   <span class="token number">1</span>% /run/user/1000</code></pre>
+<p>可以看到，根目录的对应的设备目录为 <code>/dev/mapper/ubuntu--vg-ubuntu--lv</code>，之所这么奇怪而不是类似 <code>sda</code> 这种似乎是使用了 LVM（Logical Volume Manager） 的缘故。</p>
+<p>最后，在 QEMU 启动参数中指定我们上面得到的 initrd、kernel、root。完整的启动参数如下：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">qemu-system-x86_64 <span class="token punctuation">\</span>
+    -machine q35,accel<span class="token operator">=</span>kvm <span class="token punctuation">\</span>
+    -cpu <span class="token function">host</span> <span class="token punctuation">\</span>
+    -m 8G <span class="token punctuation">\</span>
+    -smp <span class="token number">4</span> <span class="token punctuation">\</span>
+    -kernel bzImage <span class="token punctuation">\</span>
+    -initrd initrd.img-5.10.0 <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,readonly<span class="token operator">=</span>on,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_CODE_4M.fd <span class="token punctuation">\</span>
+    -drive <span class="token assign-left variable">if</span><span class="token operator">=</span>pflash,format<span class="token operator">=</span>raw,file<span class="token operator">=</span>/usr/share/OVMF/OVMF_VARS_4M.fd <span class="token punctuation">\</span>
+    -append <span class="token string">"root=/dev/mapper/ubuntu--vg-ubuntu--lv console=ttyS0"</span> <span class="token punctuation">\</span>
+    -hda ubuntu-vm.qcow2 <span class="token punctuation">\</span>
+    -netdev user,id<span class="token operator">=</span>net0,hostfwd<span class="token operator">=</span>tcp::2222-:22 <span class="token punctuation">\</span>
+    -device e1000,netdev<span class="token operator">=</span>net0 <span class="token punctuation">\</span>
+    -serial mon:stdio <span class="token punctuation">\</span>
+    -display none</code></pre>
+<p>成功启动后，通过 <code>uname -a</code> 查看内核信息：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">lordaeronesz@flame:~$ <span class="token function">uname</span> -a
+
+Linux flame <span class="token number">5.10</span>.0+ <span class="token comment">#58 SMP Thu Oct 30 19:18:14 CST 2025 x86_64 x86_64 x86_64 GNU/Linux</span></code></pre>
+<p>可以看到，内核为我自行编译的 5.10 版本，而非自带的 6.8 版本：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">lordaeronesz@flame:~$ <span class="token function">uname</span> -a
+
+Linux flame <span class="token number">6.8</span>.0-87-generic <span class="token comment">#88-Ubuntu SMP PREEMPT_DYNAMIC Sat Oct 11 09:28:41 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux</span></code></pre>
+<blockquote>
+<p>说实话，我对操作系统启动这一块的内容不太熟悉，对 initrd、initramfs 等这些名词有些一知半解，所以这一块的配置才踩了那么多坑🥲。在此立个 flag，这部分内容等后续找个时间深入研究一下，再整理成博客。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>操作系统</tag>
+        <tag>虚拟化</tag>
+      </tags>
+  </entry>
 </search>
