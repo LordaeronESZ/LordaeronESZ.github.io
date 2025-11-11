@@ -18568,4 +18568,121 @@ Linux flame <span class="token number">6.8</span>.0-87-generic <span class="toke
         <tag>虚拟化</tag>
       </tags>
   </entry>
+  <entry>
+    <title>使用QEMU调试Linux内核</title>
+    <url>/2025/11/11/%E4%BD%BF%E7%94%A8QEMU%E8%B0%83%E8%AF%95Linux%E5%86%85%E6%A0%B8/</url>
+    <content><![CDATA[<p>本文是一个快速记录，旨在记录使用 QEMU 调试 Linux 内核的方法，文章内容比较短，内容也比较浅显，不会对具体原理进行分析，主打一个够用。使用的 QEMU 版本为 6.2，Linux 内核版本为 5.10，指令集架构为 x86_64。</p>
+<span id="more"></span>
+<h1 id="使用-monitor"><a href="#使用-monitor" class="headerlink" title="使用 monitor"></a>使用 monitor</h1><p>使用 monitor 的前提是要先启用该功能，一般将其设置在指定的 telnet 端口（如 6789）：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">-monitor telnet:localhost:6789,server,nowait,nodelay</code></pre>
+<p>使用 monitor 调试的基本场景是内核 crash 时，打开 QEMU 的 monitor，打印此时的寄存器值。为了保证 RIP 的值准确，需要在 QEMU 模拟器的内核命令行参数中关闭内核地址空间随机化：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">-append <span class="token string">"nokaslr"</span></code></pre>
+<p>打开新的终端使用 telnet 连接到指定端口：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ telnet localhost <span class="token number">6789</span>
+Trying <span class="token number">127.0</span>.0.1<span class="token punctuation">..</span>.
+Connected to localhost.
+Escape character is <span class="token string">'^]'</span><span class="token builtin class-name">.</span>
+QEMU <span class="token number">6.2</span>.0 monitor - <span class="token builtin class-name">type</span> <span class="token string">'help'</span> <span class="token keyword">for</span> <span class="token function">more</span> information
+
+<span class="token punctuation">(</span>qemu<span class="token punctuation">)</span> info registers
+<span class="token assign-left variable">RAX</span><span class="token operator">=</span>0000000000000839 <span class="token assign-left variable">RBX</span><span class="token operator">=</span>00000000000a328c <span class="token assign-left variable">RCX</span><span class="token operator">=</span>0000000000000000 <span class="token assign-left variable">RDX</span><span class="token operator">=</span>0000000000001000
+<span class="token assign-left variable">RSI</span><span class="token operator">=</span>0000000000000086 <span class="token assign-left variable">RDI</span><span class="token operator">=</span>0000000000001001 <span class="token assign-left variable">RBP</span><span class="token operator">=</span>ffffffff82403f40 <span class="token assign-left variable">RSP</span><span class="token operator">=</span>ffffffff82403ec8
+R8 <span class="token operator">=</span>ffffffff82450f20 R9 <span class="token operator">=</span>2d2d2d5d2063696e <span class="token assign-left variable">R10</span><span class="token operator">=</span>20796c6c61756e61 <span class="token assign-left variable">R11</span><span class="token operator">=</span><span class="token number">6572656767697274</span>
+<span class="token assign-left variable">R12</span><span class="token operator">=</span>0000000000000000 <span class="token assign-left variable">R13</span><span class="token operator">=</span>00000000000a32f0 <span class="token assign-left variable">R14</span><span class="token operator">=</span>0000000000000047 <span class="token assign-left variable">R15</span><span class="token operator">=</span>0000000000000000
+<span class="token assign-left variable">RIP</span><span class="token operator">=</span>ffffffff8142b090 <span class="token assign-left variable">RFL</span><span class="token operator">=</span>00000202 <span class="token punctuation">[</span>-------<span class="token punctuation">]</span> <span class="token assign-left variable">CPL</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">II</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">A20</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">SMM</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">HLT</span><span class="token operator">=</span><span class="token number">0</span>
+ES <span class="token operator">=</span>0000 0000000000000000 00000000 00000000
+CS <span class="token operator">=</span>0010 0000000000000000 ffffffff 00af9b00 <span class="token assign-left variable">DPL</span><span class="token operator">=</span><span class="token number">0</span> CS64 <span class="token punctuation">[</span>-RA<span class="token punctuation">]</span>
+SS <span class="token operator">=</span>0000 0000000000000000 ffffffff 00c09300 <span class="token assign-left variable">DPL</span><span class="token operator">=</span><span class="token number">0</span> DS   <span class="token punctuation">[</span>-WA<span class="token punctuation">]</span>
+DS <span class="token operator">=</span>0000 0000000000000000 00000000 00000000
+FS <span class="token operator">=</span>0000 0000000000000000 00000000 00000000
+GS <span class="token operator">=</span>0000 ffffffff82b01000 00000000 00000000
+<span class="token assign-left variable">LDT</span><span class="token operator">=</span>0000 0000000000000000 00000000 00008200 <span class="token assign-left variable">DPL</span><span class="token operator">=</span><span class="token number">0</span> LDT
+TR <span class="token operator">=</span>0020 0000000000000000 00000fff 00808900 <span class="token assign-left variable">DPL</span><span class="token operator">=</span><span class="token number">0</span> TSS64-avl
+<span class="token assign-left variable">GDT</span><span class="token operator">=</span>     ffffffff82b0c000 0000007f
+<span class="token assign-left variable">IDT</span><span class="token operator">=</span>     ffffffff82c38000 00000fff
+<span class="token assign-left variable">CR0</span><span class="token operator">=</span><span class="token number">80050033</span> <span class="token assign-left variable">CR2</span><span class="token operator">=</span>ffff888000013750 <span class="token assign-left variable">CR3</span><span class="token operator">=</span>0000000002b82000 <span class="token assign-left variable">CR4</span><span class="token operator">=</span>000000a0
+<span class="token assign-left variable">DR0</span><span class="token operator">=</span>0000000000000000 <span class="token assign-left variable">DR1</span><span class="token operator">=</span>0000000000000000 <span class="token assign-left variable">DR2</span><span class="token operator">=</span>0000000000000000 <span class="token assign-left variable">DR3</span><span class="token operator">=</span>0000000000000000
+<span class="token assign-left variable">DR6</span><span class="token operator">=</span>00000000ffff0ff0 <span class="token assign-left variable">DR7</span><span class="token operator">=</span>0000000000000400
+<span class="token assign-left variable">EFER</span><span class="token operator">=</span>0000000000000d01
+<span class="token assign-left variable">FCW</span><span class="token operator">=</span>037f <span class="token assign-left variable">FSW</span><span class="token operator">=</span>0000 <span class="token punctuation">[</span>ST<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token assign-left variable">FTW</span><span class="token operator">=</span>00 <span class="token assign-left variable">MXCSR</span><span class="token operator">=</span>00001f80
+<span class="token assign-left variable">FPR0</span><span class="token operator">=</span>0000000000000000 0000 <span class="token assign-left variable">FPR1</span><span class="token operator">=</span>0000000000000000 0000
+<span class="token assign-left variable">FPR2</span><span class="token operator">=</span>0000000000000000 0000 <span class="token assign-left variable">FPR3</span><span class="token operator">=</span>0000000000000000 0000
+<span class="token assign-left variable">FPR4</span><span class="token operator">=</span>0000000000000000 0000 <span class="token assign-left variable">FPR5</span><span class="token operator">=</span>0000000000000000 0000
+<span class="token assign-left variable">FPR6</span><span class="token operator">=</span>0000000000000000 0000 <span class="token assign-left variable">FPR7</span><span class="token operator">=</span>0000000000000000 0000
+<span class="token assign-left variable">XMM00</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM01</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM02</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM03</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM04</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM05</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM06</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM07</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM08</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM09</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM10</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM11</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM12</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM13</span><span class="token operator">=</span>0000000000000000 0000000000000000
+<span class="token assign-left variable">XMM14</span><span class="token operator">=</span>0000000000000000 0000000000000000 <span class="token assign-left variable">XMM15</span><span class="token operator">=</span>0000000000000000 0000000000000000</code></pre>
+<p>可以看到，此时的 pc（x86_64 架构下为 RIP 寄存器） 停在 <code>0xffffffff8142b090</code> 的位置，此时我们可以对内核进行反汇编并查看此时的代码上下文，注意，需要对 vmlinux 进行 dump 而不是对 bzImage：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">objdump -d vmlinux <span class="token operator">></span> kernel.asm</code></pre>
+<p>然后搜索 RIP 值所在的指令位置：</p>
+<pre class="language-assembly" data-language="assembly"><code class="language-assembly">ffffffff8142b090 &lt;delay_loop&gt;:
+ffffffff8142b090:   48 89 f8                mov    %rdi,%rax
+ffffffff8142b093:   48 85 c0                test   %rax,%rax
+ffffffff8142b096:   74 1d                   je     ffffffff8142b0b5 &lt;delay_loop+0x25&gt;
+ffffffff8142b098:   eb 06                   jmp    ffffffff8142b0a0 &lt;delay_loop+0x10&gt;
+ffffffff8142b09a:   66 0f 1f 44 00 00       nopw   0x0(%rax,%rax,1)
+ffffffff8142b0a0:   eb 0e                   jmp    ffffffff8142b0b0 &lt;delay_loop+0x20&gt;
+ffffffff8142b0a2:   66 66 2e 0f 1f 84 00    data16 cs nopw 0x0(%rax,%rax,1)
+ffffffff8142b0a9:   00 00 00 00
+ffffffff8142b0ad:   0f 1f 00                nopl   (%rax)
+ffffffff8142b0b0:   48 ff c8                dec    %rax
+ffffffff8142b0b3:   75 fb                   jne    ffffffff8142b0b0 &lt;delay_loop+0x20&gt;
+ffffffff8142b0b5:   48 ff c8                dec    %rax
+ffffffff8142b0b8:   c3                      ret
+ffffffff8142b0b9:   0f 1f 80 00 00 00 00    nopl   0x0(%rax)</code></pre>
+<h1 id="使用-GDB"><a href="#使用-GDB" class="headerlink" title="使用 GDB"></a>使用 GDB</h1><p>QEMU 实现了 GDB-stub，因此能够支持使用 GDB 通过远程连接的方式调试模拟器内运行的内核。</p>
+<p>为了方便调试的进行，需要在编译内核时开启调试信息：</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">make</span> menuconfig
+<span class="token comment"># 确保设置：Kernel hacking</span>
+<span class="token comment">#			-> Compile-time checks and compiler options</span>
+<span class="token comment">#				->  # [*] Compile the kernel with debug info</span></code></pre>
+<p>在启动 QEMU 时，参数加上 <code>-s -S</code>，这样模拟器将会在执行时停止在第一条指令处，并开放默认端口 1234 等待 GDB client 连接。</p>
+<p>同样，打开一个新的终端，使用 <code>gdb vmlinux</code> 启动 GDB 并加载内核的符号，并使用 <code>target remote</code> 连接到指定的 GDB 服务端，此后便可以像正常 GDB 一样进行调试了。</p>
+<pre class="language-bash" data-language="bash"><code class="language-bash">$ gdb vmlinux
+GNU gdb <span class="token punctuation">(</span>Ubuntu <span class="token number">15.0</span>.50.20240403-0ubuntu1<span class="token punctuation">)</span> <span class="token number">15.0</span>.50.20240403-git
+Copyright <span class="token punctuation">(</span>C<span class="token punctuation">)</span> <span class="token number">2024</span> Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version <span class="token number">3</span> or later <span class="token operator">&lt;</span>http://gnu.org/licenses/gpl.html<span class="token operator">></span>
+This is <span class="token function">free</span> software: you are <span class="token function">free</span> to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type <span class="token string">"show copying"</span> and <span class="token string">"show warranty"</span> <span class="token keyword">for</span> details.
+This GDB was configured as <span class="token string">"x86_64-linux-gnu"</span><span class="token builtin class-name">.</span>
+Type <span class="token string">"show configuration"</span> <span class="token keyword">for</span> configuration details.
+For bug reporting instructions, please see:
+<span class="token operator">&lt;</span>https://www.gnu.org/software/gdb/bugs/<span class="token operator">></span>.
+Find the GDB manual and other documentation resources online at:
+    <span class="token operator">&lt;</span>http://www.gnu.org/software/gdb/documentation/<span class="token operator">></span>.
+
+For help, <span class="token builtin class-name">type</span> <span class="token string">"help"</span><span class="token builtin class-name">.</span>
+Type <span class="token string">"apropos word"</span> to search <span class="token keyword">for</span> commands related to <span class="token string">"word"</span><span class="token punctuation">..</span>.
+Reading symbols from vmlinux<span class="token punctuation">..</span>.
+
+<span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> target remote localhost:1234
+Remote debugging using localhost:1234
+0x000000000000fff0 <span class="token keyword">in</span> exception_stacks <span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> b start_kernel
+Breakpoint <span class="token number">1</span> at 0xffffffff82b2c921: <span class="token function">file</span> init/main.c, line <span class="token number">853</span>.
+
+<span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> c
+Continuing.
+
+Breakpoint <span class="token number">1</span>, start_kernel <span class="token punctuation">(</span><span class="token punctuation">)</span> at init/main.c:853
+<span class="token number">853</span>             set_task_stack_end_magic<span class="token punctuation">(</span><span class="token operator">&amp;</span>init_task<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">(</span>gdb<span class="token punctuation">)</span></code></pre>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>经验</tag>
+        <tag>操作系统</tag>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
 </search>
