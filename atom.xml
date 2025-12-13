@@ -6,7 +6,7 @@
   <link href="http://lordaeronesz.github.io/atom.xml" rel="self"/>
   
   <link href="http://lordaeronesz.github.io/"/>
-  <updated>2025-12-02T13:24:57.592Z</updated>
+  <updated>2025-12-13T15:06:14.074Z</updated>
   <id>http://lordaeronesz.github.io/</id>
   
   <author>
@@ -15,6 +15,31 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>浅谈rootfs、initramfs和initrd</title>
+    <link href="http://lordaeronesz.github.io/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/"/>
+    <id>http://lordaeronesz.github.io/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/</id>
+    <published>2025-12-13T15:30:11.000Z</published>
+    <updated>2025-12-13T15:06:14.074Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文算是之前博客 <a href="https://lordaeronesz.top/2025/10/31/使用QEMU安装并启动一个Ubuntu发行版/">使用QEMU安装并启动一个Ubuntu发行版 | Lordaeron_ESZ’s blog</a> 的一个 callback，花了一天时间整理了一下有关 rootfs、initramfs 等操作系统启动相关的内容，并在此分享出来。</p><span id="more"></span><h1 id="rootfs"><a href="#rootfs" class="headerlink" title="rootfs"></a>rootfs</h1><p>首先需要理解 rootfs（即根文件系统）的概念。本质上来说，rootfs 就是挂载在根目录（<code>/</code> 目录）上的文件系统，而无关具体的文件系统类型。</p><p>另外，rootfs 根据系统启动时刻的不同，分为两个阶段，一阶段为系统启动初期的内存 rootfs（通常为 ramfs 和 tmpfs，下面将具体介绍），二阶段为完成基本的模块加载等操作之后的磁盘 rootfs（包括 ext4、zfs 和 btrfs 等等）。</p><h1 id="ramfs-和-tmpfs"><a href="#ramfs-和-tmpfs" class="headerlink" title="ramfs 和 tmpfs"></a>ramfs 和 tmpfs</h1><p>ramfs 只是一个简单的文件系统，用作一阶段 rootfs 的文件系统类型，它与磁盘文件系统最大的区别就在于 <strong>它没有可供回写的后备设备</strong> ，以 Linux 6.12 内核版本为例（下同），其 ramfs 的代码实现：</p><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* fs/ramfs/file-mmu.c */</span><span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">file_operations</span> ramfs_file_operations <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">.</span>read_iter<span class="token operator">=</span> generic_file_read_iter<span class="token punctuation">,</span><span class="token punctuation">.</span>write_iter<span class="token operator">=</span> generic_file_write_iter<span class="token punctuation">,</span><span class="token punctuation">.</span>mmap<span class="token operator">=</span> generic_file_mmap<span class="token punctuation">,</span><span class="token punctuation">.</span>fsync<span class="token operator">=</span> noop_fsync<span class="token punctuation">,</span><span class="token punctuation">.</span>splice_read<span class="token operator">=</span> filemap_splice_read<span class="token punctuation">,</span><span class="token punctuation">.</span>splice_write<span class="token operator">=</span> iter_file_splice_write<span class="token punctuation">,</span><span class="token punctuation">.</span>llseek<span class="token operator">=</span> generic_file_llseek<span class="token punctuation">,</span><span class="token punctuation">.</span>get_unmapped_area<span class="token operator">=</span> ramfs_mmu_get_unmapped_area<span class="token punctuation">,</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre><p>可以看到，其 <code>fsync</code> 回调函数为 <code>noop_fsync</code>，它不做任何操作：</p><pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* fs/libfs.c */</span><span class="token keyword">int</span> <span class="token function">noop_fsync</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">file</span> <span class="token operator">*</span>file<span class="token punctuation">,</span> <span class="token class-name">loff_t</span> start<span class="token punctuation">,</span> <span class="token class-name">loff_t</span> end<span class="token punctuation">,</span> <span class="token keyword">int</span> datasync<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span><span class="token punctuation">&#125;</span><span class="token function">EXPORT_SYMBOL</span><span class="token punctuation">(</span>noop_fsync<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre><p>由于没有磁盘等后备存储介质，因此对其文件数据的读写和目录的遍历直接工作在 VFS 层，对 ramfs 而言，page cache 和 dentry cache 不是“缓存”，而是 <strong>唯一的数据存储位置</strong> 。</p><p>回顾 VFS 文件缓存的工作原理：当 page cache 回写到后备存储中后，页面会被标记为干净，此后该页面的 page cache 内存资源可以被安全地释放。但是对于 ramfs 而言，由于它没有后备存储的存在，其 page cache 将永远不会被标记为干净，内存也就无从释放。因此 ramfs 的一个显著的缺点是：<strong>可以一直向其中写入数据，直到填满所有内存。</strong></p><p>tmpfs 可以看作是 ramfs 的升级版，它相较于 ramfs 最大的区别在于引入了大小的限制以及 swap 特性，允许在内存资源紧张时将内存数据交换到磁盘的 swap 区域中。值得注意的是，内核代码的 <code>fs</code> 目录下并没有 <code>tmpfs</code> 的目录，其实现放在共享内存相关源文件中：<code>mm/shmem.c</code>。</p><h1 id="initramfs"><a href="#initramfs" class="headerlink" title="initramfs"></a>initramfs</h1><p>在系统启动初期，在磁盘等驱动程序模块还未加载时，需要构建一个临时的内存文件系统，即前面提到的内存 rootfs，该文件系统就称为 initramfs。通常来说，initramfs 中的内容包括入口脚本 init（被用作 <code>pid = 1</code> 进程）、内核模块、核心工具集等，会被打包成为一个 <code>cpio.gz</code> 文件。其既可以直接被链接到内核镜像中，也可以指定为外部的 <code>cpio.gz</code> 文件。</p><p>initramfs 在内核启动初期会被解压缩提取到内存 rootfs 中，提取后，内核会将其中的 init 文件作为 <code>pid = 1</code> 的进程来执行。此进程负责启动系统的其余部分，包括定位和挂载最终的磁盘 rootfs，并借助 <code>switch_root</code> 工具（核心是通过调用 <code>chroot</code> 系统调用），将整个系统的根目录切换到磁盘 rootfs 中，再在保留 <code>pid = 1</code> 的情况下，通过 <code>exec</code> 将 init 进程替换为磁盘 rootfs 中 init 进程（在现代发行版中，通常为 systemd），完成后续的初始化操作。</p><p>这里可以思考一个问题：为什么需要这样的两阶段？直接加载磁盘 rootfs 不行吗？</p><p>这是因为最终的 rootfs 通常位于磁盘等设备中，甚至是网络服务器中，因此内核必须要有磁盘或是网卡等驱动的支持，但是这些驱动通常不会直接链接到内核中，而是动态加载，因此需要将它们放在一个无需任何驱动即可访问的“设备”——内存中，在加载了内存中的相应驱动之后，再过渡到真正的磁盘/网络 rootfs 之中。</p><p>直接将需要的磁盘和网卡等驱动链接到内核中当然也是一种方法，但是这会牺牲一定的灵活性，可能要为了应对各种情况将大量的驱动程序都预先链接进内核。两阶段的做法实质上是一个权衡之下的选择。</p><h1 id="Legacy：initrd"><a href="#Legacy：initrd" class="headerlink" title="Legacy：initrd"></a>Legacy：initrd</h1><p>在 initramfs 诞生前，一阶 rootfs 是基于 initrd（全称为 init ram disk）来实现的。initrd 本质上是一个虚拟的块设备，是被磁盘文件系统（如 ext2）格式化的加载到内存中的镜像文件，内核会将其视为块设备挂载到内存 rootfs 目录树中，在执行其中的脚本并通过 <code>pivot_root</code> 系统调用切换到磁盘 rootfs 之后，该镜像文件所占用的内存空间需要被释放。</p><h1 id="一个小问题"><a href="#一个小问题" class="headerlink" title="一个小问题"></a>一个小问题</h1><p>在查阅资料的过程中，发现有些地方对此的介绍有些偏差：在 initramfs 的方法下，并不是通过 <code>pivot_root</code> 系统调用进行根目录的切换的，这点在 man 手册（通过 <code>man 2 pivot_root</code> 查看）中有明确说明：</p><blockquote><p>The rootfs (initial ramfs) cannot be pivot_root()ed.  The recommended method of changing the root filesystem in  this  case  is  to  delete  everything  in rootfs, overmount rootfs with the new root, attach stdin/stdout/stderr to the new /dev/console, and exec the new init(1).  Helper programs for this process exist; see switch_root(8).</p></blockquote><p>之所以有这样的差别，是因为 initrd 是一个模拟的块设备，本身只是一个普通的、可被卸载的挂载点；而 initramfs 就是系统启动时的 rootfs 本身的第一（内存）阶段，rootfs 是一个特殊的、不可卸载的文件系统实例。简单来说，initrd 的切换做法是“切换并卸载”，而 initramfs 的切换做法则是“删除并覆盖”。</p><h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul><li><a href="https://docs.linuxkernel.org.cn/filesystems/ramfs-rootfs-initramfs.html">Ramfs、rootfs 和 initramfs — Linux 内核文档</a></li><li><a href="https://docs.linuxkernel.org.cn/filesystems/tmpfs.html">Tmpfs — Linux内核文档</a></li><li><a href="https://jyywiki.cn/OS/2025/lect12.md">Yanyan’s Wiki</a></li></ul>]]></content>
+    
+    
+    <summary type="html">&lt;p&gt;本文算是之前博客 &lt;a href=&quot;https://lordaeronesz.top/2025/10/31/使用QEMU安装并启动一个Ubuntu发行版/&quot;&gt;使用QEMU安装并启动一个Ubuntu发行版 | Lordaeron_ESZ’s blog&lt;/a&gt; 的一个 callback，花了一天时间整理了一下有关 rootfs、initramfs 等操作系统启动相关的内容，并在此分享出来。&lt;/p&gt;</summary>
+    
+    
+    
+    <category term="操作系统" scheme="http://lordaeronesz.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+    
+    <category term="操作系统" scheme="http://lordaeronesz.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+    <category term="Linux" scheme="http://lordaeronesz.github.io/tags/Linux/"/>
+    
+    <category term="文件系统" scheme="http://lordaeronesz.github.io/tags/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/"/>
+    
+  </entry>
   
   <entry>
     <title>论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</title>
@@ -464,31 +489,6 @@
     
     
     <summary type="html">&lt;p&gt;本文将介绍 2024 年发表在 arXiv 上的论文《DITTO：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》。&lt;/p&gt;</summary>
-    
-    
-    
-    <category term="操作系统" scheme="http://lordaeronesz.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-    
-    <category term="操作系统" scheme="http://lordaeronesz.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-    <category term="机密计算" scheme="http://lordaeronesz.github.io/tags/%E6%9C%BA%E5%AF%86%E8%AE%A1%E7%AE%97/"/>
-    
-    <category term="虚拟化" scheme="http://lordaeronesz.github.io/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>论文《SEV-Step：A Single-Stepping Framework for AMD-SEV》总结</title>
-    <link href="http://lordaeronesz.github.io/2025/07/05/%E8%AE%BA%E6%96%87%E3%80%8ASEV-Step%20A%20Single-Stepping%20Framework%20for%20AMD-SEV%E3%80%8B%E6%80%BB%E7%BB%93/"/>
-    <id>http://lordaeronesz.github.io/2025/07/05/%E8%AE%BA%E6%96%87%E3%80%8ASEV-Step%20A%20Single-Stepping%20Framework%20for%20AMD-SEV%E3%80%8B%E6%80%BB%E7%BB%93/</id>
-    <published>2025-07-05T15:30:11.000Z</published>
-    <updated>2025-07-05T12:38:07.224Z</updated>
-    
-    <content type="html"><![CDATA[<p>本文将介绍发表在 arXiv 上的论文《SEV-Step: A Single-Stepping Framework for AMD-SEV》。</p><span id="more"></span><h1 id="文章贡献"><a href="#文章贡献" class="headerlink" title="文章贡献"></a>文章贡献</h1><ul><li>在 SEV 环境下引入了可靠（reliable）的单步执行方法。</li><li>将交互式单步执行、页面错误追踪和基于缓存组置换的缓存攻击（eviction set-based cache attacks）整合到一个可复用的框架中。</li></ul><h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="基于中断的单步执行"><a href="#基于中断的单步执行" class="headerlink" title="基于中断的单步执行"></a>基于中断的单步执行</h2><p>基于中断的单步执行方法是一种通过控制处理器中断（如 APIC 时钟中断）来提升微架构攻击的时间分辨率（temporal resolution）的技术。核心思想是利用高频率的中断强制目标程序暂停执行，从而实现对微架构状态（如缓存等）的细粒度观测。</p><p>APIC 提供了高精度的定时功能，攻击者可以通过配置定时器周期性触发中断，强制目标程序在执行过程中频繁暂停。暂停后，攻击者可以利用侧信道攻击等方法，读取此时的微架构状态，再恢复下一条指令执行。这种方式将时间分辨率从页错误级别提升到了指令级。</p><h2 id="缓存侧信道攻击"><a href="#缓存侧信道攻击" class="headerlink" title="缓存侧信道攻击"></a>缓存侧信道攻击</h2><blockquote><p>下列内容主要来自《操作系统：原理与实现》（银杏书）的在线章节：操作系统安全的 16.6.2 节。</p></blockquote><p>缓存侧信道是利用时间信息推断程序执行中缓存的行为，进而推断出程序中的关键信息。</p><h3 id="Flush-Reload"><a href="#Flush-Reload" class="headerlink" title="Flush + Reload"></a>Flush + Reload</h3><p><code>Flush + Reload</code> 方法思路是：<strong>假设攻击进程和目标进程共享一块内存</strong> ，攻击者的目标是想知道目标进程是否访问了这块共享内存中的某个变量。</p><blockquote><p>共享内存如果不存在，需要事先构造，构造方法在此不做介绍。</p></blockquote><p>具体步骤如下：</p><ol><li>攻击进程首先将 cache 清空，方法是不断访问其他内存，用其他内存的数据填满 cache，或直接通过 <code>flush</code> 指令将 cache 清空；</li><li>等待目标进程执行；</li><li>攻击进程访问共享内存中的某个变量，并记录访问的时间：若时间长，则表示 cache miss，意味着目标进程在第二步中没有访问过该变量；若时间短，则表示 cache hit，意味着目标进程在第二步中访问过该变量。</li></ol><h3 id="Flush-Flush"><a href="#Flush-Flush" class="headerlink" title="Flush + Flush"></a>Flush + Flush</h3><p><code>Flush + Flush</code> 方法思路是基于缓存刷新时间（如 <code>cflush</code>）来推测数据在缓存中的状态，进而推断出程序之前的执行行为。若数据在缓存中，则 <code>cflush</code> 执行时间相比不在缓存中更长。具体步骤如下：</p><ol><li>攻击进程首先将 cache 清空；</li><li>等待目标进程执行；</li><li>再次清空不同的缓存区域，若时间较短说明缓存中无数据，时间较长则说明缓存中有数据，意味着目标进程曾经访问过对应的内存。</li></ol><h3 id="Prime-Probe"><a href="#Prime-Probe" class="headerlink" title="Prime + Probe"></a>Prime + Probe</h3><p><code>Prime + Probe</code> 和 <code>Flush + Reload</code> 类似，但是 <strong>无需共享内存的支持</strong> 。具体步骤如下：</p><ol><li>攻击进程用自己的数据将 cache set 填满（Prime）；</li><li>等待目标进程执行；</li><li>再次访问自己的数据，若时间很短，表示 cache hit，说明目标进程没有将该数据 evict，推导出目标进程没有访问过某个关键数据，反之则说明目标进程访问了某个关键数据。</li></ol><h3 id="Evict-Reload"><a href="#Evict-Reload" class="headerlink" title="Evict + Reload"></a>Evict + Reload</h3><p>与 <code>Prime + Probe</code> 方法不同的是，<code>Evict + Reload</code> 先执行目标进程，之后将  cache set 中的数据清出去，之后再次执行目标进程。比较两次执行的时间，从而得出关键数据是否被访问到。</p><p>具体步骤如下：</p><ol><li>等待目标进程执行，并测量执行时间；</li><li>将关键数据所在的 cache set 都替换成攻击进程的数据；</li><li>再次执行目标进程，并测量执行时间。若时间较短，表示 cache  hit，说明攻击进程 evict 的数据没有被目标进程访问，推导出目标进程没有访问过某个关键数据，反之则说明目标进程访问了某个关键数据。</li></ol><h1 id="设计与实现"><a href="#设计与实现" class="headerlink" title="设计与实现"></a>设计与实现</h1><p>SEV-Step 的架构图如下所示：</p><p><img src="/2025/07/05/%E8%AE%BA%E6%96%87%E3%80%8ASEV-Step%20A%20Single-Stepping%20Framework%20for%20AMD-SEV%E3%80%8B%E6%80%BB%E7%BB%93/step1.png" alt></p><h2 id="设计目标"><a href="#设计目标" class="headerlink" title="设计目标"></a>设计目标</h2><p>设计目标包括：交互性（interactivity）和可复用性（reusability）。</p><p>交互性要求 SEV-Step 不仅能够中断虚拟机的执行，而且要能够在中断时通知攻击者，并在攻击者完成相应的操作（如缓存侧信道攻击）前暂停虚拟机的执行。</p><p>可复用性要求 SEV-Step 将对虚拟机的单步执行与具体的攻击方法解耦，能够被多种攻击方法所适用。</p><h2 id="单步执行"><a href="#单步执行" class="headerlink" title="单步执行"></a>单步执行</h2><p>单步执行成功的关键在于配置合适的 APIC 时钟周期，既不能太长也不能太短：太长将导致每次中断可能有多条指令被执行，使得“单步执行”的粒度变粗；太短将导致虚拟机在未执行第一条的情况下就被中断，造成零步现象（zero-step）。</p><p><img src="/2025/07/05/%E8%AE%BA%E6%96%87%E3%80%8ASEV-Step%20A%20Single-Stepping%20Framework%20for%20AMD-SEV%E3%80%8B%E6%80%BB%E7%BB%93/step2.png" alt></p><p>为了实现可靠的单步操作，作者采用了下列方法：</p><h3 id="增大单步窗口"><a href="#增大单步窗口" class="headerlink" title="增大单步窗口"></a>增大单步窗口</h3><p>为了能够有足够的粒度找到合适的时钟配置，单步的窗口应该尽可能大。</p><p>作者选择每次调度虚拟机执行前，清空虚拟机的 TLB 条目，并清除包含第一条指令的页表条目的访问位（accessed bit），尽可能增大从 VMRUN 到第一条指令开始执行的窗口。</p><p>同时，为了系统速度的稳定。作者还做了下列工作：</p><ul><li>将运行虚拟机的内核线程固定到特定的 CPU 核心，该核心不运行其他线程。</li><li>通过 BIOS 或者 Linux 的 <code>cpufreq</code> 子系统固定 CPU 频率。</li><li>禁用硬件缓存预取。</li></ul><blockquote><p>因为机密虚拟机的威胁模型中，特权软件属于不可信的范畴，因此上述操作都是可行的。</p></blockquote><h3 id="阻止虚拟时钟中断"><a href="#阻止虚拟时钟中断" class="headerlink" title="阻止虚拟时钟中断"></a>阻止虚拟时钟中断</h3><p>在正常的虚拟机中，在每次宿主机的时钟中断触发后，hypervisor 都需要向虚拟机注入虚拟时钟中断，以实现对虚拟机时钟中断的模拟。但是这将导致虚拟机运行后转到自己的时钟中断处理程序执行，与我们想要攻击用户态程序的目标相悖，因此需要对其进行禁用。</p><p>但是时钟中断对于正常的操作系统来说至关重要，是任务调度的时间指标来源，因此如果虚拟机长时间没有时钟中断可能导致一些问题，还需要定期进行注入。</p><h3 id="确定步长大小"><a href="#确定步长大小" class="headerlink" title="确定步长大小"></a>确定步长大小</h3><p>为了迭代 APIC 时钟周期以确定是否成功实现了单步，还需要确定本次虚拟机执行与上次虚拟机执行间执行的指令数量。</p><p>观察页表的访问位是一种方法，但是它确定页面是被访问或是没有被访问，无法确定访问次数。作者还使用了另外一种方法：观察虚拟机的性能计数器事件。</p><blockquote><p>有关性能计数器事件，在 IEEE SP ‘22 论文 <em>A systematic look at ciphertext side channels on AMD SEV-SNP</em> 中有介绍。</p></blockquote>]]></content>
-    
-    
-    <summary type="html">&lt;p&gt;本文将介绍发表在 arXiv 上的论文《SEV-Step: A Single-Stepping Framework for AMD-SEV》。&lt;/p&gt;</summary>
     
     
     

@@ -18734,4 +18734,59 @@ Breakpoint <span class="token number">1</span>, start_kernel <span class="token 
         <tag>虚拟化</tag>
       </tags>
   </entry>
+  <entry>
+    <title>浅谈rootfs、initramfs和initrd</title>
+    <url>/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/</url>
+    <content><![CDATA[<p>本文算是之前博客 <a href="https://lordaeronesz.top/2025/10/31/使用QEMU安装并启动一个Ubuntu发行版/">使用QEMU安装并启动一个Ubuntu发行版 | Lordaeron_ESZ’s blog</a> 的一个 callback，花了一天时间整理了一下有关 rootfs、initramfs 等操作系统启动相关的内容，并在此分享出来。</p>
+<span id="more"></span>
+<h1 id="rootfs"><a href="#rootfs" class="headerlink" title="rootfs"></a>rootfs</h1><p>首先需要理解 rootfs（即根文件系统）的概念。本质上来说，rootfs 就是挂载在根目录（<code>/</code> 目录）上的文件系统，而无关具体的文件系统类型。</p>
+<p>另外，rootfs 根据系统启动时刻的不同，分为两个阶段，一阶段为系统启动初期的内存 rootfs（通常为 ramfs 和 tmpfs，下面将具体介绍），二阶段为完成基本的模块加载等操作之后的磁盘 rootfs（包括 ext4、zfs 和 btrfs 等等）。</p>
+<h1 id="ramfs-和-tmpfs"><a href="#ramfs-和-tmpfs" class="headerlink" title="ramfs 和 tmpfs"></a>ramfs 和 tmpfs</h1><p>ramfs 只是一个简单的文件系统，用作一阶段 rootfs 的文件系统类型，它与磁盘文件系统最大的区别就在于 <strong>它没有可供回写的后备设备</strong> ，以 Linux 6.12 内核版本为例（下同），其 ramfs 的代码实现：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* fs/ramfs/file-mmu.c */</span>
+<span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">file_operations</span> ramfs_file_operations <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+	<span class="token punctuation">.</span>read_iter	<span class="token operator">=</span> generic_file_read_iter<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>write_iter	<span class="token operator">=</span> generic_file_write_iter<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>mmap		<span class="token operator">=</span> generic_file_mmap<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>fsync		<span class="token operator">=</span> noop_fsync<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>splice_read	<span class="token operator">=</span> filemap_splice_read<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>splice_write	<span class="token operator">=</span> iter_file_splice_write<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>llseek		<span class="token operator">=</span> generic_file_llseek<span class="token punctuation">,</span>
+	<span class="token punctuation">.</span>get_unmapped_area	<span class="token operator">=</span> ramfs_mmu_get_unmapped_area<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span></code></pre>
+<p>可以看到，其 <code>fsync</code> 回调函数为 <code>noop_fsync</code>，它不做任何操作：</p>
+<pre class="language-c" data-language="c"><code class="language-c"><span class="token comment">/* fs/libfs.c */</span>
+<span class="token keyword">int</span> <span class="token function">noop_fsync</span><span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">file</span> <span class="token operator">*</span>file<span class="token punctuation">,</span> <span class="token class-name">loff_t</span> start<span class="token punctuation">,</span> <span class="token class-name">loff_t</span> end<span class="token punctuation">,</span> <span class="token keyword">int</span> datasync<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token function">EXPORT_SYMBOL</span><span class="token punctuation">(</span>noop_fsync<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>由于没有磁盘等后备存储介质，因此对其文件数据的读写和目录的遍历直接工作在 VFS 层，对 ramfs 而言，page cache 和 dentry cache 不是“缓存”，而是 <strong>唯一的数据存储位置</strong> 。</p>
+<p>回顾 VFS 文件缓存的工作原理：当 page cache 回写到后备存储中后，页面会被标记为干净，此后该页面的 page cache 内存资源可以被安全地释放。但是对于 ramfs 而言，由于它没有后备存储的存在，其 page cache 将永远不会被标记为干净，内存也就无从释放。因此 ramfs 的一个显著的缺点是：<strong>可以一直向其中写入数据，直到填满所有内存。</strong></p>
+<p>tmpfs 可以看作是 ramfs 的升级版，它相较于 ramfs 最大的区别在于引入了大小的限制以及 swap 特性，允许在内存资源紧张时将内存数据交换到磁盘的 swap 区域中。值得注意的是，内核代码的 <code>fs</code> 目录下并没有 <code>tmpfs</code> 的目录，其实现放在共享内存相关源文件中：<code>mm/shmem.c</code>。</p>
+<h1 id="initramfs"><a href="#initramfs" class="headerlink" title="initramfs"></a>initramfs</h1><p>在系统启动初期，在磁盘等驱动程序模块还未加载时，需要构建一个临时的内存文件系统，即前面提到的内存 rootfs，该文件系统就称为 initramfs。通常来说，initramfs 中的内容包括入口脚本 init（被用作 <code>pid = 1</code> 进程）、内核模块、核心工具集等，会被打包成为一个 <code>cpio.gz</code> 文件。其既可以直接被链接到内核镜像中，也可以指定为外部的 <code>cpio.gz</code> 文件。</p>
+<p>initramfs 在内核启动初期会被解压缩提取到内存 rootfs 中，提取后，内核会将其中的 init 文件作为 <code>pid = 1</code> 的进程来执行。此进程负责启动系统的其余部分，包括定位和挂载最终的磁盘 rootfs，并借助 <code>switch_root</code> 工具（核心是通过调用 <code>chroot</code> 系统调用），将整个系统的根目录切换到磁盘 rootfs 中，再在保留 <code>pid = 1</code> 的情况下，通过 <code>exec</code> 将 init 进程替换为磁盘 rootfs 中 init 进程（在现代发行版中，通常为 systemd），完成后续的初始化操作。</p>
+<p>这里可以思考一个问题：为什么需要这样的两阶段？直接加载磁盘 rootfs 不行吗？</p>
+<p>这是因为最终的 rootfs 通常位于磁盘等设备中，甚至是网络服务器中，因此内核必须要有磁盘或是网卡等驱动的支持，但是这些驱动通常不会直接链接到内核中，而是动态加载，因此需要将它们放在一个无需任何驱动即可访问的“设备”——内存中，在加载了内存中的相应驱动之后，再过渡到真正的磁盘/网络 rootfs 之中。</p>
+<p>直接将需要的磁盘和网卡等驱动链接到内核中当然也是一种方法，但是这会牺牲一定的灵活性，可能要为了应对各种情况将大量的驱动程序都预先链接进内核。两阶段的做法实质上是一个权衡之下的选择。</p>
+<h1 id="Legacy：initrd"><a href="#Legacy：initrd" class="headerlink" title="Legacy：initrd"></a>Legacy：initrd</h1><p>在 initramfs 诞生前，一阶 rootfs 是基于 initrd（全称为 init ram disk）来实现的。initrd 本质上是一个虚拟的块设备，是被磁盘文件系统（如 ext2）格式化的加载到内存中的镜像文件，内核会将其视为块设备挂载到内存 rootfs 目录树中，在执行其中的脚本并通过 <code>pivot_root</code> 系统调用切换到磁盘 rootfs 之后，该镜像文件所占用的内存空间需要被释放。</p>
+<h1 id="一个小问题"><a href="#一个小问题" class="headerlink" title="一个小问题"></a>一个小问题</h1><p>在查阅资料的过程中，发现有些地方对此的介绍有些偏差：在 initramfs 的方法下，并不是通过 <code>pivot_root</code> 系统调用进行根目录的切换的，这点在 man 手册（通过 <code>man 2 pivot_root</code> 查看）中有明确说明：</p>
+<blockquote>
+<p>The rootfs (initial ramfs) cannot be pivot_root()ed.  The recommended method of changing the root filesystem in  this  case  is  to  delete  everything  in rootfs, overmount rootfs with the new root, attach stdin/stdout/stderr to the new /dev/console, and exec the new init(1).  Helper programs for this process exist; see switch_root(8).</p>
+</blockquote>
+<p>之所以有这样的差别，是因为 initrd 是一个模拟的块设备，本身只是一个普通的、可被卸载的挂载点；而 initramfs 就是系统启动时的 rootfs 本身的第一（内存）阶段，rootfs 是一个特殊的、不可卸载的文件系统实例。简单来说，initrd 的切换做法是“切换并卸载”，而 initramfs 的切换做法则是“删除并覆盖”。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a href="https://docs.linuxkernel.org.cn/filesystems/ramfs-rootfs-initramfs.html">Ramfs、rootfs 和 initramfs — Linux 内核文档</a></li>
+<li><a href="https://docs.linuxkernel.org.cn/filesystems/tmpfs.html">Tmpfs — Linux内核文档</a></li>
+<li><a href="https://jyywiki.cn/OS/2025/lect12.md">Yanyan’s Wiki</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+        <tag>Linux</tag>
+        <tag>文件系统</tag>
+      </tags>
+  </entry>
 </search>
