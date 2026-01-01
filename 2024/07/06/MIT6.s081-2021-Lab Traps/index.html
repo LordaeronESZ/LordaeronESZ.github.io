@@ -1,0 +1,453 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MIT6.s081 2021 Lab Traps | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="使用gdb调试xv6内核从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。  安装 gdb-multiarch.  利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令： 1sudo apt install gdb-multiarch  在 xv6">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.s081 2021 Lab Traps">
+<meta property="og:url" content="https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="使用gdb调试xv6内核从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。  安装 gdb-multiarch.  利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令： 1sudo apt install gdb-multiarch  在 xv6">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png">
+<meta property="article:published_time" content="2024-07-06T03:45:11.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:38.222Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="xv6">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="经验">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MIT6.s081 2021 Lab Traps",
+  "url": "https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/",
+  "image": "https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png",
+  "datePublished": "2024-07-06T03:45:11.000Z",
+  "dateModified": "2025-12-26T16:26:38.222Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MIT6.s081 2021 Lab Traps',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MIT6.s081 2021 Lab Traps</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-06T03:45:11.000Z" title="发表于 2024-07-06 11:45:11">2024-07-06</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:38.222Z" title="更新于 2025-12-27 00:26:38">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>15分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="使用gdb调试xv6内核"><a href="#使用gdb调试xv6内核" class="headerlink" title="使用gdb调试xv6内核"></a>使用gdb调试xv6内核</h1><p>从最近两个 Lab 开始，代码逻辑的复杂度明显上升，对内核进行调试可能是帮助理解操作系统机制的绝佳方法。因此在开始本 Lab 之前，我们先来配置一下针对 xv6 内核的 gdb 调试器。</p>
+<ol>
+<li>安装 <code>gdb-multiarch</code>.</li>
+</ol>
+<p>利用包管理工具进行安装，我使用的是 Ubuntu 系统，执行以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install gdb-multiarch</span><br></pre></td></tr></table></figure>
+<ol>
+<li>在 xv6 项目根目录下可以看到 <code>.gdbinit</code> 文件，其中已经写好了一些 <code>gdb</code> 的初始化选项，使用文本编辑器或 <code>cat</code> 命令查看：</li>
+</ol>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">set confirm off                                                         </span><br><span class="line">set architecture riscv:rv64                                             </span><br><span class="line">target remote 127.0.0.1:26000                                           </span><br><span class="line">symbol-file kernel/kernel                                               </span><br><span class="line">set disassemble-next-line auto           </span><br><span class="line">set riscv use-compressed-breakpoints yes</span><br></pre></td></tr></table></figure>
+<ol>
+<li>在 <code>~/.config/gdb/</code> 目录下的文件 <code>gdbinit</code> 中（没有则新建）添加安全加载路径，否则可能无法加载 <code>.gdbinit</code> 的配置。</li>
+</ol>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add-auto-load-safe-path &lt;xv6项目的根目录&gt;/.gdbinit</span><br></pre></td></tr></table></figure>
+<ol>
+<li>打开两个终端窗口（可以使用 tmux 进行分屏），都需要进入 xv6 根目录，第一个窗口输入 <code>make-qemu</code> 等待调试器连接，第二个窗口输入 <code>gdb-multiarch</code> 打开 <code>gdb</code>，如果前面配置正确，那么 <code>gdb</code> 并自动加载 <code>.gdbinit</code> 配置，与 <code>qemu</code> 连接，之后便可以开始正常调试了。</li>
+</ol>
+<p><img src="gdb.png" alt=""></p>
+<h1 id="RISC-V-assembly"><a href="#RISC-V-assembly" class="headerlink" title="RISC-V assembly"></a>RISC-V assembly</h1><p>一些有关 RISC-V 汇编的问题，最好先通过网上博客或手册简单了解一下 RISC-V 的基本指令。</p>
+<p><strong>Q1:</strong> </p>
+<blockquote>
+<p>Which registers contain arguments to functions? For example, which register holds 13 in main’s call to <code>printf</code>?</p>
+</blockquote>
+<p><strong>A1:</strong> </p>
+<p>可以参考 RISC-V 的 <em>calling convention</em>，<code>a0</code> - <code>a7</code>: 这些寄存器用于传递函数的前八个整数或指针类型的参数，如果超出这些寄存器的数量，超出的部分会存放在栈上。观察指令 <code>li  a2,13</code> 可知，13 作为 <code>printf</code> 的第二个参数，存放在寄存器 <code>a2</code> 中。</p>
+<p><img src="reg.png" alt=""></p>
+<p><strong>Q2:</strong></p>
+<blockquote>
+<p>Where is the call to function <code>f</code> in the assembly code for main? Where is the call to <code>g</code>? (Hint: the compiler may inline functions.)</p>
+</blockquote>
+<p><strong>A2:</strong> </p>
+<p>调用函数 <code>f</code> 和函数 <code>g</code> 的代码被编译器优化，直接计算出了结果 12，作为 <code>printf</code> 的参数存入寄存器 <code>a1</code> 中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">26:   45b1                    li  a1,12</span><br></pre></td></tr></table></figure>
+<p><strong>Q3:</strong></p>
+<blockquote>
+<p>At what address is the function <code>printf</code> located?</p>
+</blockquote>
+<p><strong>A3:</strong> </p>
+<p>位于 0x638 地址处。</p>
+<p><strong>Q4:</strong></p>
+<blockquote>
+<p>What value is in the register <code>ra</code> just after the <code>jalr</code> to <code>printf</code> in <code>main</code>?</p>
+</blockquote>
+<p><strong>A4:</strong> 参考 <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2021/readings/riscv-calling.pdf">riscv-calling</a>，<code>ra</code> 用来存储函数调用的返回地址，因此 <code>ra</code> 的值为 <code>jalr    1544(ra)</code> 的后一条指令地址，即 0x38.</p>
+<p><strong>Q5:</strong></p>
+<blockquote>
+<p>Run the following code.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">int</span> i = <span class="number">0x00646c72</span>;</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;H%x Wo%s&quot;</span>, <span class="number">57616</span>, &amp;i);</span><br></pre></td></tr></table></figure>
+<p>What is the output? <a target="_blank" rel="noopener" href="http://web.cs.mun.ca/~michael/c/ascii-table.html">Here’s an ASCII table</a> that maps bytes to characters.</p>
+<p>The output depends on that fact that the RISC-V is little-endian. If the RISC-V were instead big-endian what would you set <code>i</code> to in order to yield the same output? Would you need to change <code>57616</code> to a different value?</p>
+<p><a target="_blank" rel="noopener" href="http://www.webopedia.com/TERM/b/big_endian.html">Here’s a description of little- and big-endian</a> and <a target="_blank" rel="noopener" href="http://www.networksorcery.com/enp/ien/ien137.txt">a more whimsical description</a>.</p>
+</blockquote>
+<p><strong>A5:</strong></p>
+<ul>
+<li><code>%x</code> 用于输出一个无符号十六进制整数。</li>
+<li><code>%s</code> 用于输出一个字符指针所指向的字符串，直到遇到空字符<code>\0</code>为止。</li>
+</ul>
+<p>小端模式下，57616 的 十六进制表示为 e110，<code>&amp;i</code> 首地址开始的字节分别为 <code>0x72, 0x6c, 0x64, 0x0</code>，对应 ASCII 表中的字符为 <code>r, l, d</code>，因此最终输出结果为 <code>He110 World</code>.</p>
+<p>若采取大端模式，<code>i</code> 的值应当替换为 <code>0x726c6400</code>，57616 的值无需改变，因为十六进制的书写规则并没有改变（高位在左，低位在右）。</p>
+<p><strong>Q6:</strong></p>
+<blockquote>
+<p>In the following code, what is going to be printed after <code>&#39;y=&#39;</code>? (note: the answer is not a specific value.) Why does this happen?</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;x=%d y=%d&quot;</span>, <span class="number">3</span>);</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p><strong>A6:</strong></p>
+<p>关于可变参数的内容查看 《<em>C Programming Language 2nd Edition</em>》（K\&amp;R）的 7.3 节 <em>Variable-length Argument Lists</em>.</p>
+<p>简而言之，这样的操作将引发<strong>未定义行为</strong>，此时 <code>ap</code> 指向了一个未知的内存区域，并将该区域的数据以整型的形式输出。</p>
+<h1 id="Backtrace"><a href="#Backtrace" class="headerlink" title="Backtrace"></a>Backtrace</h1><h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>思路其实很简单：对照 <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2021/lec/l-riscv-slides.pdf">lecture notes</a> 给出的栈的结构，从当前栈帧的起始地址 <code>fp</code> 开始，<code>fp - 8</code> 的位置存放着当前函数调用的返回地址（上一次函数调用处的下一条指令地址），即我们 <strong>需要打印</strong> 的地址，<code>fp - 16</code> 的位置存放着上一次函数调用所在栈帧的起始地址，将该地址作为新的 <code>fp</code> 重复上述步骤即可。</p>
+<p><img src="st.png" alt=""></p>
+<p>关键问题是 <strong>什么时候停止</strong> ？可以看到上述 backtrace 的过程就好像是在遍历一个链表，当链表的 <code>next</code> 域为空指针时链表到达末尾，那 traceback 完成后<code>fp</code> 的值应该是什么？为了寻找这个问题的答案，我选择先不设置终止条件，让它一直向上搜索，最后发现，返回地址最终为一个很小的值，这个地址显然不是我们想要的，在此之前应该退出，即本次 traceback 的尽头是 0x80001c92.</p>
+<p><img src="noterm.png" alt=""></p>
+<p>但打印出来的函数调用的返回地址似乎并没有什么规律，因此我又尝试将遍历过程中的栈帧起始地址 <code>fp</code> 打印出来，得到以下结果：</p>
+<p><img src="pfp.png" alt=""></p>
+<p>结合提示：</p>
+<blockquote>
+<p>Xv6 allocates one page for each stack in the xv6 kernel at PAGE-aligned address.</p>
+</blockquote>
+<p>原因就很明显了，在打印第三个返回地址时，此时栈帧起始地址为 0x3fffffa000，注意该地址后 12 二进制数为 0，且页面大小为 4KB，因此该地址位于一个页面的起始地址。又因为 xv6 内核只为每个 <strong>内核栈</strong> 分配一个页面的存储空间，该页面的起始地址按页面大小对齐，所以此时已经到达一个内核栈的顶端，无需继续遍历。</p>
+<p>弄清楚了这些，代码的编写就很简单了：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">backtrace</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;backtrace:\n&quot;</span>);</span><br><span class="line">    uint64 fp = r_fp();</span><br><span class="line">    uint64 top = PGROUNDUP(fp);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, *(uint64 *)(fp - <span class="number">8</span>));</span><br><span class="line">        fp = *(uint64 *)(fp - <span class="number">16</span>);</span><br><span class="line">    &#125; <span class="keyword">while</span> (fp &lt; top); <span class="comment">// reach the top of kernel stack</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- a/kernel/defs.h</span></span><br><span class="line"><span class="comment">+++ b/kernel/defs.h</span></span><br><span class="line"><span class="meta">@@ -80,6 +80,7 @@</span> int             pipewrite(struct pipe*, uint64, int);</span><br><span class="line"> void            printf(char*, ...);</span><br><span class="line"> void            panic(char*) __attribute__((noreturn));</span><br><span class="line"> void            printfinit(void);</span><br><span class="line"><span class="addition">+void			backtrace(void); // here</span></span><br><span class="line"> </span><br><span class="line"> // proc.c</span><br><span class="line"> int             cpuid(void);</span><br><span class="line"><span class="comment">diff --git a/kernel/printf.c b/kernel/printf.c</span></span><br><span class="line"><span class="comment">index e1347de..a068cbd 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/printf.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/printf.c</span></span><br><span class="line"><span class="meta">@@ -114,6 +114,23 @@</span> printf(char *fmt, ...)</span><br><span class="line">     release(&amp;pr.lock);</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line"><span class="addition">+// here</span></span><br><span class="line"><span class="addition">+void backtrace(void) &#123;</span></span><br><span class="line"><span class="addition">+	printf(&quot;backtrace:\n&quot;);</span></span><br><span class="line"><span class="addition">+	uint64 fp = r_fp();</span></span><br><span class="line"><span class="addition">+	uint64 top = PGROUNDUP(fp);</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	do &#123;</span></span><br><span class="line"><span class="addition">+		printf(&quot;%p\n&quot;, *(uint64 *)(fp - 8));</span></span><br><span class="line"><span class="addition">+		fp = *(uint64 *)(fp - 16);</span></span><br><span class="line"><span class="addition">+	&#125; while (lower &lt; top);</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"> void</span><br><span class="line"> panic(char *s)</span><br><span class="line"> &#123;</span><br><span class="line"><span class="comment">diff --git a/kernel/riscv.h b/kernel/riscv.h</span></span><br><span class="line"><span class="comment">index 1691faf..fae7bf3 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/riscv.h</span></span><br><span class="line"><span class="comment">+++ b/kernel/riscv.h</span></span><br><span class="line"><span class="meta">@@ -331,6 +331,15 @@</span> sfence_vma()</span><br><span class="line">   asm volatile(&quot;sfence.vma zero, zero&quot;);</span><br><span class="line"> &#125;</span><br><span class="line"> </span><br><span class="line"><span class="addition">+// here</span></span><br><span class="line"><span class="addition">+static inline uint64</span></span><br><span class="line"><span class="addition">+r_fp()</span></span><br><span class="line"><span class="addition">+&#123;</span></span><br><span class="line"><span class="addition">+  uint64 x;</span></span><br><span class="line"><span class="addition">+  asm volatile(&quot;mv %0, s0&quot; : &quot;=r&quot; (x) );</span></span><br><span class="line"><span class="addition">+  return x;</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"> </span><br><span class="line"> #define PGSIZE 4096 // bytes per page</span><br><span class="line"> #define PGSHIFT 12  // bits of offset within a page</span><br><span class="line"><span class="comment">diff --git a/kernel/sysproc.c b/kernel/sysproc.c</span></span><br><span class="line"><span class="comment">index e8bcda9..f27c007 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/sysproc.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/sysproc.c</span></span><br><span class="line"><span class="meta">@@ -70,6 +70,7 @@</span> sys_sleep(void)</span><br><span class="line">     sleep(&amp;ticks, &amp;tickslock);</span><br><span class="line">   &#125;</span><br><span class="line">   release(&amp;tickslock);</span><br><span class="line"><span class="addition">+  backtrace(); // here</span></span><br><span class="line">   return 0;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<h1 id="Alarm"><a href="#Alarm" class="headerlink" title="Alarm"></a>Alarm</h1><h2 id="思路-1"><a href="#思路-1" class="headerlink" title="思路"></a>思路</h2><p>目前为止感觉最复杂的一题，需要对 trap 机制有一个比较深入的理解，建议在上手之前先仔细阅读与 trap 有关的代码：<code>kernel/trampoline.S</code> 和 <code>kernel/trap.c</code>，这里也推荐一位博主写的两篇有关 xv6 的 trap 机制的博客：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zzy980511/article/details/130255251">6.S081——陷阱部分(一文读懂xv6系统调用)——xv6源码完全解析系列(5)</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zzy980511/article/details/130642258">6.S081——补充材料——RISC-V架构中的异常与中断详解</a></p>
+<h3 id="test0-invoke-handler"><a href="#test0-invoke-handler" class="headerlink" title="test0: invoke handler"></a>test0: invoke handler</h3><p>我们不妨按照提示的顺序来进行，不关注 <code>sys_sigreturn</code>，先把 <code>sys_sigalarm</code> 的功能实现。</p>
+<p>实际上，<code>sys_sigalarm</code> 函数的功能很简单，只是简单地将用户态下传递的参数 <code>ticks</code> 和 <code>handler</code> 存入进程的 <code>struct proc</code> 结构体中。实现调用 <code>handler</code> 的操作需要在内核态下的 <code>usertrap</code> 中完成，具体来说，针对时钟中断导致的 trap 将在 <code>if(which_dev == 2)</code> 后的语句中被处理。有两个目标需要完成： <strong>定时</strong> 和 <strong>函数调用</strong> 。</p>
+<p>定时的逻辑比较清楚，在 <code>struct proc</code> 中添加变量 <code>ticksum</code>，代表从上次 <code>handler</code> 处理完成开始进程累计的时钟中断次数，该变量在进程初始化时设置为 0，随后每次遇到时钟中断，都自增 1，如果自增后的值达到了设定的间隔 <code>ticks</code>，则将其复位为 0，调用 <code>handler</code> 函数。</p>
+<p>函数调用是一个需要考虑的问题，这里不能直接利用函数指针 <code>handler</code> 进行函数调用，因为 <code>handler</code> 指向的函数位于用户空间下，而 <code>usertrap</code> 位于内核态下，页表的地址映射不同，无法直接根据用户空间下的虚拟地址进行寻址（直接调用引发的错误如下图所示），需要在本次中断结束返回到用户态之后执行。因此正确的做法应该是设置进程 <code>struct proc</code> 的 <code>epc</code> 寄存器为函数指针 <code>handler</code>，这样在中断处理完成，进程回到用户态并被 CPU 调度执行后，寄存器 <code>pc</code> 将被设置预先保存的 <code>epc</code> 的值，这样函数 <code>handler</code> 就被成功调度执行了。至此，test0 应该成功通过。</p>
+<p><img src="nil.png" alt=""></p>
+<p>在进入到 test1\&amp;2 之前，有必要说一说我的一些思考：在上面的讨论中，我们知道内核无法直接根据函数指针 <code>handler</code> 的值进行用户空间函数的调用，那能否在内核态下根据进程的用户态页表和给定的虚拟地址，利用软件地址转换机制（<code>vm.c</code> 中的 <code>walkaddr</code> 函数）来将用户空间的虚拟地址转换为物理地址进行寻址呢（这也是我最开始的想法）？答案是不行，因为即便是在内核态下，程序中的地址仍然是虚拟地址，也就是说即便知道用户态函数实际存储的物理地址，我们也只有在 <strong>给出一个虚拟地址，该虚拟地址经过内核页表地址转换之后，刚好得到了正确的物理地址，</strong> 才可能成功。而实际上，尽管内核 <code>KERNBASE</code> 到 <code>PHYSTOP</code> 地址都是直接映射，但内核页表中可能并没有所需要的页表项，因此，这并不会成功。</p>
+<h3 id="test1-test2-resume-interrupted-code"><a href="#test1-test2-resume-interrupted-code" class="headerlink" title="test1/test2(): resume interrupted code"></a>test1/test2(): resume interrupted code</h3><p>test1 的目标是，存储和恢复中断处理前后的寄存器状态。那么问题就来了：为什么需要存储这些寄存器？需要存储哪些寄存器？</p>
+<p>其实最开始，我是有些纠结寄存器状态的存储目的是什么，认为可能是与内核态和用户态切换有关，但仔细想想，这部分的工作应该是由 <code>trampoline.S</code> 和 <code>usertrapret</code> 来完成的，那么为什么还需要存储和恢复寄存器？</p>
+<p>事实上，在系统未关闭中断的情况下，时钟中断可能在程序执行的任何时刻发生，且在返回到原程序位置继续执行之前还需要执行预先设定好的 <code>handler</code> 函数，那么寄存器状态的保存将是必要的。一方面在执行 <code>handler</code> 函数期间，如果 <code>handler</code> 函数包含一些对局部变量的处理，那么通用寄存器的值将会发生改变，从而使得中断返回时程序的执行结果与预期不符；另一方面，由于 <code>epc</code> 的值被手动改变，如果执行完 <code>handler</code> 之后不恢复中断发生时的保存的 <code>pc</code> 值，那么 <code>pc</code> 将会指向 <code>handler</code> 函数末尾的下一条指令，中断因此无法正常返回。 简单来说，这部分的操作相当于手动模拟了 <strong>线程</strong> 的切换。</p>
+<p>另一个问题是：需要存储哪些寄存器？好吧，在解决这个 Lab 时我其实偷了点懒，没有去仔细琢磨，只是简单地将整个 <code>trapframe</code> 中所有的寄存器都保存下来。但根据上面的讨论，再结合 RISC-V 的 <em>calling convention</em>，应该不难得出答案。</p>
+<p>最后的 test2 就比较简单了，目标是：</p>
+<blockquote>
+<p>Prevent re-entrant calls to the handler——if a handler hasn’t returned yet, the kernel shouldn’t call it again.</p>
+</blockquote>
+<p>解决的办法有很多，可以额外在 <code>strcut proc</code> 添加一个变量，用来表示进程当前是否正处在处理 <code>handler</code> 的过程中，如果是，则不进行 <code>ticksum</code> 的自增操作。这里我采用了一点 <strong>小技巧</strong> ：不添加额外的变量，而是在处理 <code>handler</code> 前将 <code>ticksum</code> 置为负数，并在自增前判断 <code>ticksum</code> 是否非负，在 <code>sys_sigreturn</code> 时再将它置为 0，本质上与添加变量的操作大差不差。</p>
+<h2 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h2><figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">diff --git a/Makefile b/Makefile</span></span><br><span class="line"><span class="comment">index 7a7e380..bc4d47a 100644</span></span><br><span class="line"><span class="comment">--- a/Makefile</span></span><br><span class="line"><span class="comment">+++ b/Makefile</span></span><br><span class="line"><span class="meta">@@ -188,6 +188,7 @@</span> UPROGS=\</span><br><span class="line"> 	$U/_grind\</span><br><span class="line"> 	$U/_wc\</span><br><span class="line"> 	$U/_zombie\</span><br><span class="line"><span class="addition">+	$U/_alarmtest\</span></span><br><span class="line"> </span><br><span class="line"><span class="comment">diff --git a/kernel/proc.c b/kernel/proc.c</span></span><br><span class="line"><span class="comment">index 22e7ce4..80096f7 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/proc.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/proc.c</span></span><br><span class="line"><span class="meta">@@ -119,6 +119,7 @@</span> allocproc(void)</span><br><span class="line"> found:</span><br><span class="line">   p-&gt;pid = allocpid();</span><br><span class="line">   p-&gt;state = USED;</span><br><span class="line"><span class="addition">+  p-&gt;ticksum = 0; // here</span></span><br><span class="line"> </span><br><span class="line">   // Allocate a trapframe page.</span><br><span class="line">   if((p-&gt;trapframe = (struct trapframe *)kalloc()) == 0)&#123;</span><br><span class="line"><span class="comment">diff --git a/kernel/proc.h b/kernel/proc.h</span></span><br><span class="line"><span class="comment">index f6ca8b7..c1d5a23 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/proc.h</span></span><br><span class="line"><span class="comment">+++ b/kernel/proc.h</span></span><br><span class="line"><span class="meta">@@ -105,4 +105,10 @@</span> struct proc &#123;</span><br><span class="line">   struct file *ofile[NOFILE];  // Open files</span><br><span class="line">   struct inode *cwd;           // Current directory</span><br><span class="line">   char name[16];               // Process name (debugging)</span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  int ticks;         // here</span></span><br><span class="line"><span class="addition">+  void (*handler)();</span></span><br><span class="line"><span class="addition">+  int ticksum;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+  struct trapframe strapframe;</span></span><br><span class="line"> &#125;;</span><br><span class="line"><span class="comment">diff --git a/kernel/syscall.c b/kernel/syscall.c</span></span><br><span class="line"><span class="comment">index c1b3670..d4e5585 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/syscall.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/syscall.c</span></span><br><span class="line"><span class="meta">@@ -104,6 +104,8 @@</span> extern uint64 sys_unlink(void);</span><br><span class="line"> extern uint64 sys_wait(void);</span><br><span class="line"> extern uint64 sys_write(void);</span><br><span class="line"> extern uint64 sys_uptime(void);</span><br><span class="line"><span class="addition">+extern uint64 sys_sigalarm(void); // here</span></span><br><span class="line"><span class="addition">+extern uint64 sys_sigreturn(void);</span></span><br><span class="line"> </span><br><span class="line"> static uint64 (*syscalls[])(void) = &#123;</span><br><span class="line"> [SYS_fork]    sys_fork,</span><br><span class="line"><span class="meta">@@ -127,6 +129,8 @@</span> static uint64 (*syscalls[])(void) = &#123;</span><br><span class="line"> [SYS_link]    sys_link,</span><br><span class="line"> [SYS_mkdir]   sys_mkdir,</span><br><span class="line"> [SYS_close]   sys_close,</span><br><span class="line"><span class="addition">+[SYS_sigalarm]  sys_sigalarm,  // here</span></span><br><span class="line"><span class="addition">+[SYS_sigreturn] sys_sigreturn,</span></span><br><span class="line"> &#125;;</span><br><span class="line"> </span><br><span class="line"> void</span><br><span class="line"><span class="comment">diff --git a/kernel/syscall.h b/kernel/syscall.h</span></span><br><span class="line"><span class="comment">index bc5f356..a040610 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/syscall.h</span></span><br><span class="line"><span class="comment">+++ b/kernel/syscall.h</span></span><br><span class="line"><span class="meta">@@ -20,3 +20,5 @@</span></span><br><span class="line"> #define SYS_link   19</span><br><span class="line"> #define SYS_mkdir  20</span><br><span class="line"> #define SYS_close  21</span><br><span class="line"><span class="addition">+#define SYS_sigalarm  22  // here</span></span><br><span class="line"><span class="addition">+#define SYS_sigreturn 23</span></span><br><span class="line"><span class="comment">diff --git a/kernel/sysproc.c b/kernel/sysproc.c</span></span><br><span class="line"><span class="comment">index f27c007..ee859ed 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/sysproc.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/sysproc.c</span></span><br><span class="line"><span class="meta">@@ -96,3 +96,28 @@</span> sys_uptime(void)</span><br><span class="line">   release(&amp;tickslock);</span><br><span class="line">   return xticks;</span><br><span class="line"> &#125;</span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+// here</span></span><br><span class="line"><span class="addition">+uint64 sys_sigalarm(void) &#123;</span></span><br><span class="line"><span class="addition">+	struct proc *p = myproc();</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	if (argint(0, &amp;(p-&gt;ticks)) &lt; 0) &#123;</span></span><br><span class="line"><span class="addition">+		return -1;</span></span><br><span class="line"><span class="addition">+	&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	if (argaddr(1, (uint64 *)&amp;(p-&gt;handler)) &lt; 0) &#123;</span></span><br><span class="line"><span class="addition">+		return -1;</span></span><br><span class="line"><span class="addition">+	&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	return 0;</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+uint64 sys_sigreturn(void) &#123;</span></span><br><span class="line"><span class="addition">+	struct proc *p = myproc();</span></span><br><span class="line"><span class="addition">+	</span></span><br><span class="line"><span class="addition">+	// restore registers</span></span><br><span class="line"><span class="addition">+	memmove(p-&gt;trapframe, &amp;(p-&gt;strapframe), sizeof(p-&gt;strapframe));</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	p-&gt;ticksum = 0;</span></span><br><span class="line"><span class="addition">+	return 0;</span></span><br><span class="line"><span class="addition">+&#125;</span></span><br><span class="line"><span class="comment">diff --git a/kernel/trap.c b/kernel/trap.c</span></span><br><span class="line"><span class="comment">index a63249e..447e6d8 100644</span></span><br><span class="line"><span class="comment">--- a/kernel/trap.c</span></span><br><span class="line"><span class="comment">+++ b/kernel/trap.c</span></span><br><span class="line"> </span><br><span class="line"><span class="meta">@@ -77,8 +77,17 @@</span> usertrap(void)</span><br><span class="line">     exit(-1);</span><br><span class="line"> </span><br><span class="line">   // give up the CPU if this is a timer interrupt.</span><br><span class="line"><span class="deletion">-  if(which_dev == 2)</span></span><br><span class="line"><span class="addition">+  if(which_dev == 2) &#123;</span></span><br><span class="line"><span class="addition">+	// here</span></span><br><span class="line"><span class="addition">+	if (p-&gt;ticks &gt; 0 &amp;&amp; p-&gt;ticksum &gt;= 0 &amp;&amp; ++(p-&gt;ticksum) &gt;= p-&gt;ticks) &#123;</span></span><br><span class="line"><span class="addition">+	  // save registers</span></span><br><span class="line"><span class="addition">+	  memmove(&amp;(p-&gt;strapframe), p-&gt;trapframe, sizeof(p-&gt;strapframe));</span></span><br><span class="line"><span class="addition">+</span></span><br><span class="line"><span class="addition">+	  p-&gt;ticksum = -1; // prevent re-entrant calls to the handler</span></span><br><span class="line"><span class="addition">+	  p-&gt;trapframe-&gt;epc = (uint64)p-&gt;handler;</span></span><br><span class="line"><span class="addition">+	&#125;</span></span><br><span class="line">     yield();</span><br><span class="line"><span class="addition">+  &#125;</span></span><br><span class="line"> </span><br><span class="line">   usertrapret();</span><br><span class="line"> &#125;</span><br><span class="line"><span class="comment">diff --git a/user/user.h b/user/user.h</span></span><br><span class="line"><span class="comment">index b71ecda..422a4c1 100644</span></span><br><span class="line"><span class="comment">--- a/user/user.h</span></span><br><span class="line"><span class="comment">+++ b/user/user.h</span></span><br><span class="line"><span class="meta">@@ -23,6 +23,8 @@</span> int getpid(void);</span><br><span class="line"> char* sbrk(int);</span><br><span class="line"> int sleep(int);</span><br><span class="line"> int uptime(void);</span><br><span class="line"><span class="addition">+int sigalarm(int ticks, void (*handler)()); // here</span></span><br><span class="line"><span class="addition">+int sigreturn(void);</span></span><br><span class="line"> </span><br><span class="line"> // ulib.c</span><br><span class="line"> int stat(const char*, struct stat*);</span><br><span class="line"><span class="comment">diff --git a/user/usys.pl b/user/usys.pl</span></span><br><span class="line"><span class="comment">index 01e426e..84c6784 100755</span></span><br><span class="line"><span class="comment">--- a/user/usys.pl</span></span><br><span class="line"><span class="comment">+++ b/user/usys.pl</span></span><br><span class="line"><span class="meta">@@ -36,3 +36,5 @@</span> entry(&quot;getpid&quot;);</span><br><span class="line"> entry(&quot;sbrk&quot;);</span><br><span class="line"> entry(&quot;sleep&quot;);</span><br><span class="line"> entry(&quot;uptime&quot;);</span><br><span class="line"><span class="addition">+entry(&quot;sigalarm&quot;); # here</span></span><br><span class="line"><span class="addition">+entry(&quot;sigreturn&quot;);</span></span><br></pre></td></tr></table></figure>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/">https://lordaeronesz.top/2024/07/06/MIT6.s081-2021-Lab%20Traps/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/xv6/">xv6</a></div><div class="post-share"><div class="social-share" data-image="/2024/07/06/MIT6.s081-2021-Lab%20Traps/unix.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">MIT6.s081 2021 Lab Copy on-write</div></div><div class="info-2"><div class="info-item-1">Implement copy-on write背景xv6 使用 fork() 系统调用创建子进程时，需要将父进程的地址空间进行 深拷贝 ，即将页表和实际物理空间同时进行拷贝，以实现父进程和子进程地址空间的独立性。但很多时候，如 shell 程序，fork() 通常与 exec() 搭配使用，首先使用 fork() 创建子进程，随后在子进程中使用 exec() 将指定的程序加载到当前地址空间，这样在 fork() 中进行的地址空间拷贝就白白浪费了。 本实现要求实现一个写时复制（copy-on write）的 fork() 系统调用。具体来说，在进行虚拟内存拷贝时，不直接进行物理内存的拷贝，只是将父进程的页表复制给子进程，这样子进程和父进程的每个虚拟页面都指向了同一个物理页面，当子进程需要对某个虚拟页面进行写入时，为了保证父进程和子进程之间的独立性，子进程此时将进行物理内存的分配和拷贝，再进行写入。 实现方案根据提示，可以将上述的写时复制的思路用 异常 的方式来实现。 首先可以利用页表项的 flags 中的 RSW 位来表示页表项是否为 COW 页，以便后续的异常处理。 修改 uvm...</div></div></div></a><a class="pagination-related" href="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">MIT6.s081 2021 Lab Page tables</div></div><div class="info-2"><div class="info-item-1">Speed up system calls思路题目要求在每个进程初始化时为它的页表插入一个页表项，内核通过这样预先缓存页表项的操作，来加速特定系统调用的执行速度。 由于前不久刚过完一遍《OSTEP》，因此我认为自己对页表机制还算比较熟悉，应对本 Lab 理应比较轻松，但在真正上手的时候，还是觉得有些无所适从，无奈老老实实地把 xv6 手册的第 3 章对照着代码仔细研读了一番，从中提炼出了几个关键的函数：  kernel/kalloc.c:kalloc  1void *kalloc(void); 遍历空闲链表，寻找一个可分配的物理页面。若找到，返回该页面的首（物理）地址；否则，返回 0 （空指针）。  kernel/kalloc.c:kfree  1void kfree(void *pa); 释放已分配的首地址为 pa 的物理页面，并更新空闲链表。  kernel/proc.c:allocproc  1static struct proc *allocproc(void); 遍历进程数组 proc，寻找未被使用的 struct proc。若找到，则初始化其状态，为创建一个新的页表，...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/" title="MIT6.s081 2021 Lab Page tables"><img class="cover" src="/2024/07/01/MIT6.s081-2021-Lab%20Page%20tables/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-01</div><div class="info-item-2">MIT6.s081 2021 Lab Page tables</div></div><div class="info-2"><div class="info-item-1">Speed up system calls思路题目要求在每个进程初始化时为它的页表插入一个页表项，内核通过这样预先缓存页表项的操作，来加速特定系统调用的执行速度。 由于前不久刚过完一遍《OSTEP》，因此我认为自己对页表机制还算比较熟悉，应对本 Lab 理应比较轻松，但在真正上手的时候，还是觉得有些无所适从，无奈老老实实地把 xv6 手册的第 3 章对照着代码仔细研读了一番，从中提炼出了几个关键的函数：  kernel/kalloc.c:kalloc  1void *kalloc(void); 遍历空闲链表，寻找一个可分配的物理页面。若找到，返回该页面的首（物理）地址；否则，返回 0 （空指针）。  kernel/kalloc.c:kfree  1void kfree(void *pa); 释放已分配的首地址为 pa 的物理页面，并更新空闲链表。  kernel/proc.c:allocproc  1static struct proc *allocproc(void); 遍历进程数组 proc，寻找未被使用的 struct proc。若找到，则初始化其状态，为创建一个新的页表，...</div></div></div></a><a class="pagination-related" href="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/" title="MIT6.s081 2021 Lab System calls"><img class="cover" src="/2024/06/27/MIT6.s081-2021-Lab%20System%20calls/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-27</div><div class="info-item-2">MIT6.s081 2021 Lab System calls</div></div><div class="info-2"><div class="info-item-1">xv6系统调用实现不同于 Lab1 利用已实现的系统调用来实现一些用户态下的命令行程序，本 Lab 是要在内核层面实现一些系统调用。这其中难免涉及到一些对内核数据结构的操作，以及处理器体系结构（本系列 Lab 基于 RISCV）相关的内容，那么首先有必要梳理一下 xv6 下系统调用的实现过程。 xv6 系统调用的实现：  以 trace 系统调用为例，用户通过调用 user/user.h 中的函数 trace 进行系统调用。 通过调用 Perl 脚本 user/usys.pl 生成的一系列汇编代码，该汇编代码的作用是设置寄存器的内容并实现用户态到内核态的切换，内核后续针对寄存器中的内容执行相应的系统调用操作。以下是对 user/usys.pl 代码的逐行解析：    #!/usr/bin/perl -w：这是一个Perl脚本的“shebang”行，指定使用/usr/bin/perl解释器执行此脚本，并开启警告（-w）选项。  print &quot;# generated by usys.pl - do not edit\n&quot;;：打印注释说明此文件是由usys.pl脚本...</div></div></div></a><a class="pagination-related" href="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/" title="MIT6.s081 2021 Lab Multithreading"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Multithreading/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="info-item-2">MIT6.s081 2021 Lab Multithreading</div></div><div class="info-2"><div class="info-item-1">Uthread: switching between threads思路xv6 已经实现了进程的切换机制，本实验要求参考进程的切换，实现一个用户态线程的切换。 要实现线程切换，必然涉及上下文，即寄存器的保存和恢复，那么需要保存哪些寄存器？实际上，只需要保存被调用者保存寄存器（callee-saved registers），而实现调用者保存寄存器（caller-saved registers）的保存与恢复的代码由编译器自动生成。关于调用者保存与被调用者保存寄存器有哪些可以参照下述 RISC-V 的 calling convention：  另外，根据 user/uthread_switch.S 的注释，thread_switch 最后通过 ret 指令将当前程序计数器的值切换为 ra 寄存器中存储的地址，实现进程的“切换”，因此 struct thread 中还需要保存每个线程对应程序的起始地址（即函数指针）。 在了解需要保存哪些寄存器之后以及如何进行线程切换之后，还有一个细节需要考虑，即栈指针寄存器（sp）的初始化。线程栈的存储位置为 struct thread 中的 stack...</div></div></div></a><a class="pagination-related" href="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/" title="MIT6.s081 2021 Lab Utilities"><img class="cover" src="/2024/06/24/MIT6.s081-2021-Lab%20Utilities/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-06-24</div><div class="info-item-2">MIT6.s081 2021 Lab Utilities</div></div><div class="info-2"><div class="info-item-1">Boot xv6按照示例切换到 util 分支后，看到目录下包含 Makefile 文件，执行 make qemu 即可。 sleep思路借助系统调用 sleep 实现一个命令行程序，关键是要找到封装了系统调用的 C 函数的位置，根据提示：  … user/user.h for the C definition of sleep callable from a user program …  可知该函数的声明位于 user.h 头文件中，声明方式很简单： 1int sleep(int); 将其“拷贝”（include）到需要编写的代码 user/sleep.c 中，调用 sleep(&lt;睡眠时间&gt;) 即可。 最后，按照提示，将编写的 sleep 代码添加到 Makefile 的 UPROGS 中，添加后如下所示： 123456789101112131415161718UPROGS=\    $U/_cat\    $U/_echo\    $U/_forktest\    $U/_grep\    $U/_init\    $U/_kill\    $U/_ln\   ...</div></div></div></a><a class="pagination-related" href="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/" title="MIT6.s081 2021 Lab Copy on-write"><img class="cover" src="/2024/08/13/MIT6.s081-2021-Lab%20Copy%20on-write/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-13</div><div class="info-item-2">MIT6.s081 2021 Lab Copy on-write</div></div><div class="info-2"><div class="info-item-1">Implement copy-on write背景xv6 使用 fork() 系统调用创建子进程时，需要将父进程的地址空间进行 深拷贝 ，即将页表和实际物理空间同时进行拷贝，以实现父进程和子进程地址空间的独立性。但很多时候，如 shell 程序，fork() 通常与 exec() 搭配使用，首先使用 fork() 创建子进程，随后在子进程中使用 exec() 将指定的程序加载到当前地址空间，这样在 fork() 中进行的地址空间拷贝就白白浪费了。 本实现要求实现一个写时复制（copy-on write）的 fork() 系统调用。具体来说，在进行虚拟内存拷贝时，不直接进行物理内存的拷贝，只是将父进程的页表复制给子进程，这样子进程和父进程的每个虚拟页面都指向了同一个物理页面，当子进程需要对某个虚拟页面进行写入时，为了保证父进程和子进程之间的独立性，子进程此时将进行物理内存的分配和拷贝，再进行写入。 实现方案根据提示，可以将上述的写时复制的思路用 异常 的方式来实现。 首先可以利用页表项的 flags 中的 RSW 位来表示页表项是否为 COW 页，以便后续的异常处理。 修改 uvm...</div></div></div></a><a class="pagination-related" href="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/" title="MIT6.s081 2021 Lab File system"><img class="cover" src="/2024/08/16/MIT6.s081-2021-Lab%20File%20system/unix.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-16</div><div class="info-item-2">MIT6.s081 2021 Lab File system</div></div><div class="info-2"><div class="info-item-1">Large files思路xv6 文件系统的 inode 中地址域 addrs[] 由 12 个直接地址和 1 个一级间接地址组成，本实验要求将地址域更改为 11 个直接地址、1 个一级间接地址和 1 个二级间接地址组成，以支持更大文件的存储。 代码的实现有了直接地址和一级间接地址做参考，就很简单了，直接查看代码部分即可。 代码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107diff --git a/kernel/file.h b/kernel/file.hindex b076d1d..5c4eb3a 100644--- a/kernel/file.h+++ b/kernel/file.h@@ -26,7 +...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8gdb%E8%B0%83%E8%AF%95xv6%E5%86%85%E6%A0%B8"><span class="toc-number">1.</span> <span class="toc-text">使用gdb调试xv6内核</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RISC-V-assembly"><span class="toc-number">2.</span> <span class="toc-text">RISC-V assembly</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Backtrace"><span class="toc-number">3.</span> <span class="toc-text">Backtrace</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">3.2.</span> <span class="toc-text">代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Alarm"><span class="toc-number">4.</span> <span class="toc-text">Alarm</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%B7%AF-1"><span class="toc-number">4.1.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#test0-invoke-handler"><span class="toc-number">4.1.1.</span> <span class="toc-text">test0: invoke handler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#test1-test2-resume-interrupted-code"><span class="toc-number">4.1.2.</span> <span class="toc-text">test1&#x2F;test2(): resume interrupted code</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81-1"><span class="toc-number">4.2.</span> <span class="toc-text">代码</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

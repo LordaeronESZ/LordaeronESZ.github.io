@@ -1,0 +1,26 @@
+/* 字体配置 - 使用筑字手写体 */
+
+@font-face {
+  font-family: 'tzy';
+  /* 字体名自定义即可 */
+  src: url('/img/ZhuZiAWan.woff2');
+  /* 字体文件路径 */
+  font-display: swap;
+}
+
+/* 全局应用字体 - 但保留导航栏的特殊字体 */
+body,
+.gitcalendar {
+  font-family: tzy !important;
+}
+
+/* 排除左上角导航栏标题,保持原有 Brush Script MT 字体 */
+#nav .site-name {
+  font-family: 'Brush Script MT', 'cursive', 'Segoe UI', sans-serif !important;
+}
+
+/* 侧边栏作者卡片 - 应用筑字手写体 */
+.author-info-name,
+.author-info-description {
+  font-family: tzy, 'Segoe UI', sans-serif !important;
+}

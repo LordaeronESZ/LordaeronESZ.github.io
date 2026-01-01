@@ -1,0 +1,18 @@
+#footer {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#footer > * {
+  color: #333 !important;
+}
+
+#footer a {
+  color: #555 !important;
+}
+
+#footer a:hover {
+  color: var(--theme-color) !important;
+}

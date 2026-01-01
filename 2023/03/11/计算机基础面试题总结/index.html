@@ -1,0 +1,533 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>计算机基础面试题总结 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="承接上文，本文总结了计算机基础学科（包括数据结构、计算机组成原理、操作系统、计算机网络等）常见的一些面试问题，以便随时查看。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="计算机基础面试题总结">
+<meta property="og:url" content="https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="承接上文，本文总结了计算机基础学科（包括数据结构、计算机组成原理、操作系统、计算机网络等）常见的一些面试问题，以便随时查看。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg">
+<meta property="article:published_time" content="2023-03-11T01:38:58.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:39.429Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="经验">
+<meta property="article:tag" content="计算机基础">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "计算机基础面试题总结",
+  "url": "https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/",
+  "image": "https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg",
+  "datePublished": "2023-03-11T01:38:58.000Z",
+  "dateModified": "2025-12-26T16:26:39.429Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '计算机基础面试题总结',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">计算机基础面试题总结</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-03-11T01:38:58.000Z" title="发表于 2023-03-11 09:38:58">2023-03-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:39.429Z" title="更新于 2025-12-27 00:26:39">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">7.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>21分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>承接上文，本文总结了计算机基础学科（包括数据结构、计算机组成原理、操作系统、计算机网络等）常见的一些面试问题，以便随时查看。<br><span id="more"></span></p>
+<h1 id="常见的进程调度算法有哪些"><a href="#常见的进程调度算法有哪些" class="headerlink" title="常见的进程调度算法有哪些"></a>常见的进程调度算法有哪些</h1><ul>
+<li><p><strong>先来先服务调度算法：</strong>处于就绪态的进程按先后顺序链入到就绪队列中，而先来先去服务调度算法按就绪进程进入就绪队列的先后次序选择当前最先进入就绪队列的进程来执行，直到此进程阻塞或结束，才进行下一次的进程选择调度。</p>
+</li>
+<li><p><strong>短进程优先调度算法：</strong>是一种按照进程执行时间长短进行调度的算法，即优先调度执行时间短的进程。</p>
+</li>
+<li><strong>优先级调度算法：</strong>优先级调度算法又称优先权调度算法。优先级调度算法每次从就绪队列中选择优先级最高的进程，将处理机分配给它，使之投入运行。</li>
+<li><strong>高响应比优先调度算法：</strong>该算法是对 FCFS 调度算法和 SPF 调度算法的一种综合平衡，同时考虑每个进程的等待时间和估计的运行时间。在每次进行进程调度时，先计算就绪队列中每个进程的响应比，从中选出响应比最高的进程投入运行。 </li>
+<li><strong>时间片轮转调度算法：</strong>时间片轮转调度算法主要适用于分时系统。每次调度时，把 CPU 分配给队首进程，并令其执行一个时间片。当执行的时间片用完时，由一个计时器发出时钟中断请求，调度程序便据此信号来停止该进程的执行，并将它送往就绪队列的末尾；然后，再把处理机分配给就绪队列中新的队首进程，同时也让它执行一个时间片。</li>
+<li><strong>多级反馈队列调度算法：</strong>是一种综合性的调度算法，它将进程队列分成多个队列，每个队列有不同的优先级，每个队列的时间片大小也不同。</li>
+</ul>
+<h1 id="什么是大端、小端，如何判断大端和小端"><a href="#什么是大端、小端，如何判断大端和小端" class="headerlink" title="什么是大端、小端，如何判断大端和小端"></a>什么是大端、小端，如何判断大端和小端</h1><h2 id="什么是大端、小端"><a href="#什么是大端、小端" class="headerlink" title="什么是大端、小端"></a>什么是大端、小端</h2><p>大端和小端是指在多字节数据类型的存储方式中，高位字节和低位字节的存储顺序。大端模式是指高位字节存储在低地址，低位字节存储在高地址；小端模式是指低位字节存储在低地址，高位字节存储在高地址。</p>
+<h2 id="如何判断大端和小端"><a href="#如何判断大端和小端" class="headerlink" title="如何判断大端和小端"></a>如何判断大端和小端</h2><ul>
+<li><p><strong>利用联合体的特性</strong>，将一个多字节的变量和一个字节的变量存放在同一个地址空间中，通过判断该变量的第一个字节的值来判断系统的大小端模式。如果第一个字节的值为 0，那么该系统是大端模式；如果第一个字节的值为 1，那么该系统是小端模式。</p>
+</li>
+<li><p><strong>利用强制类型转换</strong>，将一个整型变量的地址强制转换为一个字符型指针，然后通过判断该指针所指向的地址的值来判断系统的大小端模式。如果该指针所指向的地址的值为 0，那么该系统是大端模式；如果该指针所指向的地址的值为 1，那么该系统是小端模式。</p>
+</li>
+</ul>
+<h1 id="进程通信的方式有哪些"><a href="#进程通信的方式有哪些" class="headerlink" title="进程通信的方式有哪些"></a>进程通信的方式有哪些</h1><ul>
+<li><p><strong>管道</strong>是一种进程间通信的方式，建立在具有血缘关系的进程之上。管道是一种单向通信方式，即发送进程以字符流形式将大量数据送入管道，接收进程可从管道接收数据，二者利用管道进行通信。管道是基于字节流的，管道内部已完成同步机制，数据具有一致性，不被外界打扰。</p>
+</li>
+<li><p><strong>消息队列</strong>是一种进程间通信的方式，它是一种消息传递机制，即发送进程将消息发送到消息队列，接收进程从消息队列中接收消息。消息队列是基于消息的，消息队列中的消息具有类型，接收进程可以选择接收特定类型的消息。</p>
+</li>
+<li><p><strong>共享内存</strong>是一种进程间通信的方式，它是一种共享内存区域的机制，即多个进程共享同一块内存区域，进程可以直接访问这块内存区域，从而实现进程间通信。</p>
+</li>
+<li><p><strong>信号量</strong>是一种进程间通信的方式，它是一种计数器，用于控制多个进程对共享资源的访问。</p>
+</li>
+<li><p><strong>信号</strong>是一种进程间通信的方式，它是一种软件中断，用于通知进程发生了某个事件。</p>
+</li>
+<li><p><strong>Socket</strong> 是一种进程间通信的方式，它是一种网络通信机制，可以在不同的主机之间进行通信。</p>
+</li>
+</ul>
+<h1 id="进程有多少种状态，如何转换"><a href="#进程有多少种状态，如何转换" class="headerlink" title="进程有多少种状态，如何转换"></a>进程有多少种状态，如何转换</h1><p>进程有五种状态：创建、就绪、执行、阻塞、终止：</p>
+<ul>
+<li><strong>创建：</strong>一个进程启动，首先进入创建状态，需要获取系统资源创建进程控制块（PCB：Process Control Block）完成资源分配。</li>
+<li><strong>就绪：</strong>在创建状态完成之后，进程已经准备好，处于就绪状态，但是还未获得处理器资源，无法运行。</li>
+<li><strong>运行：</strong>获取处理器资源，被系统调度，当具有时间片开始进入运行状态。如果进程的时间片用完了就进入就绪状态。</li>
+<li><strong>阻塞：</strong>在运行状态期间，如果进行了阻塞的操作，此时进程暂时无法操作就进入到了阻塞状态，在这些操作完成后就进入就绪状态。等待再次获取处理器资源，被系统调度，当具有时间片就进入运行状态。</li>
+<li><strong>终止：</strong>进程结束或者被系统终止，进入终止状态。</li>
+</ul>
+<h1 id="进程和线程的区别"><a href="#进程和线程的区别" class="headerlink" title="进程和线程的区别"></a>进程和线程的区别</h1><ul>
+<li>. 进程有独立的地址空间，线程有自己的堆栈和局部变量，但线程之间没有单独的地址空间； </li>
+<li>进程和线程切换时，需要切换进程和线程的上下文，进程的上下文切换时间开销远远大于线程上下文切换时间，耗费资源较大，效率较低； </li>
+<li>进程的并发性较低，线程的并发性较高； </li>
+<li>每个独立的进程有一个程序运行的入口、顺序执行序列和程序的出口，但是线程不能够独立执行，必须依存在应用程序中，由应用程序提供多个线程执行控制； </li>
+<li>系统在运行的时候会为每个进程分配不同的内存空间；而对线程而言，除了 CPU 外，系统不会为线程分配内存（线程所使用的资源来自其所属进程的资源），线程组之间只能共享资源； </li>
+<li>一个进程崩溃后，在保护模式下不会对其他进程产生影响，但是一个线程崩溃整个进程都将崩溃。因此多进程要比多线程健壮。</li>
+</ul>
+<h1 id="介绍一下死锁，产生的必要条件，产生的原因，如何避免死锁"><a href="#介绍一下死锁，产生的必要条件，产生的原因，如何避免死锁" class="headerlink" title="介绍一下死锁，产生的必要条件，产生的原因，如何避免死锁"></a>介绍一下死锁，产生的必要条件，产生的原因，如何避免死锁</h1><h2 id="什么是死锁"><a href="#什么是死锁" class="headerlink" title="什么是死锁"></a>什么是死锁</h2><p>死锁是指两个或多个进程在执行过程中，因争夺资源而造成的一种僵局，若无外力作用，它们都将无法继续执行下去。</p>
+<h2 id="产生的必要条件"><a href="#产生的必要条件" class="headerlink" title="产生的必要条件"></a>产生的必要条件</h2><ul>
+<li><strong>互斥条件：</strong>进程要求对所分配的资源进行排它性控制，即在一段时间内某资源仅为一进程所占用。</li>
+<li><strong>请求和保持条件：</strong>当进程因请求资源而阻塞时，对已获得的资源保持不放。</li>
+<li><strong>不剥夺条件：</strong>进程已获得的资源，在未使用完之前，不能被剥夺，只能在使用完时由自己释放。</li>
+<li><strong>循环等待条件：</strong>若干进程之间形成一种头尾相接的循环等待资源关系。</li>
+</ul>
+<h2 id="产生的原因"><a href="#产生的原因" class="headerlink" title="产生的原因"></a>产生的原因</h2><ul>
+<li><strong>系统资源的竞争：</strong>通常系统中拥有的不可剥夺资源，其数量不足以满足多个进程运行的需要，使得进程在运行过程中，会因争夺资源而陷入僵局，如磁带机、打印机等。</li>
+<li><strong>进程推进顺序非法：</strong>进程在运行过程中，请求和释放资源的顺序不当，也会导致死锁。</li>
+<li><strong>资源分配不当：</strong>系统在资源分配过程中，本身也可能发生错误，如本来应该分配给进程 A 的资源，却分配给了进程 B，这样也可能导致死锁。</li>
+</ul>
+<h2 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h2><ul>
+<li><strong>死锁的预防：</strong>破坏互斥条件、破坏请求和保持条件、破坏不剥夺条件、破坏循环等待条件。</li>
+<li><strong>死锁的避免：</strong>在资源分配过程中，采用银行家算法，动态地分配资源，避免进程间发生死锁。</li>
+<li><strong>死锁的检测与解除：</strong>通过进程的资源分配图，检测系统中是否存在死锁。采用撤销进程、回收资源等方法，解除死锁。</li>
+</ul>
+<h1 id="介绍一下分段和分页"><a href="#介绍一下分段和分页" class="headerlink" title="介绍一下分段和分页"></a>介绍一下分段和分页</h1><ul>
+<li><p><strong>分段</strong>是将程序分成若干个逻辑段，每个段可以包含一个模块或若干个模块，每个段的长度是不固定的，每个段都有一个段名和段长，段名是一个符号，段长是指该段所包含的字节数。分段的主要目的是为了方便程序员编写和修改程序，同时也可以更好地利用内存空间，避免内存碎片的产生。</p>
+</li>
+<li><p><strong>分页</strong>是将程序和数据分成固定大小的页。每个页都有一个页号和页框号，页号是页在程序或数据中的逻辑地址，页框号是页在内存中的物理地址。分页的主要目的是为了实现非连续分配，以便解决内存碎片问题，或者说分页是由于系统管理的需要。</p>
+</li>
+</ul>
+<h1 id="介绍一下共享内存"><a href="#介绍一下共享内存" class="headerlink" title="介绍一下共享内存"></a>介绍一下共享内存</h1><p>共享内存是一种允许两个或多个进程访问同一块内存的进程间通信方式。共享内存是两个正在运行的进程之间共享和传递数据的一种非常有效的方式。</p>
+<p>共享内存的主要优点是速度快，因为数据不需要在进程之间复制，而是直接在内存中传递。共享内存的主要缺点是需要进程之间进行同步，以避免数据的冲突和竞争条件。</p>
+<h1 id="介绍一下虚拟内存和物理内存"><a href="#介绍一下虚拟内存和物理内存" class="headerlink" title="介绍一下虚拟内存和物理内存"></a>介绍一下虚拟内存和物理内存</h1><p>虚拟内存和物理内存都是计算机中的内存概念，但它们在实现方式和作用上有所不同。</p>
+<p>物理内存是计算机实际物理上存在的内存，也被称为主存储器。它是用来存储程序和数据的地方，数据可以被 CPU 直接访问。物理内存的容量是有限的，因此它通常被操作系统分配给运行程序的进程。</p>
+<p>虚拟内存则是一种将物理内存和硬盘空间结合起来的技术。它将物理内存扩展到了硬盘上，使得运行的程序可以访问比物理内存更大的内存空间。虚拟内存由操作系统管理，可以分配给不同的进程使用。当进程需要访问虚拟内存时，操作系统会将需要的部分从硬盘上读取到物理内存中，并将不需要的部分暂时写入硬盘，以便为其他进程或操作系统腾出更多的物理内存空间。</p>
+<p>虚拟内存的使用可以让多个进程共享物理内存，并且可以提高系统的整体性能和稳定性，因为操作系统可以更好地管理物理内存的使用。虚拟内存的一个重要作用是，它可以使得进程能够访问比物理内存更大的内存空间，因为它使用硬盘空间作为缓存，允许运行大型应用程序和操作系统。</p>
+<h1 id="TCP-和-UDP-的区别是什么"><a href="#TCP-和-UDP-的区别是什么" class="headerlink" title="TCP 和 UDP 的区别是什么"></a>TCP 和 UDP 的区别是什么</h1><p>TCP（传输控制协议）和 UDP（用户数据报协议）都是互联网协议中的传输层协议，它们在传输数据时有一些区别：</p>
+<ul>
+<li><strong>连接：</strong>TCP 是面向连接的协议，UDP 是无连接的协议。TCP 通过三次握手建立连接，数据传输结束后需要四次挥手断开连接。而 UDP 在传输数据之前不需要建立连接，也不需要断开连接。</li>
+<li><strong>可靠性：</strong>TCP 是一种可靠的协议，它通过序号、确认和重传等机制来保证数据传输的可靠性。如果数据丢失或损坏，TCP 会自动重传数据，直到接收方正确接收到数据为止。而 UDP 则没有任何可靠性保障，它只是将数据报发送给接收方，如果数据在传输过程中丢失或损坏，UDP 不会自动重传数据。</li>
+<li><strong>传输效率：</strong>UDP 比 TCP 传输效率高。UDP 不需要建立连接、维护状态等，因此可以更快地传输数据。但是，由于 UDP 没有可靠性保障，如果出现数据丢失或损坏，需要应用层自己处理。</li>
+<li><strong>消息大小：</strong>TCP 可以传输大型数据，而 UDP 只能传输小型数据。TCP 在传输数据时会将数据分成多个小块，每个小块都有序号和确认机制，可以保证数据的完整性。而 UDP 每个数据包的大小限制在 64KB 以内，超过这个限制需要应用层进行分割。</li>
+<li><strong>应用场景：</strong>TCP 适合用于可靠性要求高、数据量较大的场景，例如文件传输、网页访问等。而 UDP 适合用于实时性要求高、数据量较小的场景，例如语音通话、视频会议等。</li>
+</ul>
+<h1 id="TCP-三次握手四次挥手的过程是什么"><a href="#TCP-三次握手四次挥手的过程是什么" class="headerlink" title="TCP 三次握手四次挥手的过程是什么"></a>TCP 三次握手四次挥手的过程是什么</h1><h2 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h2><ol>
+<li>客户端向服务器发送 SYN 报文，表示请求连接。</li>
+<li>服务器接收到 SYN 报文后，发送一个 ACK 报文，表示确认收到客户端请求，并且向客户端发送一个 SYN 报文，表示同意连接。</li>
+<li>客户端接收到服务器的 SYN 和 ACK 报文后，向服务器发送一个 ACK 报文，表示确认连接建立成功。</li>
+</ol>
+<p>三次握手完成后，客户端和服务器之间建立了一个可靠的连接，可以进行数据传输。</p>
+<h2 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h2><ol>
+<li>客户端向服务器发送一个 FIN 报文，表示要关闭连接。</li>
+<li>服务器接收到 FIN 报文后，发送一个 ACK 报文，表示确认收到客户端的请求，但是还没有准备好关闭连接。</li>
+<li>服务器准备好关闭连接后，向客户端发送一个 FIN 报文，表示要关闭连接。</li>
+<li>客户端接收到服务器的 FIN 报文后，发送一个 ACK 报文，表示确认收到服务器的请求，然后等待两个 MSL （最长报文段寿命）后自动关闭连接。</li>
+</ol>
+<p>四次挥手完成后，客户端和服务器之间的连接被释放，不再进行数据传输。</p>
+<h1 id="介绍一下-OSI-七层模型"><a href="#介绍一下-OSI-七层模型" class="headerlink" title="介绍一下 OSI 七层模型"></a>介绍一下 OSI 七层模型</h1><p>OSI 七层模型是一种网络协议的分层模型，它把网络协议从逻辑上分为了 7 层，每一层都有相关、相对应的物理设备。这 7 层分别为：物理层、数据链路层、网络层、传输层、会话层、表示层、应用层。</p>
+<p>这 7 层的具体功能如下：</p>
+<ol>
+<li><strong>物理层：</strong>定义了物理媒介的规范，如传输速率、信号类型、线路编码等。</li>
+<li><strong>数据链路层：</strong>为物理层提供服务，定义了数据在物理媒介上的传输规范，如帧的格式、数据的传输和接收、差错校验等。</li>
+<li><strong>网络层：</strong>负责在不同的网络之间进行数据传输，包括路由选择、拥塞控制、逻辑寻址等。</li>
+<li><strong>传输层：</strong>负责提供端到端的数据传输，包括数据的分段、传输控制、差错恢复等。</li>
+<li><strong>会话层：</strong>管理不同设备之间的会话，包括会话的建立、维护和结束。</li>
+<li><strong>表示层：</strong>负责数据的格式转换、加密解密、数据压缩等。</li>
+<li><strong>应用层：</strong>负责向用户提供网络服务，包括电子邮件、文件传输、远程登录等。</li>
+</ol>
+<h1 id="TCP-如何实现可靠传输"><a href="#TCP-如何实现可靠传输" class="headerlink" title="TCP 如何实现可靠传输"></a>TCP 如何实现可靠传输</h1><ol>
+<li><strong>超时重传机制：</strong>TCP 通过使用确认和超时机制来检测丢失的分组并进行重传。当发送方发送一个分组后，会等待接收方发送确认信息，如果在指定的时间内没有收到确认信息，TCP 就会认为这个分组丢失了，然后重新发送。</li>
+<li><strong>滑动窗口机制：</strong>TCP 采用滑动窗口技术来控制传输的速度。发送方和接收方都有一个窗口大小的参数，发送方根据接收方发送的确认信息来调整窗口大小，从而保证传输的可靠性和效率。</li>
+<li><strong>流量控制：</strong>TCP 使用流量控制来防止发送方发送过多的数据导致接收方的缓存区溢出。接收方可以向发送方发送窗口大小信息，告诉发送方还能接收多少数据，从而实现流量控制。</li>
+<li><strong>拥塞控制：</strong>TCP 通过拥塞控制来避免网络拥塞。发送方会根据网络的拥塞情况来调整发送速率，从而避免过多的数据包在网络中堆积导致网络拥塞。</li>
+</ol>
+<p>通过上述可靠传输机制，TCP 协议可以在网络不可靠、有丢失和错误的情况下，保证数据传输的可靠性和正确性，从而被广泛应用于各种应用场景。</p>
+<h1 id="TCP-和-UDP-的使用场景"><a href="#TCP-和-UDP-的使用场景" class="headerlink" title="TCP 和 UDP 的使用场景"></a>TCP 和 UDP 的使用场景</h1><ul>
+<li><p>TCP 适用于要求数据传输可靠性和完整性的场景，如文件传输、电子邮件、网页浏览、远程登录等。由于 TCP 提供了可靠的数据传输和错误处理，这些应用能够保证数据的正确性和完整性，但是 TCP 的建立连接和维护状态等操作会增加传输的时延，适合对速度要求不是特别高的应用。</p>
+</li>
+<li><p>UDP 适用于对实时性和传输速度要求较高的场景，如视频会议、实时游戏等。UDP 不保证数据传输的可靠性，但是它传输速度快，且不需要建立连接和维护状态等操作，适合对实时性和传输速度要求较高的应用场景。</p>
+</li>
+</ul>
+<h1 id="UDP-怎么实现可靠传输"><a href="#UDP-怎么实现可靠传输" class="headerlink" title="UDP 怎么实现可靠传输"></a>UDP 怎么实现可靠传输</h1><ul>
+<li><p><strong>应用层重传：</strong>在应用层实现数据的重传机制，当收到 ACK 包时，如果发现某个数据包没有收到 ACK 包的确认，则重新发送该数据包，直到收到 ACK 包的确认。</p>
+</li>
+<li><p><strong>数据包校验和：</strong>在数据包中添加校验和，用来检测数据包是否发生错误，如果发现数据包发生错误，则进行重传。</p>
+</li>
+<li><p><strong>超时重传：</strong>发送方在发送数据包时，设置一个超时时间，如果在该时间内没有收到 ACK 包的确认，则进行数据包的重传。</p>
+</li>
+<li><p><strong>序列号机制：</strong>在发送数据包时，为每个数据包添加一个序列号，接收方收到数据包后，对数据包进行排序，如果发现数据包乱序，则进行重排序。</p>
+</li>
+</ul>
+<h1 id="介绍一下滑动窗口机制"><a href="#介绍一下滑动窗口机制" class="headerlink" title="介绍一下滑动窗口机制"></a>介绍一下滑动窗口机制</h1><p>滑动窗口机制是一种流量控制方法，它允许发送方在停止并等待确认前连续发送多个分组，而不必每发送一个分组就停下来等待确认，从而增加数据传输的速率提高应用的吞吐量。</p>
+<p>滑动窗口机制通过动态改变窗口大小来调节两台主机间数据传输。滑动窗口机制的基本原理是：发送方和接收方各自维护一个窗口，窗口大小是动态变化的，窗口大小的变化取决于网络的拥塞情况和接收方的处理能力。</p>
+<h1 id="浏览器从输入-URL-到页面显示内容，中间发生了什么"><a href="#浏览器从输入-URL-到页面显示内容，中间发生了什么" class="headerlink" title="浏览器从输入 URL 到页面显示内容，中间发生了什么"></a>浏览器从输入 URL 到页面显示内容，中间发生了什么</h1><ol>
+<li><strong>DNS 解析：</strong>浏览器根据 URL 中的主机名进行 DNS 解析，将域名解析成 IP 地址。</li>
+<li><strong>TCP 连接：</strong>浏览器使用 HTTP 协议通过 TCP 与服务器建立连接。</li>
+<li><strong>发送 HTTP 请求：</strong>浏览器向服务器发送 HTTP 请求，请求中包含请求方法、请求头部、请求正文等内容。</li>
+<li><strong>服务器处理请求：</strong>服务器接收到请求后，会根据请求的内容进行处理，处理完后会将响应结果返回给浏览器。</li>
+<li><strong>接收 HTTP 响应：</strong>浏览器接收到 HTTP 响应，响应中包含响应头部、响应状态码、响应正文等内容。</li>
+<li><strong>解析 HTML：</strong>浏览器根据响应内容中的 HTML 标签和文本内容，解析成 DOM 树。</li>
+<li><strong>加载 CSS 和 JavaScript：</strong>浏览器根据 HTML 中的链接标签和脚本标签，加载相应的 CSS 和 JavaScript 文件，并执行其中的代码。</li>
+<li><strong>渲染页面：</strong>浏览器根据 DOM 树和 CSS 样式表中的样式信息，将页面渲染出来，包括布局、绘制等过程。</li>
+<li><strong>关闭 TCP 连接：</strong>浏览器在完成页面渲染后，会关闭与服务器之间的 TCP 连接。</li>
+</ol>
+<p>总的来说，浏览器从输入 URL 到页面显示内容，经历了 DNS 解析、TCP 连接、HTTP 请求、服务器处理请求、HTTP 响应、解析 HTML、加载 CSS 和 JavaScript、渲染页面、关闭 TCP 连接等多个步骤。</p>
+<h1 id="介绍一下-DNS-解析过程以及-DNS-劫持"><a href="#介绍一下-DNS-解析过程以及-DNS-劫持" class="headerlink" title="介绍一下 DNS 解析过程以及 DNS 劫持"></a>介绍一下 DNS 解析过程以及 DNS 劫持</h1><h2 id="DNS-解析过程"><a href="#DNS-解析过程" class="headerlink" title="DNS 解析过程"></a>DNS 解析过程</h2><ol>
+<li>浏览器首先会检查本地缓存，看是否已经存在该域名的解析结果。如果存在，则直接使用缓存中的解析结果。</li>
+<li>如果本地缓存中不存在该域名的解析结果，则会向本地 DNS 服务器发送查询请求。本地 DNS 服务器一般由 ISP（Internet Service Provider）提供，它会缓存一些常用的域名解析结果。如果本地 DNS 服务器缓存中存在该域名的解析结果，则直接返回给浏览器。</li>
+<li>如果本地 DNS 服务器缓存中也不存在该域名的解析结果，则会向根域名服务器发送查询请求。根域名服务器会告诉本地 DNS 服务器该域名对应的顶级域名服务器的 IP 地址。</li>
+<li>本地 DNS 服务器会向顶级域名服务器发送查询请求。顶级域名服务器会告诉本地 DNS 服务器该域名对应的权威域名服务器的 IP 地址。</li>
+<li>本地 DNS 服务器向权威域名服务器发送查询请求。权威域名服务器会返回该域名的解析结果，本地 DNS 服务器将结果缓存起来，并将结果返回给浏览器。</li>
+<li>浏览器使用该域名对应的 IP 地址与服务器建立连接，并获取相应的资源。</li>
+</ol>
+<h2 id="DNS-劫持"><a href="#DNS-劫持" class="headerlink" title="DNS 劫持"></a>DNS 劫持</h2><p>DNS 劫持指的是黑客通过某种手段篡改了 DNS 解析结果，将用户访问的域名指向了恶意服务器，从而实现网络攻击。常见的 DNS 劫持方式包括：</p>
+<ul>
+<li><p>DNS 缓存投毒：黑客利用漏洞将恶意的 DNS 解析结果注入到 DNS 缓存中。</p>
+</li>
+<li><p>劫持 DNS 服务器：黑客攻击 DNS 服务器，修改服务器的 DNS 解析结果。</p>
+</li>
+<li><p>本地 Hosts 文件劫持：黑客通过修改本地 Hosts 文件，将用户访问的域名指向恶意 IP 地址。</p>
+</li>
+</ul>
+<h1 id="介绍一下-ARP-协议"><a href="#介绍一下-ARP-协议" class="headerlink" title="介绍一下 ARP 协议"></a>介绍一下 ARP 协议</h1><p>ARP（Address Resolution Protocol）协议是用于将网络层地址（IP地址）转换为链路层地址（MAC地址）的协议。在进行数据传输之前，需要先获得目标设备的 MAC 地址，才能将数据包通过网络传递到目标设备。这就是 ARP 协议的作用。</p>
+<p>具体来说，当一台计算机在发送数据时，会先检查其 ARP 缓存，查看目标设备的 MAC 地址是否已经存在。如果已经存在，则将数据包封装成链路层帧，直接发送给目标设备。如果目标设备的 MAC 地址未知，则需要进行 ARP 请求。</p>
+<p>ARP 请求是以广播形式发送的，即发送给本网络内所有的设备。请求中包含发送方的 IP 地址和 MAC 地址，以及目标设备的 IP 地址。当目标设备收到 ARP 请求时，会返回一个 ARP 应答，包含其 MAC 地址。此时发送方就可以获得目标设备的 MAC 地址，并将数据包封装成链路层帧发送给目标设备。</p>
+<p>需要注意的是，ARP 协议是基于广播的，因此会产生一定的网络负载。此外，ARP 缓存中的条目是有时限的，一旦过期就需要重新进行 ARP 请求。由于 ARP 协议没有进行认证，因此容易受到 ARP 欺骗攻击。</p>
+<h1 id="数据库为什么不用红黑树而用-B-树"><a href="#数据库为什么不用红黑树而用-B-树" class="headerlink" title="数据库为什么不用红黑树而用 B+ 树"></a>数据库为什么不用红黑树而用 B+ 树</h1><ol>
+<li>磁盘 I/O 效率：相对于红黑树而言，B+ 树可以更好地利用磁盘块的大小，一次 I/O 读取更多的节点，从而降低 I/O 的次数，提高查询效率。</li>
+<li>数据查询效率：B+ 树是一种多路搜索树，因此在进行数据查询时，可以很快定位到需要查找的数据节点。而红黑树的查找时间复杂度为 O(log n)，相对较慢。</li>
+<li>数据范围查询：在数据库中，我们常常需要进行范围查询，例如查询某个区间内的所有数据。B+ 树可以支持按照范围进行数据查询，而红黑树则需要对整个树进行遍历。</li>
+<li>内存占用：相对于红黑树而言，B+ 树的每个节点可以存储更多的关键字，因此在内存占用方面更加优秀。</li>
+</ol>
+<h1 id="介绍一下单例设计模式"><a href="#介绍一下单例设计模式" class="headerlink" title="介绍一下单例设计模式"></a>介绍一下单例设计模式</h1><p>单例设计模式是一种创建型设计模式，它保证一个类只有一个实例，并提供了一个全局访问该实例的入口。</p>
+<p>在单例设计模式中，类的构造函数被私有化，以防止外部直接通过构造函数创建多个实例。同时，该类提供一个静态方法用于获取该类唯一的实例。在该方法中，会先判断是否已经存在该实例，如果已经存在则直接返回该实例，如果不存在则创建一个新实例并返回。</p>
+<p>单例模式主要用于控制实例的数量，避免不必要的内存占用和对象创建。它可以提供一个全局的访问点，方便其他模块或类访问该实例。在多线程环境下，需要注意线程安全，可以通过加锁或双重检查等方式来保证线程安全。</p>
+<p>需要注意的是，单例模式虽然有很多优点，但是也存在一些缺点。例如，单例模式会增加代码的复杂度和可读性，同时也会增加测试的难度。因此，应该在确实需要控制实例数量时才使用单例模式。</p>
+<h1 id="介绍一下-B-树和-B-树"><a href="#介绍一下-B-树和-B-树" class="headerlink" title="介绍一下 B 树和 B+ 树"></a>介绍一下 B 树和 B+ 树</h1><p>B 树和 B+ 树都是一种多路平衡查找树，主要用于在磁盘等外存储介质上进行数据的高效组织和访问。</p>
+<p>B 树是一种平衡树，每个节点可以有多个子节点，通常用于数据库索引等场景。B 树的每个节点中存储的数据是该节点所有子节点中最大或最小的值。在查找时，从根节点开始，依次查找满足条件的子节点，直到找到目标数据或到达叶子节点。</p>
+<p>B+ 树是在 B 树的基础上进行改进的，相对于 B 树，B+ 树的所有数据都存储在叶子节点上。每个节点中只存储关键字，而不存储数据，数据只存储在叶子节点上，从而可以减少非叶子节点的磁盘 I/O 次数。在 B+ 树中，叶子节点之间有一个双向链表连接，可以方便地进行范围查询操作。同时，B+ 树的内部节点可以存储更多的关键字，相对于 B 树可以更好地利用磁盘块的大小，从而提高查询效率。</p>
+<p>总体来说，B 树和 B+ 树都是一种非常重要的数据结构，它们可以很好地解决在磁盘等外存储介质上进行数据组织和访问的问题。在实际应用中，需要根据具体场景选择适合的树型结构。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/">https://lordaeronesz.top/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%BB%8F%E9%AA%8C/">经验</a><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/">计算机基础</a></div><div class="post-share"><div class="social-share" data-image="/2023/03/11/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cs.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2023/04/04/%E6%9C%89%E5%85%B3C++%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8B%B7%E8%B4%9D%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E9%97%AE%E9%A2%98/" title="有关C++字符串拷贝的一个小问题"><img class="cover" src="/2023/04/04/%E6%9C%89%E5%85%B3C++%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8B%B7%E8%B4%9D%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E9%97%AE%E9%A2%98/cpp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">有关C++字符串拷贝的一个小问题</div></div><div class="info-2"><div class="info-item-1">最近面试被问到了一个 C++ 中的小问题，就是如果有字符串 s1 和 s2，将 s1 赋值给 s2 后，它们的内存分布是什么样的。当时感觉可能是共享的，但也不太确定，回来后查阅资料发现结果并不是那么简单。 查阅资料首先是询问 chatGPT 得到的答案，如下：  如果两个 string 对象存储相同的字符串，它们可能会共享同一个内存块，也可能会分别分配自己的内存块。当一个 string 对象被创建时，它会分配一个新的内存块，并将字符串复制到该内存块中。当第二个 string 对象被创建时，它可能会使用与第一个 string 对象相同的内存块，也可能会分配一个新的内存块并将字符串复制到该内存块中。  代码测试看来又是一个没有标准解决方案的问题，于是我编写了一个简单的程序用来在不同的环境下测试。 1234567891011121314151617void* operator new(size_t count) &#123;	cout &lt;&lt; &quot;Allocate &quot; &lt;&lt; count &lt;&lt; &quot; Bytes&quot; &l...</div></div></div></a><a class="pagination-related" href="/2023/03/07/C++%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/" title="C++面试题总结"><img class="cover" src="/2023/03/07/C++%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93/cpp.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">C++面试题总结</div></div><div class="info-2"><div class="info-item-1">由于考研失利，最近在准备春招，想要找一份游戏客户端开发的岗位，便想要将 C++ 常见的面试题整理出来。题目来自牛客网的 C++ 面试题库，答案结合了牛客网给出的参考答案、new bing 给出的回答以及个人的理解和思考。  C++ 和 C 中 struct 的区别，以及 C++ 中 struct 和 class 的区别C++ 和 C 中 struct 的区别 C 中 struct 只能定义成员变量，不能定义成员函数，而 C++ 中 struct 可以定义成员函数，甚至构造函数，析构函数，友元等。 C 中 struct 内的成员变量不可以直接初始化，而 C++ 中可以。 C 中使用结构体需要加上 struct 关键字，或者使用 typedef 对结构体取别名后再直接使用其别名，而 C++ 使用结构体则可以直接忽略 struct 关键字。  C++ 中 struct 和 class 的区别 class 的成员默认是 private 的，而 struct 的成员默认是 public 的。 class 继承默认是 private 继承，而 struct 继承默认是 public 继承。 ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2024/08/31/CSAPP-Data-Lab/" title="CSAPP Data Lab"><img class="cover" src="/2024/08/31/CSAPP-Data-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-08-31</div><div class="info-item-2">CSAPP Data Lab</div></div><div class="info-2"><div class="info-item-1">CSAPP 的第一个 Lab，对应知识点为书中的第 2 章（信息的表示与处理），要求使用受限制的运算符和表达式实现一些位操作。主要分为两个部分：整数部分和浮点数部分。其中整数部分限制较多，比较偏重技巧性，部分题个人认为很有难度。而浮点数部分则比较基础，主要考察对 IEEE 754 标准的熟悉程度，代码较长，但思路相对简单。 bitXor思路使用德-摩根定律进行推导，推导过程如下：  代码1234int bitXor(int x, int y) &#123;    // 德-摩根定律    return ~(~(x &amp; ~y) &amp; ~(~x &amp; y));&#125; tmin思路最小整数即最高位（负数权重）为 1，其余（正数权重）为 0。 代码123int tmin(void) &#123;    return 1 &lt;&lt; 31;&#125; isTmax思路由于不能使用左移运算符，因此没办法直接构造出 tmax，需要仔细考虑 tmax 的性质：tmax = 0x7fffffff ，而 tmax + 1 = 0x80000000 ，这两个数的二进制...</div></div></div></a><a class="pagination-related" href="/2024/09/17/CSAPP-Bomb-Lab/" title="CSAPP Bomb Lab"><img class="cover" src="/2024/09/17/CSAPP-Bomb-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-17</div><div class="info-item-2">CSAPP Bomb Lab</div></div><div class="info-2"><div class="info-item-1"> 本 Lab 可以说是 CSAPP 的几个 Lab 中最为人津津乐道的一个，对应知识点为书中的第 3 章（程序的机器级表示），要求使用 GDB 调试器，对汇编语言进行调试，从而得出正确的“拆弹密码”。共分为 6 个关卡和一个隐藏关卡，每个关卡都分别考察了一种语法结构或数据结构的汇编表示，部分关卡逻辑比较复杂，要求对 x86 汇编有一定的熟悉度。 bomb.c1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980int main(int argc, char *argv[])&#123;    char *input;    /* Note to self: remember to port this bomb to Windows and put a     * fantastic GUI on it. */    /* When ru...</div></div></div></a><a class="pagination-related" href="/2024/09/25/CSAPP-Attack-Lab/" title="CSAPP Attack Lab"><img class="cover" src="/2024/09/25/CSAPP-Attack-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-25</div><div class="info-item-2">CSAPP Attack Lab</div></div><div class="info-2"><div class="info-item-1">个人感觉非常有意思的一个 Lab，涉及的知识面比较窄，主要关注 缓冲区溢出漏洞 这一个方面，并基于此进行代码攻击，体验一把做黑客的感觉，对应知识点为书中的 3.10 节内容。  这个 Lab 上手便给了我当头一棒，在环境配置上琢磨了好一阵。直接运行 ./ctarget -q ，程序没有让进行输入，而是直接触发了段错误，后来尝试在跑在学校的 Linux 服务器上得以正常运行，原因不明，推测是 WSL 的锅？？  phase_1在倒腾好环境之后，终于可以开始着手完成实验了。 phase_1 要求我们在调用 getbuf 读取标准输入后，不返回到 test 函数接着执行 printf，而是转而执行 touch1. 123456void test()&#123;    int val;    val = getbuf();    printf(&quot;No exploit. Getbuf returned 0x%x\n&quot;, val);&#125; 可以利用书中 3.10.3 节提到的知识，向缓冲区中写入过量的数据，大到足以覆盖掉调用 getbuf 时压入栈中的返回地址，将其...</div></div></div></a><a class="pagination-related" href="/2024/12/29/CSAPP-Shell-Lab/" title="CSAPP Shell Lab"><img class="cover" src="/2024/12/29/CSAPP-Shell-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-29</div><div class="info-item-2">CSAPP Shell Lab</div></div><div class="info-2"><div class="info-item-1">本 Lab 需要实现一个简易的 shell，主要考察对进程和信号的理解，以及对与其相关的 POSIX API 的使用，对应知识点为书中的第 8 章内容。  思路实验要求实现一个简单的 shell，要求支持如下特性：  输入 ctrl-c 触发 SIGINT 信号，输入 ctrl-z 触发 SIGTSTP 信号，发送给给前台运行的任务和依赖于这些任务的子任务（子进程）。 如果命令行以 &amp; 结尾，那么本次作业将被置于后台运行，否则置于前台运行。 每个作业可以通过 PID（process id）或 JID（job id）来指定，其中 JID 需要加上前缀 %。 支持下列内建命令： quit：终止 shell 的运行。 jobs：列出所有的后台作业。 bg &lt;job&gt;：重启 &lt;job&gt;（PID 或者 JID），通过发出 SIGCONT 信号，然后将其运行在后台。 fg &lt;job&gt;：重启 &lt;job&gt;（PID 或者 JID），通过发出 SIGCONT 信号，然后将其运行在前台。   回收所有的僵尸进程。  命令行解释执行eval 函数的...</div></div></div></a><a class="pagination-related" href="/2025/01/10/CSAPP-Malloc-Lab/" title="CSAPP Malloc Lab"><img class="cover" src="/2025/01/10/CSAPP-Malloc-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-10</div><div class="info-item-2">CSAPP Malloc Lab</div></div><div class="info-2"><div class="info-item-1">本 Lab 需要实现一个内存分配器，技巧性较强，对应知识点为书中的第 9 章的第 9.9 节。个人认为是所有 Lab 中难度最高的一个，我这里也是时间所迫，只参照教材实现了隐式空闲链表，显式空闲链表的实现尚存在一些 bug，在本文暂不介绍。  思路实验要求实现 mm_init, mm_malloc, mm_free, mm_realloc。 mm_malloc 需要返回 8 字节对齐的指针。 mm_realloc: 返回一个指向至少 size 字节的内存区域指针。  如果 ptr 为空，作用等同于 mm_malloc(size)。 如果 size 等于 0，作用等用于 mm_free(ptr)。 如果 ptr 非空，将 ptr 指向区域的大小更改为 size 字节，并返回新区域的内存地址。  隐式空闲链表首先介绍一下书中介绍的隐式空闲链表的设计，主要分为两个方面：空闲块的设计和空闲链表的组织。 空闲块的设计 一个空闲块由三部分组成：首部、载荷（可能包含填充）和尾部。头部和尾部的内容完全一致，之所以要引入这样的冗余信息，是为了实现常数时间复杂度的反向访问。因为内存载荷大小的不确定性...</div></div></div></a><a class="pagination-related" href="/2024/12/17/CSAPP-Cache-Lab/" title="CSAPP Cache Lab"><img class="cover" src="/2024/12/17/CSAPP-Cache-Lab/csapp.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-12-17</div><div class="info-item-2">CSAPP Cache Lab</div></div><div class="info-2"><div class="info-item-1">本 Lab 主要考察对计算机高速缓存（Cache）机制的理解，以及如何针对 Cache 进行程序的优化，对应知识点为书中的 6.4 ~ 6.6 节内容。  Part A: Writing a Cache Simulator思路基本流程Part A 需要实现一个 Cache 模拟器，能够根据 valgrind 工具所生成的访存跟踪数据，模拟在特定参数的 Cache 环境下的命中（hits）次数、不命中（misses）次数和置换（evictions）次数，目标是实现与 csim-ref 同等的功能。模拟器需要具备的几个功能模块如下：  对命令行参数进行参数解析。  读取 trace 文件并解析为地址访问流。  定义 Cache 模拟器数据结构，以及相关的函数操作，包括初始化和地址访问。  遍历解析出来的地址访问流，依次进行访问模拟，计算得到命中次数等信息。   接下来分别对它们进行介绍。 命令行参数解析根据实验手册的提示，可以使用 getopt 函数进行命令行参数的解析。另外，如果需要支持长选项（形如 --opt arg），则可以使用 GNU C 库提供的扩展版本 getopt_lo...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84%E8%BF%9B%E7%A8%8B%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95%E6%9C%89%E5%93%AA%E4%BA%9B"><span class="toc-number">1.</span> <span class="toc-text">常见的进程调度算法有哪些</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E7%AB%AF%E3%80%81%E5%B0%8F%E7%AB%AF%EF%BC%8C%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E5%A4%A7%E7%AB%AF%E5%92%8C%E5%B0%8F%E7%AB%AF"><span class="toc-number">2.</span> <span class="toc-text">什么是大端、小端，如何判断大端和小端</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E7%AB%AF%E3%80%81%E5%B0%8F%E7%AB%AF"><span class="toc-number">2.1.</span> <span class="toc-text">什么是大端、小端</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E5%A4%A7%E7%AB%AF%E5%92%8C%E5%B0%8F%E7%AB%AF"><span class="toc-number">2.2.</span> <span class="toc-text">如何判断大端和小端</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E7%9A%84%E6%96%B9%E5%BC%8F%E6%9C%89%E5%93%AA%E4%BA%9B"><span class="toc-number">3.</span> <span class="toc-text">进程通信的方式有哪些</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%9C%89%E5%A4%9A%E5%B0%91%E7%A7%8D%E7%8A%B6%E6%80%81%EF%BC%8C%E5%A6%82%E4%BD%95%E8%BD%AC%E6%8D%A2"><span class="toc-number">4.</span> <span class="toc-text">进程有多少种状态，如何转换</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">5.</span> <span class="toc-text">进程和线程的区别</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E6%AD%BB%E9%94%81%EF%BC%8C%E4%BA%A7%E7%94%9F%E7%9A%84%E5%BF%85%E8%A6%81%E6%9D%A1%E4%BB%B6%EF%BC%8C%E4%BA%A7%E7%94%9F%E7%9A%84%E5%8E%9F%E5%9B%A0%EF%BC%8C%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%AD%BB%E9%94%81"><span class="toc-number">6.</span> <span class="toc-text">介绍一下死锁，产生的必要条件，产生的原因，如何避免死锁</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%AD%BB%E9%94%81"><span class="toc-number">6.1.</span> <span class="toc-text">什么是死锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%A7%E7%94%9F%E7%9A%84%E5%BF%85%E8%A6%81%E6%9D%A1%E4%BB%B6"><span class="toc-number">6.2.</span> <span class="toc-text">产生的必要条件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%A7%E7%94%9F%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-number">6.3.</span> <span class="toc-text">产生的原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%AD%BB%E9%94%81"><span class="toc-number">6.4.</span> <span class="toc-text">如何避免死锁</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E5%88%86%E6%AE%B5%E5%92%8C%E5%88%86%E9%A1%B5"><span class="toc-number">7.</span> <span class="toc-text">介绍一下分段和分页</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="toc-number">8.</span> <span class="toc-text">介绍一下共享内存</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E5%92%8C%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98"><span class="toc-number">9.</span> <span class="toc-text">介绍一下虚拟内存和物理内存</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP-%E5%92%8C-UDP-%E7%9A%84%E5%8C%BA%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">10.</span> <span class="toc-text">TCP 和 UDP 的区别是什么</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP-%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E7%9A%84%E8%BF%87%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">11.</span> <span class="toc-text">TCP 三次握手四次挥手的过程是什么</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B"><span class="toc-number">11.1.</span> <span class="toc-text">三次握手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B"><span class="toc-number">11.2.</span> <span class="toc-text">四次挥手</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-OSI-%E4%B8%83%E5%B1%82%E6%A8%A1%E5%9E%8B"><span class="toc-number">12.</span> <span class="toc-text">介绍一下 OSI 七层模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP-%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%8F%AF%E9%9D%A0%E4%BC%A0%E8%BE%93"><span class="toc-number">13.</span> <span class="toc-text">TCP 如何实现可靠传输</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#TCP-%E5%92%8C-UDP-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">14.</span> <span class="toc-text">TCP 和 UDP 的使用场景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#UDP-%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E5%8F%AF%E9%9D%A0%E4%BC%A0%E8%BE%93"><span class="toc-number">15.</span> <span class="toc-text">UDP 怎么实现可靠传输</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3%E6%9C%BA%E5%88%B6"><span class="toc-number">16.</span> <span class="toc-text">介绍一下滑动窗口机制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B5%8F%E8%A7%88%E5%99%A8%E4%BB%8E%E8%BE%93%E5%85%A5-URL-%E5%88%B0%E9%A1%B5%E9%9D%A2%E6%98%BE%E7%A4%BA%E5%86%85%E5%AE%B9%EF%BC%8C%E4%B8%AD%E9%97%B4%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88"><span class="toc-number">17.</span> <span class="toc-text">浏览器从输入 URL 到页面显示内容，中间发生了什么</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-DNS-%E8%A7%A3%E6%9E%90%E8%BF%87%E7%A8%8B%E4%BB%A5%E5%8F%8A-DNS-%E5%8A%AB%E6%8C%81"><span class="toc-number">18.</span> <span class="toc-text">介绍一下 DNS 解析过程以及 DNS 劫持</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DNS-%E8%A7%A3%E6%9E%90%E8%BF%87%E7%A8%8B"><span class="toc-number">18.1.</span> <span class="toc-text">DNS 解析过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DNS-%E5%8A%AB%E6%8C%81"><span class="toc-number">18.2.</span> <span class="toc-text">DNS 劫持</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-ARP-%E5%8D%8F%E8%AE%AE"><span class="toc-number">19.</span> <span class="toc-text">介绍一下 ARP 协议</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E7%BA%A2%E9%BB%91%E6%A0%91%E8%80%8C%E7%94%A8-B-%E6%A0%91"><span class="toc-number">20.</span> <span class="toc-text">数据库为什么不用红黑树而用 B+ 树</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E5%8D%95%E4%BE%8B%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"><span class="toc-number">21.</span> <span class="toc-text">介绍一下单例设计模式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-B-%E6%A0%91%E5%92%8C-B-%E6%A0%91"><span class="toc-number">22.</span> <span class="toc-text">介绍一下 B 树和 B+ 树</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Ping命令的实现 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Ping （Packet Internet Groper）是一种因特网包探索器，用于测试网络连接量的程序。本文将基于 Socket 编程，实现一个基本的 Ping 命令程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ping命令的实现">
+<meta property="og:url" content="https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="Ping （Packet Internet Groper）是一种因特网包探索器，用于测试网络连接量的程序。本文将基于 Socket 编程，实现一个基本的 Ping 命令程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg">
+<meta property="article:published_time" content="2022-05-31T06:06:32.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:38.374Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="Ping">
+<meta property="article:tag" content="Socket编程">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Ping命令的实现",
+  "url": "https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/",
+  "image": "https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg",
+  "datePublished": "2022-05-31T06:06:32.000Z",
+  "dateModified": "2025-12-26T16:26:38.374Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Ping命令的实现',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Ping命令的实现</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-05-31T06:06:32.000Z" title="发表于 2022-05-31 14:06:32">2022-05-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:38.374Z" title="更新于 2025-12-27 00:26:38">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>Ping （Packet Internet Groper）是一种因特网包探索器，用于测试网络连接量的程序。本文将基于 Socket 编程，实现一个基本的 Ping 命令程序。</p>
+<span id="more"></span>
+<h1 id="ICMP-报文分析"><a href="#ICMP-报文分析" class="headerlink" title="ICMP 报文分析"></a>ICMP 报文分析</h1><h2 id="ICMP-报文捕获"><a href="#ICMP-报文捕获" class="headerlink" title="ICMP 报文捕获"></a>ICMP 报文捕获</h2><p>在控制台输入 <code>ping 202.195.147.248</code>，对该目的主机发起请求，可以看到控制台输出了一系列统计信息：4 个数据包全部接收并且往返时间为 5 ms（较短），表明与该主机之间的连接畅通。</p>
+<p><img src="f1.png" alt=""></p>
+<p>使用 Wireshark 工具捕获 icmp 数据包，为了避免无关数据包的干扰，可以使用 filter 对数据包进行过滤，在上部栏输入 <code>ip.src == 202.195.147.248 or ip.dst == 202.195.147.248</code>，表明只筛选源地址或目的地址为 202.195.147.248 的数据包，最终可以得到数据包的内容。</p>
+<p><img src="f2.png" alt=""></p>
+<h2 id="Wireshark-数据包分析"><a href="#Wireshark-数据包分析" class="headerlink" title="Wireshark 数据包分析"></a>Wireshark 数据包分析</h2><p>根据 ICMP 报文的格式进行分析: </p>
+<ol>
+<li>Type：数据包类型，占 1 Byte，为 0x00，代表回送报文。</li>
+<li>Code：代码部分，占 1 Byte，为 0x00.</li>
+<li>Checksum：检验和，占 2 Bytes，为 0x554c.</li>
+<li>Identifier(IE)：占 2 Bytes，为 0x0001.</li>
+<li>Identifier(LE)：占 2 Bytes，为 0x0100.</li>
+<li>Sequence Number(BE)：占 2 Bytes，为 0x000f.</li>
+<li>Sequence Number(LE)：占 2 Bytes，为 0x0f00.</li>
+<li>Data：占 32 Bytes，为6162636465666768696a6b6c6d6e6f7071727374757677616263646566676869.</li>
+</ol>
+<h1 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路"></a>实现思路</h1><h2 id="构造-ICMP-报文"><a href="#构造-ICMP-报文" class="headerlink" title="构造 ICMP 报文"></a>构造 ICMP 报文</h2><p>自定义数据结构 icmpHeader 表示 ICMP 报文头部，包含类型、代码、检验和、标识符和序列号。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ICMP 报文头</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">icmpHeader</span> &#123;</span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> type; <span class="comment">// 类型</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> code; <span class="comment">// 代码</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> checkSum; <span class="comment">// 检验和</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> id; <span class="comment">// 标识符</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> sequence; <span class="comment">// 序列号</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>填充该报文，类型为 8 表示请求报文。检验和使用特定的算法计算，关于算法的具体内容可以自行查看相关文档，在此不过多赘述。标识符使用进程 id 填充。最后在 ICMP 报文头的尾部，添加 32 字节的数据作为 ICMP 报文的数据部分。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 构造 ICMP 报文</span></span><br><span class="line"><span class="type">char</span> sendBuf[<span class="number">8</span> + <span class="number">32</span>] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">icmpHeader* pIcmp = (icmpHeader*)sendBuf;</span><br><span class="line">pIcmp-&gt;type = <span class="number">8</span>;</span><br><span class="line">pIcmp-&gt;code = <span class="number">0</span>;</span><br><span class="line">pIcmp-&gt;checkSum = <span class="number">0</span>;</span><br><span class="line">pIcmp-&gt;id = (USHORT)::<span class="built_in">GetCurrentProcessId</span>();</span><br><span class="line">pIcmp-&gt;sequence = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// 填充数据部分</span></span><br><span class="line"><span class="built_in">memcpy</span>(sendBuf + <span class="number">8</span>, <span class="string">&quot;abcdelmnopqrstuvwiammekakuactor&quot;</span>, <span class="number">32</span>);</span><br><span class="line"><span class="comment">// 计算检验和</span></span><br><span class="line">pIcmp-&gt;checkSum = <span class="built_in">computeCks</span>((icmpHeader*)sendBuf, <span class="built_in">sizeof</span>(sendBuf));</span><br></pre></td></tr></table></figure>
+<h2 id="发送请求报文"><a href="#发送请求报文" class="headerlink" title="发送请求报文"></a>发送请求报文</h2><p>该部分使用 Socket 编程向指定 IP 地址发送 ICMP 请求报文。需要注意的是，在创建套接字时，需要使用原始套接字，且 protocol 参数为 <code>IPPROTO_ICMP</code>，表明使用 ICMP 协议。<code>SOCKET s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);</code> 报文发送成功后，接收从客户端发送的回送报文信息。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始化套接字库</span></span><br><span class="line">WORD wReq = <span class="built_in">MAKEWORD</span>(<span class="number">2</span>, <span class="number">2</span>);</span><br><span class="line">WSADATA wsadata;</span><br><span class="line"><span class="built_in">WSAStartup</span>(wReq, &amp;wsadata);</span><br><span class="line"><span class="comment">// 填充服务端地址</span></span><br><span class="line">SOCKADDR_IN serverAddr;</span><br><span class="line"><span class="built_in">memset</span>(&amp;serverAddr, <span class="number">0</span>, <span class="built_in">sizeof</span>(serverAddr));</span><br><span class="line">serverAddr.sin_family = AF_INET;</span><br><span class="line">serverAddr.sin_addr.S_un.S_addr = <span class="built_in">inet_addr</span>(targetIP.<span class="built_in">c_str</span>());</span><br><span class="line"><span class="comment">// 创建套接字</span></span><br><span class="line">SOCKET s = <span class="built_in">socket</span>(AF_INET, SOCK_RAW, IPPROTO_ICMP);</span><br></pre></td></tr></table></figure>
+<p>为了得到报文往返的时间，可以在发送前和接收后使用 <code>GetTickCount64()</code> 获取从操作系统启动到现在所经历的的时间 start 和 end，两时间相减得到时间差。</p>
+<p>此外，由于 <code>recvfrom()</code> 在未收到报文时将会阻塞，因此可以使用 <code>setsockopt()</code> 设定一个接收超时时间，在超过指定时间未受到数据时返回 -1，表示接收异常。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">setsockopt</span>(s, SOL_SOCKET, SO_RCVTIMEO, (<span class="type">const</span> <span class="type">char</span>*)&amp;timeOut, <span class="built_in">sizeof</span>(timeOut)); <span class="comment">// 设置接收超时</span></span><br></pre></td></tr></table></figure>
+<h2 id="解析回送报文"><a href="#解析回送报文" class="headerlink" title="解析回送报文"></a>解析回送报文</h2><p>根据回送的 IP 数据包的指定格式对信息进行解析，IPv4 头部的 4 到 8 位为 IP 报文头部长度，第 9 个字节是 TTL 的值。</p>
+<h1 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h1><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;winsock.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> comment(lib,<span class="string">&quot;ws2_32.lib&quot;</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ICMP 报文头</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">icmpHeader</span> &#123;</span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> type; <span class="comment">// 类型</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> code; <span class="comment">// 代码</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> checkSum; <span class="comment">// 检验和</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> id; <span class="comment">// 标识符</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span> sequence; <span class="comment">// 序列号</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算检验和</span></span><br><span class="line"><span class="function"><span class="type">unsigned</span> <span class="type">short</span> <span class="title">computeCks</span><span class="params">(icmpHeader* picmp, <span class="type">int</span> len)</span> </span>&#123;</span><br><span class="line">	<span class="type">long</span> sum = <span class="number">0</span>;</span><br><span class="line">	<span class="type">unsigned</span> <span class="type">short</span>* pusicmp = (<span class="type">unsigned</span> <span class="type">short</span>*)picmp;</span><br><span class="line">	<span class="keyword">while</span> (len &gt; <span class="number">1</span>) &#123;</span><br><span class="line">		sum += *(pusicmp++);</span><br><span class="line">		<span class="keyword">if</span> (sum &amp; <span class="number">0x80000000</span>)</span><br><span class="line">			sum = (sum &amp; <span class="number">0xffff</span>) + (sum &gt;&gt; <span class="number">16</span>);</span><br><span class="line">		len -= <span class="number">2</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (len)</span><br><span class="line">		sum += (<span class="type">unsigned</span> <span class="type">short</span>)*(<span class="type">unsigned</span> <span class="type">char</span>*)pusicmp;</span><br><span class="line">	<span class="keyword">while</span> (sum &gt;&gt; <span class="number">16</span>)</span><br><span class="line">		sum = (sum &amp; <span class="number">0xffff</span>) + (sum &gt;&gt; <span class="number">16</span>);</span><br><span class="line">	<span class="keyword">return</span> (<span class="type">unsigned</span> <span class="type">short</span>)~sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">ping</span><span class="params">(<span class="type">const</span> std::string&amp; targetIP)</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 初始化套接字库</span></span><br><span class="line">	WORD wReq = <span class="built_in">MAKEWORD</span>(<span class="number">2</span>, <span class="number">2</span>);</span><br><span class="line">	WSADATA wsadata;</span><br><span class="line">	<span class="built_in">WSAStartup</span>(wReq, &amp;wsadata);</span><br><span class="line">	<span class="comment">// 填充服务端地址</span></span><br><span class="line">	SOCKADDR_IN serverAddr;</span><br><span class="line">	<span class="built_in">memset</span>(&amp;serverAddr, <span class="number">0</span>, <span class="built_in">sizeof</span>(serverAddr));</span><br><span class="line">	serverAddr.sin_family = AF_INET;</span><br><span class="line">	serverAddr.sin_addr.S_un.S_addr = <span class="built_in">inet_addr</span>(targetIP.<span class="built_in">c_str</span>());</span><br><span class="line">	<span class="comment">// 创建套接字</span></span><br><span class="line">	SOCKET s = <span class="built_in">socket</span>(AF_INET, SOCK_RAW, IPPROTO_ICMP);</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 构造 ICMP 报文</span></span><br><span class="line">	<span class="type">char</span> sendBuf[<span class="number">8</span> + <span class="number">32</span>] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">	icmpHeader* pIcmp = (icmpHeader*)sendBuf;</span><br><span class="line">	pIcmp-&gt;type = <span class="number">8</span>;</span><br><span class="line">	pIcmp-&gt;code = <span class="number">0</span>;</span><br><span class="line">	pIcmp-&gt;checkSum = <span class="number">0</span>;</span><br><span class="line">	pIcmp-&gt;id = (USHORT)::<span class="built_in">GetCurrentProcessId</span>();</span><br><span class="line">	pIcmp-&gt;sequence = <span class="number">0</span>;</span><br><span class="line">	<span class="comment">// 填充数据部分</span></span><br><span class="line">	<span class="built_in">memcpy</span>(sendBuf + <span class="number">8</span>, <span class="string">&quot;abcdelmnopqrstuvwiammekakuactor&quot;</span>, <span class="number">32</span>);</span><br><span class="line">	<span class="comment">// 计算检验和</span></span><br><span class="line">	pIcmp-&gt;checkSum = <span class="built_in">computeCks</span>((icmpHeader*)sendBuf, <span class="built_in">sizeof</span>(sendBuf));</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 发送报文</span></span><br><span class="line">	DWORD start = <span class="built_in">GetTickCount64</span>();</span><br><span class="line">	<span class="type">int</span> sendLen = <span class="built_in">sendto</span>(s, sendBuf, <span class="built_in">sizeof</span>(sendBuf), <span class="number">0</span>, (SOCKADDR*)&amp;serverAddr, <span class="built_in">sizeof</span>(SOCKADDR));</span><br><span class="line">	<span class="keyword">if</span> (sendLen &lt; <span class="number">0</span>) <span class="built_in">printf</span>(<span class="string">&quot;errno = %d\n&quot;</span>, <span class="built_in">GetLastError</span>());</span><br><span class="line">	<span class="comment">// 接收报文</span></span><br><span class="line">	<span class="type">char</span> recvBuf[<span class="number">1024</span>];</span><br><span class="line">	SOCKADDR_IN fromAddr;</span><br><span class="line">	<span class="type">int</span> fLen = <span class="built_in">sizeof</span>(fromAddr);</span><br><span class="line">	<span class="type">unsigned</span> timeOut = <span class="number">1000</span>; <span class="comment">// 超时时间</span></span><br><span class="line">	<span class="built_in">setsockopt</span>(s, SOL_SOCKET, SO_RCVTIMEO, (<span class="type">const</span> <span class="type">char</span>*)&amp;timeOut, <span class="built_in">sizeof</span>(timeOut)); <span class="comment">// 设置接收超时</span></span><br><span class="line">	<span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">		<span class="type">int</span> len = <span class="built_in">recvfrom</span>(s, recvBuf, <span class="number">1024</span>, <span class="number">0</span>, (SOCKADDR*)&amp;fromAddr, &amp;fLen);</span><br><span class="line">		<span class="keyword">if</span> (len &lt; <span class="number">0</span>) &#123;</span><br><span class="line">			std::cout &lt;&lt; <span class="string">&quot;请求超时&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">			<span class="keyword">return</span> INT32_MAX;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> <span class="keyword">break</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	DWORD end = <span class="built_in">GetTickCount64</span>();</span><br><span class="line">	DWORD timeSpan = end - start;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 回送报文解析</span></span><br><span class="line">	<span class="type">char</span> ipInfo = recvBuf[<span class="number">0</span>];</span><br><span class="line">	<span class="comment">// ipv4 头部的第 9 个字节为 TTL 的值</span></span><br><span class="line">	<span class="type">unsigned</span> <span class="type">char</span> ttl = recvBuf[<span class="number">8</span>];</span><br><span class="line">	<span class="type">int</span> ipHeadLen = ((<span class="type">char</span>)(ipInfo &lt;&lt; <span class="number">4</span>) &gt;&gt; <span class="number">4</span>) * <span class="number">4</span>; <span class="comment">// IP报文头部长度</span></span><br><span class="line">	icmpHeader* icmpResp = (icmpHeader*)(recvBuf + ipHeadLen);</span><br><span class="line">	<span class="keyword">if</span> (icmpResp-&gt;type == <span class="number">0</span>) &#123; <span class="comment">//回显应答报文</span></span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;来自 %s 的回复：字节=32 时间=%2dms TTL=%d\n&quot;</span>,</span><br><span class="line">			targetIP.<span class="built_in">c_str</span>(), timeSpan, ttl);</span><br><span class="line">		<span class="keyword">return</span> timeSpan;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;请求超时。type = %d\n&quot;</span>, icmpResp-&gt;type);</span><br><span class="line">		<span class="keyword">return</span> INT32_MAX;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	std::cout &lt;&lt; <span class="string">&quot;请输入目的IP地址：&quot;</span>;</span><br><span class="line">	std::string IP;</span><br><span class="line">	std::cin &gt;&gt; IP;</span><br><span class="line">	<span class="type">int</span> maxTime = INT32_MIN, minTime = INT32_MAX, timeSum = <span class="number">0</span>, acpkgCnt = <span class="number">0</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;\n正在 Ping %s 具有 32 字节的数据:\n&quot;</span>, IP.<span class="built_in">c_str</span>());</span><br><span class="line">	<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; ++i) &#123;</span><br><span class="line">		std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">		<span class="type">int</span> timeSpan = <span class="built_in">ping</span>(IP);</span><br><span class="line">		acpkgCnt += timeSpan != INT32_MAX;</span><br><span class="line">		maxTime = <span class="built_in">max</span>(maxTime, timeSpan);</span><br><span class="line">		minTime = <span class="built_in">min</span>(minTime, timeSpan);</span><br><span class="line">		timeSum += timeSpan;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;\n%s 的 Ping 统计信息:\n&quot;</span>, IP.<span class="built_in">c_str</span>());</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;    数据包: 已发送 = 4，已接收 = %d，丢失 = %d (%d%% 丢失)，\n&quot;</span>,</span><br><span class="line">		acpkgCnt, <span class="number">4</span> - acpkgCnt, (<span class="number">4</span> - acpkgCnt) * <span class="number">100</span> / <span class="number">4</span>);</span><br><span class="line">	<span class="keyword">if</span> (!acpkgCnt) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;往返行程的估计时间(以毫秒为单位):\n&quot;</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;    最短 = %dms，最长 = %dms，平均 = %dms\n&quot;</span>, minTime, maxTime, timeSum / acpkgCnt);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h1><p><img src="1.png" alt=""></p>
+<p>可见，本地与该目的主机的连通性较好。</p>
+<p><img src="2.png" alt=""></p>
+<p>可见，本地与该目的主机无法连通。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/">https://lordaeronesz.top/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a><a class="post-meta__tags" href="/tags/Socket%E7%BC%96%E7%A8%8B/">Socket编程</a><a class="post-meta__tags" href="/tags/Ping/">Ping</a></div><div class="post-share"><div class="social-share" data-image="/2022/05/31/Ping%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2022/08/08/%E7%94%A8DFS%E8%A7%A3%E5%86%B3%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B313-2%E6%97%B6%E9%92%9F%E8%B0%9C%E9%A2%98/" title="用DFS解决最终幻想13-2时钟谜题"><img class="cover" src="/2022/08/08/%E7%94%A8DFS%E8%A7%A3%E5%86%B3%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B313-2%E6%97%B6%E9%92%9F%E8%B0%9C%E9%A2%98/1.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">用DFS解决最终幻想13-2时钟谜题</div></div><div class="info-2"><div class="info-item-1">最近在补 XGP 中的最终幻想13-2时，遇到一个时钟谜题，感觉挺有意思，就像尝试用搜索算法将其解决。  问题描述如下图所示，有一个时钟，包含个结点，每个节点有一个数字标识，玩家最开始可以任意选择一个结点，选择后，该结点被消除且指针会指向该结点的位置，根据该节点的数字值 n 分裂为两根指针分别向顺时针方向和逆时针方向旋转 n 个的单位长度。此后每次玩家只能选择指针指向的结点，选择结点后结点被消除，两指针合并指向选择结点的位置并按上述描述进行分裂和旋转，玩家需要将所有节点消除才能胜利。 注：玩家无法选择已经被消除的结点，若分裂旋转后的两指针均位于已被消除的结点位置，则判定游戏失败。  算法思路本问题很容易想到利用深度优先搜索来解决，选择一个结点作为开始，如第一次选择 12 点钟位置的结点，（以下为了方便，按结点在时钟中排布位置 n 称作结点 n）该结点值为 5，则选中后分别向顺时针和逆时针方向旋转到达结点 5 和 结点 7，这就产生了两个分支（相当于二叉树的左右子树），分别选择这两个结点继续搜索，若结点到达了一个已被访问过的结点（即该结点已被消除），则终止该方向上的搜索，并进行回溯...</div></div></div></a><a class="pagination-related" href="/2022/05/26/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E6%97%85%E8%A1%8C%E5%95%86%E9%97%AE%E9%A2%98/" title="人工智能作业 使用遗传算法解决旅行商问题"><img class="cover" src="/2022/05/26/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8%E9%81%97%E4%BC%A0%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E6%97%85%E8%A1%8C%E5%95%86%E9%97%AE%E9%A2%98/AI.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">人工智能作业 使用遗传算法解决旅行商问题</div></div><div class="info-2"><div class="info-item-1">遗传算法（Genetic Algorithm，GA）最早是由美国的 John holland于20世纪70年代提出,该算法是根据大自然中生物体进化规律而设计提出的。是模拟达尔文生物进化论的自然选择和遗传学机理的生物进化过程的计算模型，是一种通过模拟自然进化过程搜索最优解的方法。本文利用遗传算法解决经典的NP问题——旅行商问题，并加深对该算法的理解。  问题描述有若干个城市，每个城市给定一个坐标，一个旅行商需要经过每个城市各一遍且不能重复经过城市，起点可以任意选择，求旅行商经过所有城市的总距离的最小值及其最优路径。 数据结构与算法设计数据结构设计 struct point  从文本提取的城市的坐标数据，包含 id, x, y.  const int idNum = 100; // 种群个体数  表示种群的个体数目，即每次迭代所包含的数据的个数。  const double variProbability = 0.05; // 变异概率  遗传过程可能导致变异，变异次数 = 变异概率 * 种群个体数。  vector&lt;point&gt; coords; // 各点坐标  从文本...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/" title="停止等待协议的模拟实现"><img class="cover" src="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-05</div><div class="info-item-2">停止等待协议的模拟实现</div></div><div class="info-2"><div class="info-item-1">协议原理 设计思路基本传输本次实验我采用了程序模拟的方式实现。发送方和接收方都为一个数组，传输过程即为发送方数组向接收方数组传递数据，并使用随机数生成的方式模拟传输过程中可能出现的差错，并且传输时间也为一个在 50 - 150 ms 间的随机数，用一个迭代器来模拟此时发送方的数据位置。 传输过程为一个循环语句，终止条件为发送迭代器到达发送方数组的末尾位置。 选择重传每次进行传输，传输时间就会累加，在一轮传输的最后判断累计时间是否超过了规定 tout，如果未超过，代表数据成功接收，发送迭代器自增 1。 否则，不进行操作，下一次循环将会再次尝试发送该数据。 舍弃重复帧存在这么一种情况，接收方成功接收了发送方的数据，并返回了一个 ACK 帧，但是此 ACK 帧还未到达发送方就已被其判定为超时，那么发送方将会重新发送上一次的数据帧，若该数据帧成功到达接收方，那么接收方需要将该数据帧舍弃（因此上一次传输时接收方已成功接受了该数据帧）。实现方法是判断接受数组的最后一个元素（即上一次接收的元素）是否与此时接受的相同，若相同，则不接收，并重新发送 ACK 帧。 代码实现1234567891011...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ICMP-%E6%8A%A5%E6%96%87%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">ICMP 报文分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ICMP-%E6%8A%A5%E6%96%87%E6%8D%95%E8%8E%B7"><span class="toc-number">1.1.</span> <span class="toc-text">ICMP 报文捕获</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Wireshark-%E6%95%B0%E6%8D%AE%E5%8C%85%E5%88%86%E6%9E%90"><span class="toc-number">1.2.</span> <span class="toc-text">Wireshark 数据包分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E9%80%A0-ICMP-%E6%8A%A5%E6%96%87"><span class="toc-number">2.1.</span> <span class="toc-text">构造 ICMP 报文</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%91%E9%80%81%E8%AF%B7%E6%B1%82%E6%8A%A5%E6%96%87"><span class="toc-number">2.2.</span> <span class="toc-text">发送请求报文</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E6%9E%90%E5%9B%9E%E9%80%81%E6%8A%A5%E6%96%87"><span class="toc-number">2.3.</span> <span class="toc-text">解析回送报文</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81"><span class="toc-number">3.</span> <span class="toc-text">完整代码</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C"><span class="toc-number">4.</span> <span class="toc-text">运行结果</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

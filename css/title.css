@@ -1,0 +1,61 @@
+/* 网站标题美化样式 */
+
+/* 导航栏中的标题样式 - 左上角 PageFault */
+#nav .site-name {
+  position: relative;
+  font-family: 'Brush Script MT', 'cursive', 'Segoe UI', sans-serif;
+  font-size: 1.4em;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  color: #5a67d8;
+  transition: all 0.3s ease;
+  text-shadow: none;
+}
+
+/* 悬停效果 */
+#nav .site-name:hover {
+  color: #764ba2;
+  transform: scale(1.08);
+  text-shadow: 2px 2px 4px rgba(118, 75, 162, 0.2);
+}
+
+/* 为标题添加微妙的边框效果 */
+#blog-info a.nav-site-title {
+  position: relative;
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+#blog-info a.nav-site-title:hover {
+  background: rgba(90, 103, 216, 0.08);
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+  #nav .site-name {
+    font-size: 1.2em;
+    letter-spacing: 0.3px;
+  }
+
+  #blog-info a.nav-site-title {
+    padding: 2px 8px;
+  }
+}
+
+/* 首页大标题样式 (如果显示在页面中间) */
+#site-title {
+  font-family: 'Brush Script MT', 'cursive', 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 侧边栏作者卡片 - 应用筑字手写体 */
+.author-info-name,
+.author-info-description {
+  font-family: tzy, 'Segoe UI', sans-serif !important;
+}

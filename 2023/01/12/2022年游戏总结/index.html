@@ -1,0 +1,394 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>2022年游戏总结 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="今年由于要准备考研，博客几乎没怎么更新，游戏玩的也比较少，算上填坑、试玩、弃坑的粗略计算大概 20 款，其中不乏近年的新游戏以及一直想补的老游戏，以下是从中选出的几款个人觉得比较有的聊的作品。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2022年游戏总结">
+<meta property="og:url" content="https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="今年由于要准备考研，博客几乎没怎么更新，游戏玩的也比较少，算上填坑、试玩、弃坑的粗略计算大概 20 款，其中不乏近年的新游戏以及一直想补的老游戏，以下是从中选出的几款个人觉得比较有的聊的作品。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/dq1.jpg">
+<meta property="article:published_time" content="2023-01-12T02:29:06.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:37.654Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="游戏">
+<meta property="article:tag" content="闲谈">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/dq1.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "2022年游戏总结",
+  "url": "https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/",
+  "image": "https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/dq1.jpg",
+  "datePublished": "2023-01-12T02:29:06.000Z",
+  "dateModified": "2025-12-26T16:26:37.654Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '2022年游戏总结',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">2022年游戏总结</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-01-12T02:29:06.000Z" title="发表于 2023-01-12 10:29:06">2023-01-12</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:37.654Z" title="更新于 2025-12-27 00:26:37">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B8%B8%E6%88%8F/">游戏</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>13分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>今年由于要准备考研，博客几乎没怎么更新，游戏玩的也比较少，算上填坑、试玩、弃坑的粗略计算大概 20 款，其中不乏近年的新游戏以及一直想补的老游戏，以下是从中选出的几款个人觉得比较有的聊的作品。</p>
+<span id="more"></span>
+<h1 id="勇者斗恶龙11s-寻觅逝去的时光"><a href="#勇者斗恶龙11s-寻觅逝去的时光" class="headerlink" title="勇者斗恶龙11s 寻觅逝去的时光"></a>勇者斗恶龙11s 寻觅逝去的时光</h1><p><img src="dq1.jpg" alt=""></p>
+<p>国民级 jrpg 系列的最新作品，各方面都非常均衡，角色构筑、战斗系统、隐藏要素的设计已经相当成熟。给我印象最深刻的还是本作的数值设计，将游戏流程的难度曲线设置的非常平缓，正常推进流程的情况下，既不会让战斗太过困难，也不会让战斗太过简单，整体战斗节奏非常舒适。剧情部分虽然较为王道，但人物性格塑造不错，能够让人代入其中，同时也有诸如人鱼的故事这样动人的剧情。</p>
+<p>本作作为传统 jrpg 给我的感觉就是一切做的都很不错，但总感觉还差那么一口气，整体上设计还是过于保守，没有让我感到特别惊艳的地方。同时很多设计放在今天来看确实有点过时了，主要还是大量无聊的重复劳动，尽管特别的二周目剧情算是一个亮点，但也意味着要重新体验一遍几乎一样的流程，放在今天确实是很难以让人坚持的。另外本作的配乐由于大量沿用了以往作品的配乐，原创配乐不多，虽然单听确实还不错，但与游戏本身的故事结合并不好，在城镇重复的交响乐反倒让人感觉很吵。</p>
+<p>用一句话总结本作：如果 jrpg 设计有模板的话，那就应该是这样，一切都是传统的味道。但我个人还是希望系列能够在保留 jrpg 传统设计的同时，尽可能加入一些符合现代游戏设计理念的元素。</p>
+<h1 id="女神异闻录5-皇家版"><a href="#女神异闻录5-皇家版" class="headerlink" title="女神异闻录5 皇家版"></a>女神异闻录5 皇家版</h1><p><img src="p5r1.jpg" alt=""></p>
+<p>本作其实是从去年 8 月份开的坑，期间由于种种原因搁置了，直到今年才真正通关，总游戏时长约 100 小时。</p>
+<p>本作可以说是现在综合素质最优秀的 jrpg 作品之一了，jrpg 核心的音乐、人设、对白、战斗系统各方面都非常优秀，几乎很难找出缺点。尤其要吹一吹本作的 UI 设计，在本身具备极佳的美观性和时髦值的同时，又拥有很强的实用性。具体体现在游戏中的很多菜单切换都非常合理且便捷，尤其是战斗时的按键操作被很好的简化，配上本作相较于传统 jrpg 快节奏的战斗与炫酷流畅的演出效果，使得原本较为重复的回合制战斗显得毫不枯燥乏味。</p>
+<p><img src="p5r2.jpg" alt=""></p>
+<p>对于 Persona 系列这种按日期来推进游戏流程的游戏模式，开始时还觉得节奏较慢，内容重复且限制较多，但越玩到后面越喜欢，精心设计的不少诙谐幽默的对话使得日常部分非常轻松而又有趣。此外，系列发展到第五代，其标志性的面具合成系统已经非常成熟，兼具深度和趣味性，在天鹅绒房间听着《全ての人の魂の诗》纠结面具的合成选择已经成了游戏中后期的常态。同时本作的迷宫设计也非常优秀，不仅迷宫本身的关卡设计过硬，且各迷宫风格迥异的美术设计与叙事部分结合的非常好。轻松的日常与优秀的战斗两者相结合就使得是本作如此让人沉迷。</p>
+<p>夸了这么多，但我对本作不满的地方也不是没有，主要是角色羁绊部分做得还不够完善，角色的羁绊剧情基本上和游戏主线是两个世界，既不会受到主线的限制也对主线几乎没有影响，而且羁绊的剧情部分也乏善可陈。但也可以理解，这方面想做好确实比较困难，但我还是期待未来的六代能够在这方面有所改进。</p>
+<p>综合来讲本作绝对是我最喜欢的 jrpg 作品之一，同时也是近年最好的 jrpg 之一。</p>
+<h1 id="最终幻想13-2"><a href="#最终幻想13-2" class="headerlink" title="最终幻想13-2"></a>最终幻想13-2</h1><p><img src="ff1.jpg" alt=""></p>
+<p>个人“最终幻想补完计划”的又一部作品，之前有尝试过 ff13 本篇，但由于较为无趣的战斗系统和过于死板的单线流程而弃坑，本来对这一作并不抱太大期望，没想到意外的还不错。</p>
+<p>作为《最终幻想》正传系列作品，音画表现必然不会拉跨，尽管本作还是发售于 2011 年的 ps3 时代的老游戏，但其画面素质依然不逊色于如今大多数日系厂商的最新作品。我尤其偏爱本作的音乐风格，将系列一贯的幻想风格与本作的科技感很好的结合，放在今天依然非常惊艳。</p>
+<p><img src="ff2.jpg" alt=""></p>
+<p>13 本篇或许是由于过于注重技术力和演出效果把 rpg 的核心系统给丢了，本作在这方面有很大的改进：更加富有策略性的战斗系统和具备很大构筑空间的怪物系统让本作的战斗具备一定深度。前作单线流程部分给人的感觉就是沿着单行道前往一个新的场景，路途中打个怪再播个片，反复循环，即便流程存在一些岔路，但也基本不存在任何关卡设计。而本作在一开始就把空间上的限制放开，新颖的时间穿越系统不仅很好的为叙事服务，而且还赋予本作很强的探索空间，找回了 jrpg 本源的冒险感。虽然 rpg 部分的设计还称不上优秀，但整体的体验还是不错的。</p>
+<p>最后稍微提一嘴本作的剧本，或者说是整个 ff13 三部曲的剧本。ff13 系列的世界观太过庞大且复杂，而且叙事又很隐晦，整体玩下来让人一头雾水，很多地方的情节又缺乏逻辑。ff13，包括个人特别喜欢的 ff15 这两代的剧本部分感觉路越走越偏了，世界观设定新奇且华丽，但剧情本身和人物塑造部分却非常空洞，远不及以往作品给人的印象深刻。希望 ff16 在回归传统剑与魔法世界观后剧本部分能够回到正轨，重新找回系列最初给人的那份感动。</p>
+<h1 id="弹丸论破-希望学园与绝望高中生"><a href="#弹丸论破-希望学园与绝望高中生" class="headerlink" title="弹丸论破 希望学园与绝望高中生"></a>弹丸论破 希望学园与绝望高中生</h1><p><img src="tr1.jpg" alt=""></p>
+<p>本作也不是今年才开始玩的，之前就在 psv 上体验过一阵，感觉风格过于怪异就没往下玩，直到今年加入 xgp 之后才想着重新开坑。</p>
+<p>正如上面所提到的，本作的风格和人设都很“怪”，初次上手的直观感受就是二次元浓度爆表，给人感觉这不是什么正经游戏。但在通关之后却发现本作在猎奇的外表下，藏着的却是一个正儿八经文字推理游戏的内核。推理部分和悬念设计非常优秀，看似荒诞胡闹的现象最终都会有一个明确的解释。另外必须夸一夸本作的人设，本作的人设虽然很多时候过于浮夸，但这样做的好处是能够给玩家留下深刻的印象，玩家能在脑海中对每个人物有一个感性的认识，制作组也很好地利用了这一点，在推理环节给玩家设置了重重陷阱，让人惊觉脑洞之大。</p>
+<p>系列的定位是“高速推理游戏”，各种花里胡哨的辩论效果让人眼前一亮，但随之附带的动作系统个人却不太能接受，不过好在游戏提供了简易模式。总的来说，只要能接受本作猎奇的设定，同时还对文字推理游戏感兴趣的话，本作还是一部不容错过的作品。</p>
+<h1 id="赛博朋克2077"><a href="#赛博朋克2077" class="headerlink" title="赛博朋克2077"></a>赛博朋克2077</h1><p><img src="cp1.jpg" alt=""></p>
+<p>原本在宣发阶段还以为是一个赛博朋克式的 gta，但事实上本作还是一个典型的 cdpr 式的作品，一个以跌宕起伏的故事和多样的分支选择为核心的 rpg.</p>
+<p>优点自不必多说，《巫师3》在叙事上的优秀表现在这一代得到了很好的继承，多样且戏剧化的支线任务遍布了整个夜之城。同时，本作相较于《巫师3》相比同类游戏较弱的演出效果，极大地强化了主线流程的表现力，加之第一人称下更强的代入感和优秀的中文配音的加入，主线剧情的表现力绝对可以说是超一流的水准，整体的叙事表现相较于《巫师3》又有了长足的进步。</p>
+<p><img src="cp2.jpg" alt=""></p>
+<p>但或许是 cdpr 第一次尝试以现代都市为背景的开放世界，本作的开放世界的设计简直是无聊至极，整个城市构建的毫无真实感可言，愚蠢的路人 AI 和过少的交互元素都让这个偌大的夜之城难以让人沉浸。另外 rpg 的系统上个人认为也不那么有趣，尽管《巫师3》的整个 rpg 系统也不算优秀，但至少也存在像装备藏宝图这样很具探索感的设计，但本作的整个装备构筑部分个人基本找不到什么可玩点。可能我是一个更偏向于日系游戏的玩家，很难接受美式 rpg 中过于冗杂的装备系统，体现在本作中就是一场战斗下来捡了一堆武器，但事实上能用的寥寥无几，大多数都是留着卖钱的垃圾，不同武器所带来的数值提升也显得非常随意，很难体会到 jrpg 中那种角色能力成长所带来的数值之美。整个流程的战斗系统我基本上都没怎么研究，就这么硬着头皮通关了游戏，这部分的内容对我来说相较于《巫师3》是完全倒退的。</p>
+<p>事实上本作也不是今年才接触的，当时还没有买新主机的时候就早早预购了游戏的 ps4 版本，最后的结果就不必多说了，游戏的首发版本不仅 bug 多到令人发指，而且在上世代主机上基本是一个不可玩的状态，最后不得已卖掉了二手盘。直到今年次世代更新的发布，我又在 xbox 上买了一份，xss 上能以 1080p 动态分辨率以 60 帧稳定运行，体验已经很不错了，但即便如此，我在整个游戏流程中遇到的 bug 依然高于大多数游戏的首发版本，可见当初首发坚持通关的玩家经历了什么…</p>
+<h1 id="灵魂旅者"><a href="#灵魂旅者" class="headerlink" title="灵魂旅者"></a>灵魂旅者</h1><p><img src="sf1.jpg" alt=""></p>
+<p>一款非常温暖治愈的游戏，游戏的基本内容是玩家扮演一名灵魂摆渡人，寻找散落在各个岛上的逝者灵魂，与他们互动，完成他们的心愿，并最终与他们告别。玩法部分简单描述就是模拟经营，玩家需要收集各种素材，为船上建造厨房、农场、果园等各种建筑，以此满足主线任务推进的需要。</p>
+<p>游戏给人的初印象就是悠扬舒缓的音乐和精美的 2d 手绘画面，营造了一种非常温暖治愈的氛围。游戏最值得称道的还要属玩家与 npc 那极其细致的交互，船上的逝者灵魂并非只是每天等待着玩家的服务，他们每一位都在船上担当着一定的任务，包括加工麻线、制作点心等等。虽然这些机制实际上不会对玩家的任务有太大的影响，但却很好的加深了玩家与 npc 的羁绊，为最后的离别奠定了情感基础。当然，游戏在交互方面给我留下最深刻印象的，也是当初吸引我入坑的部分还是游戏独特的拥抱系统，与每位 npc 拥抱的动画做得非常生动细致，同时这一机制又贯穿于整个游戏，npc 在不开心时，玩家可以选择拥抱改善他的心情，最终离别的时刻，拥抱又是作为玩家与 npc 的最后一次互动而出现，兼具功能性和情感传达，可以说是整个游戏的点睛之笔。</p>
+<p><img src="sf2.gif" alt=""></p>
+<p>游戏的 gameplay 部分也很好的契合了游戏的舒缓节奏，素材的收集和加工并非一键完成，而是由各种小游戏所填充，包括砍树、冶炼、纺织都需要玩家手动来完成。但世上没有完美的设计，这一机制初见确实很有趣，但越到游戏后期，随着系统的愈发复杂和玩家的任务量的增加，就越能感到该系统所带来的疲惫感。其实整个《灵魂旅者》的游戏体验也是如此，在没有对各机制感到乏味时感觉特别惊艳，但后面过多的重复劳动还是很大程度上打消了玩家的热情，如果游戏能对流程进行一定程度的精简，想必体验上会好不少。</p>
+<p>事实上本作我现在也还没有通关，但我想有时间一定会打完的。</p>
+<h1 id="OPUS-龙脉常歌"><a href="#OPUS-龙脉常歌" class="headerlink" title="OPUS 龙脉常歌"></a>OPUS 龙脉常歌</h1><p><img src="opus1.jpg" alt=""></p>
+<p>这可能是我玩过最喜欢的叙事类游戏之一。</p>
+<p>游戏由中国台湾工作室 Sigono Games 开发，故事的世界观设定新颖，很好地将中国神话与太空背景相结合，诸如名为“烛龙”的太阳和名为“大荒”的黑洞这样的称谓在游戏中大量存在，虽然整体体验下来这样的设定更多只是一个表皮，而且游戏的剧情本身与太空背景的结合也并不紧密，更像是一个披着科幻外衣的传统故事。但这丝毫不影响我对它的评价，能看到一个洋溢着中国传统文化的科幻故事本身就已经很满足了。</p>
+<p>游戏的故事情节本身其实并不算有多么令人意外，甚至还有些俗套，部分情节显得过于巧合，甚至游戏的最终结局在开头就已告知玩家，但它还是凭借优秀的叙事和人物刻画让故事深入人心，成为我今年印象最为深刻的旅程。不同于很多西方和日式情节，本作男女主之间的感情表现的非常克制，而在这样克制的行为举动中玩家却能深刻的体会到他们的之间的羁绊，这种感觉很像之前《最终幻想9》给过我的感受，无需直接的言语表述便以深入人心。另外，限于游戏体量的大小，本作登场的角色数量并不算太多，但都塑造的各具特点，各人物在剧情的推动上都起到了或多或少的作用，绝无工具人的存在。</p>
+<p>音乐部分也值得一提，本作音乐其实单拿出来听似乎并不算很好听，能给人留下印象的也不多，但与故事剧情的结合却非常好，音乐总会在剧情的某一关键节点响起，与制作组精心准备的演出相结合，给玩家带来足够的情感冲击。另外，本作现在的版本是加入了配音的，包括中文和日文配音，因为觉得台配的中文配音稍微有点出戏，就选择了日文配音。</p>
+<p>我个人其实很少玩 galgame 那样的纯文字冒险游戏，即便它们中很多都有跌宕起伏的故事情节，但完全没有可操作部分也让我很难只为了故事本身而完成游戏流程。而像《龙脉常歌》这样的游戏模式我却很喜欢，本作也存在一些诸如模拟经营和解谜的玩法，但都设计的非常轻度，属于是故事情节与情节之间衔接的过渡元素，能够很好的调节游戏节奏。飞船虽然也有油量和耐久度的限定，但都在制作组的掌控之中，实际上只要按正常流程走基本不会出现数值见底的情况，这个限制的加入更多是为了营造星际航行时的紧张感，而非给玩家出的难题。gameplay 缺乏挑战和负担也可以让玩家更加专注于游戏所要传达的故事本身，而不至于因此分散了注意力，这也是前作《灵魂之桥》我觉得做得不够好的地方，“雪地探索捡垃圾”的玩法对于这类叙事游戏来说还是稍显繁琐。</p>
+<p>本作我其实已经加入 steam 心愿单已久，却没想直接加入 xgp 了。通关了 xgp 的版本之后，出于对本作的喜爱，我又赶在 ns 版本打折的时候又买了一份，也算是对制作组的支持，希望它们的下一部作品能够做得更好。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/">https://lordaeronesz.top/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B8%B8%E6%88%8F/">游戏</a><a class="post-meta__tags" href="/tags/%E9%97%B2%E8%B0%88/">闲谈</a></div><div class="post-share"><div class="social-share" data-image="/2023/01/12/2022%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93/dq1.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2023/02/05/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC331%E5%9C%BA/" title="LeetCode周赛总结 第331场"><img class="cover" src="/2023/02/05/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC331%E5%9C%BA/leetcode.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">LeetCode周赛总结 第331场</div></div><div class="info-2"><div class="info-item-1">从数量最多的堆取走礼物题目链接从数量最多的堆取走礼物 解题思路直接按照流程模拟即可，将数组 gifts 的元素放入优先队列中，然后每次从中选出最大值 maxGift，再将 sqrt(maxGift) 放回队列，重复 k 次，计算队列剩余的值总和。 解题代码123456789101112131415161718class Solution &#123;public:    long long pickGifts(vector&lt;int&gt;&amp; gifts, int k) &#123;        // 这里求 gifts 总和要注意累加初始值定义为 0ll（long long 类型），否则 int 可能溢出        // 当然也可以不求初始总数量，而在循环结束后直接统计剩余的数量        long long sum = accumulate(gifts.begin(), gifts.end(), 0ll);        priority_queue&lt;int&gt; Q(gifts.begin(), gifts.end());        lon...</div></div></div></a><a class="pagination-related" href="/2023/01/08/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC327%E5%9C%BA/" title="LeetCode周赛总结 第327场"><img class="cover" src="/2023/01/08/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC327%E5%9C%BA/leetcode.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">LeetCode周赛总结 第327场</div></div><div class="info-2"><div class="info-item-1">由于考研等因素的影响，已经时隔一年没有参加力扣周赛了，长时间没有好好琢磨算法题，思维敏捷度确实有所下降，好在这次周赛前两题都没有什么难度，但第三题却把简单问题想复杂了，第四题就基本上都没怎么读题了。。。  正整数和负整数的最大计数题目链接正整数和负整数的最大计数 解题思路直接依照题意统计该数组中正整数和负整数的个数，然后返回较大个数即可，送分题。 解题代码123456789101112131415class Solution &#123;public:    int maximumCount(vector&lt;int&gt;&amp; nums) &#123;        int cnt1 = 0, cnt2 = 0;        for (int i = 0; i &lt; nums.size(); ++i) &#123;            if (nums[i] &gt; 0) &#123;                ++cnt1;            &#125;            else if (nums[i] &lt; 0) &#123;     ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2022/01/10/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8B/" title="2021年游戏总结 下"><img class="cover" src="/2022/01/10/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8B/fh.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-10</div><div class="info-item-2">2021年游戏总结 下</div></div><div class="info-2"><div class="info-item-1">本文承接上文，继续聊聊 2021 年我所体验的一些游戏。  伊苏8：丹娜的陨涕日今年玩过最喜欢的 jrpg 作品，几乎满足了我对于一款优秀 jrpg 的全部幻想。  战斗方面爽快而又不失深度。伊苏系列向来以高速的即时制战斗著称，本作也不例外，角色与敌人的动作都相对较快，技能无冷却加之技能槽的回复速度很快，因此本作的战斗与大部分 jrpg 讲究策略的慢节奏战斗有很大不同。但这并不意味着本作战斗就十分无脑，弹反、极限闪避、弱点属性等机制的加入很好的提升了战斗系统的深度。 本作的剧情也很优秀。剧情悬念设置十分得当，给予玩家很强的故事驱动力，人物塑造极佳，进一步增强代入感。 本作最值得夸赞的还是地图探索方面的体验。本作采用的是一个非常典型的“银河恶魔城”式的地图设计，玩家需要探索地图的各个角落，从而解锁新的能力，再次进行更深一步的探索。同时本作探索不光局限于对于物品的获取，还包括了 npc 的发现，这一切与 jrpg 的强故事驱动相结合，使得探索欲望进一步上升。  最后讲讲我对于本作不满的地方。首先是本作的保卫战部分，这部分实属多余，不仅不有趣，还很大程度破坏了地图探索的连贯性与叙事节奏...</div></div></div></a><a class="pagination-related" href="/2025/01/18/%E3%80%8A%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B37%EF%BC%9A%E9%87%8D%E7%94%9F%E3%80%8B%E4%BD%93%E9%AA%8C%E5%88%86%E4%BA%AB/" title="《最终幻想7：重生》体验分享"><img class="cover" src="/2025/01/18/%E3%80%8A%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B37%EF%BC%9A%E9%87%8D%E7%94%9F%E3%80%8B%E4%BD%93%E9%AA%8C%E5%88%86%E4%BA%AB/world.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-18</div><div class="info-item-2">《最终幻想7：重生》体验分享</div></div><div class="info-2"><div class="info-item-1">《最终幻想7：重生》是我 2024 年最期待的游戏之一。由于发售时还没有 PS5，加上考研复试等事务缠身，没能第一时间体验。后来，后面为了剧情体验的连贯性，我又重温了一遍四年前的《最终幻想7：重制版》，直到最近两个月才正式开坑。 历经 87 小时通关一周目后，内心感慨万千，不吐不快，于是便有了这篇体验分享。整体而言，《最终幻想7：重生》无愧于我 2024 年的年度游戏，甚至在 jrpg 品类中几乎稳坐我心中的头把交椅。但它并非完美，其中仍有一些让我不太满意或感到遗憾的地方，接下来便一一细说。  提示：本文存在剧透内容。  广阔，未必自由相较于重制版第一作，《重生》最大的进化便是引入了一个可供探索的大地图。但请注意，尽管游戏的地图很大，我却很难称之为“开放世界”。实际上，游戏并未表现出什么构建一个生动、真实的奇幻世界的意图，而是通过一个个清单项来构成世界。而这势必会导致游戏体验上的重复，制作组为了缓解这种枯燥感，尽可能地在这些重复的清单项中引入了差异化设计。例如，同样是捕获陆行鸟，不同地区有不同的解决方式，这些在一定程度上确实减轻了重复感。 支线任务方面，相比上一作，《重生》有了显...</div></div></div></a><a class="pagination-related" href="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/" title="2021年游戏总结 上"><img class="cover" src="/2022/01/05/2021%E5%B9%B4%E6%B8%B8%E6%88%8F%E6%80%BB%E7%BB%93%20%E4%B8%8A/itk1.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-05</div><div class="info-item-2">2021年游戏总结 上</div></div><div class="info-2"><div class="info-item-1">​    转眼间 2021 年已经过去，这一年间也体验了很多不同平台、不同类型的作品。本文将对此做一个小小的总结，内容主要是个人对 2021 年玩过的游戏的一些个人想法。此外，由于篇幅受限，因此并不会包含所有的游戏，部分体验不够深入的或者无话可聊的游戏将不会出现。  双人成形这算是今年玩过的最开心的游戏了，和两个室友花了大概 15 小时通关。  游戏在本身的关卡设计就很优秀，在融合了双人机制下更加显得精妙。且游戏对于资源的利用可谓毫不吝啬，每一大关就完全舍弃掉之前机制，完全变成“另一个游戏”。虽然这样各种机制浅尝辄止的设计理念可能会带来所谓的游戏深度不足，但这并不是本作所追求的，本作就是想给玩家一个极为丰富的一周目流程。仔细想想现在很多游戏的流程越来越长，但很多内容都是注水的，玩家在这些重复劳动的过程中可能会对游戏失去兴趣，最终导致游戏烂尾。而双人成形就是一个每个关卡细节精心编排打磨，每种机制总能在玩家感到无聊之前及时结束，从而转向新的机制。我在实际游戏过程中的感受也是如此，对之后关卡机制的期待是我在现在大部分游戏中所体会不到的。  还有一点值得提的就是本作的箱庭式关卡设计，几乎...</div></div></div></a><a class="pagination-related" href="/2024/03/12/%E8%87%AA%E7%94%A8%E8%80%B3%E6%9C%BA%E7%9B%98%E7%82%B9/" title="自用耳机盘点"><img class="cover" src="/2024/03/12/%E8%87%AA%E7%94%A8%E8%80%B3%E6%9C%BA%E7%9B%98%E7%82%B9/img.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-12</div><div class="info-item-2">自用耳机盘点</div></div><div class="info-2"><div class="info-item-1">最近几个月看了不少耳机相关的内容，初步了解了一些耳机的参数指标以及选购方案，同时也给自己使用的耳机进行了一波更新换代。本文就简单盘点一下自己之前用过的和现在正在使用的耳机，内容完全基于个人的使用体验。 已退役赛睿 Arctis9x 主要是为了无线连接 xbox 而购入。买之前看了不少网上的评价，包括视频评测以及 RTINGS 网站上的测试，感觉很不错，但是这耳机并没有国行版本，而且海外版售价高达 200 美元，对我而言实在是太贵，就在淘宝花 398 购入了一副所谓的“9成新”的“洋垃圾”。 单就产品本身的素质来说，我觉得还是很不错的。尽管作为游戏耳机，但它的音乐表现依然非常出色，三频的表现十分均衡。参考 RTINGS 网站上对于 9x 的评测，其中 Neutral Sound 项评分高达 7.8 分并给出了 “satisfactory” 的评价。麦克风质量也相当不错，这根可伸缩的麦克风虽小，但却拥有优秀的收音质量和降噪能力，不过我也只是拿到手的时候测试了一下，并没有怎么使用。佩戴方面，耳机头梁采用了松紧带的设计，使得佩戴时不至于压头。耳罩不算很透气，夏天佩戴可能会比较热，但好在相...</div></div></div></a><a class="pagination-related" href="/2022/08/08/%E7%94%A8DFS%E8%A7%A3%E5%86%B3%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B313-2%E6%97%B6%E9%92%9F%E8%B0%9C%E9%A2%98/" title="用DFS解决最终幻想13-2时钟谜题"><img class="cover" src="/2022/08/08/%E7%94%A8DFS%E8%A7%A3%E5%86%B3%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B313-2%E6%97%B6%E9%92%9F%E8%B0%9C%E9%A2%98/1.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-08-08</div><div class="info-item-2">用DFS解决最终幻想13-2时钟谜题</div></div><div class="info-2"><div class="info-item-1">最近在补 XGP 中的最终幻想13-2时，遇到一个时钟谜题，感觉挺有意思，就像尝试用搜索算法将其解决。  问题描述如下图所示，有一个时钟，包含个结点，每个节点有一个数字标识，玩家最开始可以任意选择一个结点，选择后，该结点被消除且指针会指向该结点的位置，根据该节点的数字值 n 分裂为两根指针分别向顺时针方向和逆时针方向旋转 n 个的单位长度。此后每次玩家只能选择指针指向的结点，选择结点后结点被消除，两指针合并指向选择结点的位置并按上述描述进行分裂和旋转，玩家需要将所有节点消除才能胜利。 注：玩家无法选择已经被消除的结点，若分裂旋转后的两指针均位于已被消除的结点位置，则判定游戏失败。  算法思路本问题很容易想到利用深度优先搜索来解决，选择一个结点作为开始，如第一次选择 12 点钟位置的结点，（以下为了方便，按结点在时钟中排布位置 n 称作结点 n）该结点值为 5，则选中后分别向顺时针和逆时针方向旋转到达结点 5 和 结点 7，这就产生了两个分支（相当于二叉树的左右子树），分别选择这两个结点继续搜索，若结点到达了一个已被访问过的结点（即该结点已被消除），则终止该方向上的搜索，并进行回溯...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8B%87%E8%80%85%E6%96%97%E6%81%B6%E9%BE%9911s-%E5%AF%BB%E8%A7%85%E9%80%9D%E5%8E%BB%E7%9A%84%E6%97%B6%E5%85%89"><span class="toc-number">1.</span> <span class="toc-text">勇者斗恶龙11s 寻觅逝去的时光</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A5%B3%E7%A5%9E%E5%BC%82%E9%97%BB%E5%BD%955-%E7%9A%87%E5%AE%B6%E7%89%88"><span class="toc-number">2.</span> <span class="toc-text">女神异闻录5 皇家版</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%80%E7%BB%88%E5%B9%BB%E6%83%B313-2"><span class="toc-number">3.</span> <span class="toc-text">最终幻想13-2</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%B9%E4%B8%B8%E8%AE%BA%E7%A0%B4-%E5%B8%8C%E6%9C%9B%E5%AD%A6%E5%9B%AD%E4%B8%8E%E7%BB%9D%E6%9C%9B%E9%AB%98%E4%B8%AD%E7%94%9F"><span class="toc-number">4.</span> <span class="toc-text">弹丸论破 希望学园与绝望高中生</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%B5%9B%E5%8D%9A%E6%9C%8B%E5%85%8B2077"><span class="toc-number">5.</span> <span class="toc-text">赛博朋克2077</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%81%B5%E9%AD%82%E6%97%85%E8%80%85"><span class="toc-number">6.</span> <span class="toc-text">灵魂旅者</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#OPUS-%E9%BE%99%E8%84%89%E5%B8%B8%E6%AD%8C"><span class="toc-number">7.</span> <span class="toc-text">OPUS 龙脉常歌</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

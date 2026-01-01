@@ -1,0 +1,660 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Crypto基础 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以攻防世界新手练习区例题为例进行分析。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Crypto基础">
+<meta property="og:url" content="https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以攻防世界新手练习区例题为例进行分析。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Crypto.jpg">
+<meta property="article:published_time" content="2021-08-09T01:35:15.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:38.007Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="CTF">
+<meta property="article:tag" content="Crypto">
+<meta property="article:tag" content="信息安全">
+<meta property="article:tag" content="攻防世界">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Crypto.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Crypto基础",
+  "url": "https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/",
+  "image": "https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Crypto.jpg",
+  "datePublished": "2021-08-09T01:35:15.000Z",
+  "dateModified": "2025-12-26T16:26:38.007Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Crypto基础',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Crypto基础</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-08-09T01:35:15.000Z" title="发表于 2021-08-09 09:35:15">2021-08-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:38.007Z" title="更新于 2025-12-27 00:26:38">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/">信息安全</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>16分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>密码学是研究编制密码和破译密码的技术科学，本文将主要介绍密码学中常见的几种加密方式的原理以及实际的应用，并以<strong>攻防世界</strong>新手练习区例题为例进行分析。</p>
+<span id="more"></span>
+<h1 id="Base64"><a href="#Base64" class="headerlink" title="Base64"></a>Base64</h1><blockquote>
+<p>Base64是网络上最常见的用于传输8Bit字节码的编码方式之一，Base64就是一种基于64个可打印字符来表示二进制数据的方法。<br>Base64编码是从二进制到字符的过程，可用于在HTTP环境下传递较长的标识信息。采用Base64编码具有不可读性，需要解码后才能阅读。</p>
+</blockquote>
+<h2 id="加密原理"><a href="#加密原理" class="headerlink" title="加密原理"></a>加密原理</h2><p>Base64中的<strong>64</strong>表示64个可打印的字符（具体范围如下表所示），而要完全表示64个不同的字符至少需要6位二进制数(2^6=64)，我们知道一个字符类型数据在计算机中占用1Byte的存储空间，而1Byte为8bit，即一个字符实际在计算机中存储的是一个8位二进制数。</p>
+<p>Base64加密的实质是将每三个8bit字节转换为四个6bit字节（8*3=4*6），再在6bit字节的高位添0以补全为8位，最终转换为四个8bit字节，完成加密。例如：字符串<strong>s13</strong>，对应的ascii码为115 49 51，转换为二进制：01110011  00110001  00110011，将其分为4组：011100  110011  000100  110011，向高位补零：00011100  00110011  00000100  00110011，十进制为28 51 4 51，对照Base64编码表得到加密后的结果为：czEz，加密完成。</p>
+<p><img src="Base64编码表.png" alt=""></p>
+<p>我们发现这样貌似只能加密3的整数个字符，当末尾的字符无法凑成3的整数个的时候我们在用一个不在编码表中的字符加以代替，这个字符通常使用“=”，举个简单的例子：字符“A”，ascii码为65，转换成二进制数：01000001，由于此时末尾字符个数不为3的整数倍（1个），我们仍然将其分成四组，并且空位用“=”代替：010000  010===  ======  ======，对于不全为空的字节，在其末尾空位添零，全为空的字节在转换时用“=”代替：010000  010000  ======  ======，对应字符为：QQ==，加密完成。</p>
+<p>通过以上示例不难发现Base64加密的密文中，“=”最多只能出现<strong>两个</strong>且只会在<strong>末尾</strong>出现。</p>
+<h2 id="Base32-Base16"><a href="#Base32-Base16" class="headerlink" title="Base32,Base16"></a>Base32,Base16</h2><p>Base32,Base16与Base64类似，区别是他们分别得到5bit字节和4bit字节。Base32是将每5个8bit字节转换成8个5bit字节，编码字符范围为：大写字母A~Z和数字2~7，密文末尾最多可能出现<strong>7个</strong>“=”。Base16是将每个8bit字节转换成2个4bit字节，编码范围为：数字0~9和大写字母A~F，密文末尾不会出现“=”。</p>
+<h2 id="例题分析"><a href="#例题分析" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接"><a href="#题目链接" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5109&amp;page=1">base64</a></p>
+<h3 id="分析与解答"><a href="#分析与解答" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>文本很明显是一串base64密文，直接解密即可，可以使用在线解密工具也可以直接用python的base64包解密，以下是python解密代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line">cipher = <span class="string">&quot;Y3liZXJwZWFjZXtXZWxjb21lX3RvX25ld19Xb3JsZCF9&quot;</span></span><br><span class="line">res = base64.b64decode(cipher)</span><br><span class="line"><span class="built_in">print</span>(res.decode())</span><br></pre></td></tr></table></figure>
+<p>运行，得到结果：cyberpeace{Welcome_to_new_World!}</p>
+<h1 id="凯撒密码-Caesar-Cipher"><a href="#凯撒密码-Caesar-Cipher" class="headerlink" title="凯撒密码(Caesar Cipher)"></a>凯撒密码(Caesar Cipher)</h1><blockquote>
+<p>在密码学中，<strong>恺撒密码</strong>（英语：Caesar cipher），或称<strong>恺撒加密</strong>、<strong>恺撒变换</strong>、<strong>变换加密</strong>，是一种最简单且最广为人知的加密技术。它是一种替换加密的技术，明文中的所有字母都在字母表上向后（或向前）按照一个固定数目进行偏移后被替换成密文。这个加密方法是以罗马共和时期恺撒的名字命名的，当年恺撒曾用此方法与其将军们进行联系。</p>
+</blockquote>
+<h2 id="加密原理-1"><a href="#加密原理-1" class="headerlink" title="加密原理"></a>加密原理</h2><p>在加密时，明文中的每个字母按照字母表的顺序向前或向后移动某一特定的位数并替换得到密文。例如明文为：FLAGISHERE，偏移量为3，那么密文就得到了：IODJLVKHUH，解密时则反向移动3位或正向移动26-3=23位。</p>
+<h2 id="例题分析-1"><a href="#例题分析-1" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-1"><a href="#题目链接-1" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5110&amp;page=1">Caesar</a></p>
+<h3 id="分析与解答-1"><a href="#分析与解答-1" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>根据字母的个数以及排列方式来看很明显对字母采用了凯撒加密，只需根据攻防世界常见的“cyberpeace”开头的flag格式得到正向偏移量为14，以此编写代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">wordList = [<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;d&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;f&#x27;</span>, <span class="string">&#x27;g&#x27;</span>, <span class="string">&#x27;h&#x27;</span>, <span class="string">&#x27;i&#x27;</span>, <span class="string">&#x27;j&#x27;</span>, <span class="string">&#x27;k&#x27;</span>, <span class="string">&#x27;l&#x27;</span>, <span class="string">&#x27;m&#x27;</span>, <span class="string">&#x27;n&#x27;</span>,</span><br><span class="line">            <span class="string">&#x27;o&#x27;</span>, <span class="string">&#x27;p&#x27;</span>, <span class="string">&#x27;q&#x27;</span>, <span class="string">&#x27;r&#x27;</span>, <span class="string">&#x27;s&#x27;</span>, <span class="string">&#x27;t&#x27;</span>, <span class="string">&#x27;u&#x27;</span>, <span class="string">&#x27;v&#x27;</span>, <span class="string">&#x27;w&#x27;</span>, <span class="string">&#x27;x&#x27;</span>, <span class="string">&#x27;y&#x27;</span>, <span class="string">&#x27;z&#x27;</span>]</span><br><span class="line">t = <span class="built_in">open</span>(<span class="string">&#x27;1.txt&#x27;</span>, mode=<span class="string">&#x27;r&#x27;</span>)  <span class="comment"># 1.txt为题目附件</span></span><br><span class="line">string = t.read()</span><br><span class="line">n_str = <span class="string">&#x27;&#x27;</span></span><br><span class="line">n = <span class="number">14</span></span><br><span class="line"><span class="keyword">for</span> s <span class="keyword">in</span> string:</span><br><span class="line">    <span class="keyword">if</span> <span class="string">&#x27;a&#x27;</span> &lt;= s &lt;= <span class="string">&#x27;z&#x27;</span>:</span><br><span class="line">        index = wordList.index(s)</span><br><span class="line">        n_index = (index + n) % <span class="number">26</span></span><br><span class="line">        n_str += wordList[n_index]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        n_str += s</span><br><span class="line"><span class="built_in">print</span>(n_str)</span><br><span class="line">t.close()</span><br></pre></td></tr></table></figure>
+<p>运行，得到flag：cyberpeace{you_have_learned_caesar_encryption}</p>
+<h1 id="摩尔斯电码-Morse-Code"><a href="#摩尔斯电码-Morse-Code" class="headerlink" title="摩尔斯电码(Morse Code)"></a>摩尔斯电码(Morse Code)</h1><blockquote>
+<p>摩尔斯电码也被称作摩斯密码，是一种时通时断的信号代码，通过不同的排列顺序来表达不同的英文字母、数字和标点符号。它发明于1837年，是一种早期的数字化通信形式。不同于现代化的数字通讯，摩尔斯电码只使用零和一两种状态的二进制代码，它的代码包括五种：短促的点信号“・”，保持一定时间的长信号“—”，表示点和划之间的停顿、每个词之间中等的停顿，以及句子之间长的停顿。</p>
+</blockquote>
+<h2 id="加密原理-2"><a href="#加密原理-2" class="headerlink" title="加密原理"></a>加密原理</h2><p>摩尔斯电码的加密原理比较简单，就是长信号（一般为“—”）与短信号（一般为“·”）的组合来替换常见的字符，比如明文为：SOS，对应摩尔斯电码表加密后得到：··· — — — ···</p>
+<p><img src="Morse.png" alt=""></p>
+<h2 id="例题分析-2"><a href="#例题分析-2" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-2"><a href="#题目链接-2" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5111&amp;page=1">Morse</a></p>
+<h3 id="分析与解答-2"><a href="#分析与解答-2" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>附件中仅由“0”和“1”构成，且每一部分以空格分开，则考虑采用了摩尔斯加密。将摩尔斯电码表中的对应关系定义为一个字典类型，遍历密文中的每一部分并得到明文字符，python代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">t = <span class="built_in">open</span>(<span class="string">&#x27;2.txt&#x27;</span>, mode=<span class="string">&#x27;r&#x27;</span>)  <span class="comment"># 2.txt为题目附件</span></span><br><span class="line">codes = t.read().split(<span class="string">&#x27; &#x27;</span>)</span><br><span class="line">dic = &#123;<span class="string">&#x27;01&#x27;</span>: <span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;1000&#x27;</span>: <span class="string">&#x27;B&#x27;</span>, <span class="string">&#x27;1010&#x27;</span>: <span class="string">&#x27;C&#x27;</span>, <span class="string">&#x27;100&#x27;</span>: <span class="string">&#x27;D&#x27;</span>, <span class="string">&#x27;0&#x27;</span>: <span class="string">&#x27;E&#x27;</span>, <span class="string">&#x27;0010&#x27;</span>: <span class="string">&#x27;F&#x27;</span>, <span class="string">&#x27;110&#x27;</span>: <span class="string">&#x27;G&#x27;</span>,</span><br><span class="line">       <span class="string">&#x27;0000&#x27;</span>: <span class="string">&#x27;H&#x27;</span>, <span class="string">&#x27;00&#x27;</span>: <span class="string">&#x27;I&#x27;</span>, <span class="string">&#x27;0111&#x27;</span>: <span class="string">&#x27;J&#x27;</span>, <span class="string">&#x27;101&#x27;</span>: <span class="string">&#x27;K&#x27;</span>, <span class="string">&#x27;0100&#x27;</span>: <span class="string">&#x27;L&#x27;</span>, <span class="string">&#x27;11&#x27;</span>: <span class="string">&#x27;M&#x27;</span>, <span class="string">&#x27;10&#x27;</span>: <span class="string">&#x27;N&#x27;</span>, <span class="string">&#x27;111&#x27;</span>: <span class="string">&#x27;O&#x27;</span>, <span class="string">&#x27;0110&#x27;</span>: <span class="string">&#x27;P&#x27;</span>,</span><br><span class="line">       <span class="string">&#x27;1101&#x27;</span>: <span class="string">&#x27;Q&#x27;</span>, <span class="string">&#x27;010&#x27;</span>: <span class="string">&#x27;R&#x27;</span>, <span class="string">&#x27;000&#x27;</span>: <span class="string">&#x27;S&#x27;</span>, <span class="string">&#x27;1&#x27;</span>: <span class="string">&#x27;T&#x27;</span>, <span class="string">&#x27;001&#x27;</span>: <span class="string">&#x27;U&#x27;</span>, <span class="string">&#x27;0001&#x27;</span>: <span class="string">&#x27;V&#x27;</span>, <span class="string">&#x27;011&#x27;</span>: <span class="string">&#x27;W&#x27;</span>, <span class="string">&#x27;1001&#x27;</span>: <span class="string">&#x27;X&#x27;</span>, <span class="string">&#x27;1011&#x27;</span>: <span class="string">&#x27;Y&#x27;</span>,</span><br><span class="line">       <span class="string">&#x27;1100&#x27;</span>: <span class="string">&#x27;Z&#x27;</span>, <span class="string">&#x27;01111&#x27;</span>: <span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;00111&#x27;</span>: <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;00011&#x27;</span>: <span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;00001&#x27;</span>: <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;00000&#x27;</span>: <span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;10000&#x27;</span>: <span class="string">&#x27;6&#x27;</span>, <span class="string">&#x27;11000&#x27;</span>: <span class="string">&#x27;7&#x27;</span>,</span><br><span class="line">       <span class="string">&#x27;11100&#x27;</span>: <span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;11110&#x27;</span>: <span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;11111&#x27;</span>: <span class="string">&#x27;0&#x27;</span>, <span class="string">&#x27;001100&#x27;</span>: <span class="string">&#x27;?&#x27;</span>, <span class="string">&#x27;10010&#x27;</span>: <span class="string">&#x27;/&#x27;</span>, <span class="string">&#x27;101101&#x27;</span>: <span class="string">&#x27;()&#x27;</span>, <span class="string">&#x27;100001&#x27;</span>: <span class="string">&#x27;-&#x27;</span>,</span><br><span class="line">       <span class="string">&#x27;010101&#x27;</span>: <span class="string">&#x27;.&#x27;</span>&#125;</span><br><span class="line">flag = <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="keyword">for</span> c <span class="keyword">in</span> codes:</span><br><span class="line">    <span class="keyword">if</span> c <span class="keyword">in</span> dic.keys():</span><br><span class="line">        flag += dic[c]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        flag += <span class="string">&#x27;*&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(flag.lower())</span><br><span class="line">t.close()</span><br></pre></td></tr></table></figure>
+<p>运行，flag以小写字母输出并格式化：cyberpeace{morsecodeissointeresting}</p>
+<h1 id="二进制幂数加密-Binary-idempotent-encryption"><a href="#二进制幂数加密-Binary-idempotent-encryption" class="headerlink" title="二进制幂数加密(Binary idempotent encryption)"></a>二进制幂数加密(Binary idempotent encryption)</h1><blockquote>
+<p>二进制幂数加密法，由于英文字母只有26个字母。只要2的0、1、2、3、4、5次幂就可以表示31个单元。通过用二进制幂数表示字母序号数来加密。</p>
+</blockquote>
+<h2 id="加密原理-3"><a href="#加密原理-3" class="headerlink" title="加密原理"></a>加密原理</h2><p>在进行二进制数转十进制数的结果为二进制各位数的幂数之和，例如1010转换成十进制数时：2^1+2^3=10，并且N位二进制数能表示的最大十进制数为2^n-1，如四位二进制数最多可表示的十进制数为1111，即15。</p>
+<p>由于英文字母总数为26，因此我们只需5位二进制数即可表示所有的英文字母(2^5-1=31)，例如：</p>
+<p>明文：I LOVE CRYPTO</p>
+<p>字母序号：9/12 15 22 5/3 18 25 16 20 15（空格表示字母的间隔，斜杠表示单词的间隔）</p>
+<p>由于9=2^0+2^3，因此加密结果为：03，以此类推</p>
+<p>密文：  03/23 0123 124 02/01 14 034 4 24 0123</p>
+<h1 id="栅栏密码-Rail-fence-Cipher"><a href="#栅栏密码-Rail-fence-Cipher" class="headerlink" title="栅栏密码(Rail-fence Cipher)"></a>栅栏密码(Rail-fence Cipher)</h1><h2 id="传统栅栏密码"><a href="#传统栅栏密码" class="headerlink" title="传统栅栏密码"></a>传统栅栏密码</h2><h3 id="加密原理-4"><a href="#加密原理-4" class="headerlink" title="加密原理"></a>加密原理</h3><p>首先确定一个key值，将明文字母按从上往下的顺序依次交替排列成key行，最后每行字母依次连接组成新字符串，得到密文。例如：</p>
+<p>明文：HAVE A GOOD DAY        key值：3</p>
+<p>将字母依次交替排列成3行： </p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>H</th>
+<th>E</th>
+<th>O</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>A</td>
+<td>O</td>
+<td>A</td>
+</tr>
+<tr>
+<td>V</td>
+<td>G</td>
+<td>D</td>
+<td>Y</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>最后每行字母依次连接得到密文：HEODAAOAVGDY</p>
+<p>值得一提的是，栅栏密码本身有一个潜规则，就是组成栅栏的字母一般不会太多。（一般不超过30个，也就是一、两句话）</p>
+<h2 id="W型栅栏密码"><a href="#W型栅栏密码" class="headerlink" title="W型栅栏密码"></a>W型栅栏密码</h2><h3 id="加密原理-5"><a href="#加密原理-5" class="headerlink" title="加密原理"></a>加密原理</h3><p>与传统栅栏密码类似，第一步先确定key值，在排列明文字母时不是垂直纵向排列，而是斜向45度角进行排列，且在排列key行后，变换方向后继续排列（右下变右上，右上变右下），组成多个“W”形，最后每行字母依次连接组成新字符串，得到密文。例如：</p>
+<p>明文：HAVE A GOOD DAY        key值：3</p>
+<p>将字母按“W”形排列成3行：  </p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>H</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+<th>A</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+<th>D</th>
+<th>.</th>
+<th>.</th>
+<th>.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>.</td>
+<td>A</td>
+<td>.</td>
+<td>E</td>
+<td>.</td>
+<td>G</td>
+<td>.</td>
+<td>o</td>
+<td>.</td>
+<td>D</td>
+<td>.</td>
+<td>Y</td>
+</tr>
+<tr>
+<td>.</td>
+<td>.</td>
+<td>V</td>
+<td>.</td>
+<td>.</td>
+<td>.</td>
+<td>O</td>
+<td>.</td>
+<td>.</td>
+<td>.</td>
+<td>A</td>
+<td>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>最后每行依次连接得到密文：HADAEGODYVOA</p>
+<h3 id="例题分析-3"><a href="#例题分析-3" class="headerlink" title="例题分析"></a>例题分析</h3><h4 id="题目链接-3"><a href="#题目链接-3" class="headerlink" title="题目链接"></a>题目链接</h4><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5112&amp;page=1">Railfence</a></p>
+<h4 id="分析与解答-3"><a href="#分析与解答-3" class="headerlink" title="分析与解答"></a>分析与解答</h4><p>密文看上去就是被打乱的flag值，基本上就是栅栏加密的结果，并且发现是W型栅栏加密。可以直接使用在线栅栏解密：</p>
+<p><a target="_blank" rel="noopener" href="http://www.atoolbox.net/Tool.php?Id=777">在线栅栏解密</a></p>
+<h1 id="培根密码-Bacon-Cipher"><a href="#培根密码-Bacon-Cipher" class="headerlink" title="培根密码(Bacon Cipher)"></a>培根密码(Bacon Cipher)</h1><h2 id="加密原理-6"><a href="#加密原理-6" class="headerlink" title="加密原理"></a>加密原理</h2><p>培根加密时，明文中每个字母会转换成一组五个由<strong>a</strong>和<strong>b</strong>组成的字母，其转换关系表如下：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>A/a</th>
+<th>aaaaa</th>
+<th>H/h</th>
+<th>aabbb</th>
+<th>O/o</th>
+<th>abbba</th>
+<th>V/v</th>
+<th>babab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B/b</td>
+<td>aaaab</td>
+<td>I/i</td>
+<td>abaaa</td>
+<td>P/p</td>
+<td>abbbb</td>
+<td>W/w</td>
+<td>babba</td>
+</tr>
+<tr>
+<td>C/c</td>
+<td>aaaba</td>
+<td>J/j</td>
+<td>abaab</td>
+<td>Q/q</td>
+<td>baaaa</td>
+<td>X/x</td>
+<td>babbb</td>
+</tr>
+<tr>
+<td>D/d</td>
+<td>aaabb</td>
+<td>K/k</td>
+<td>ababa</td>
+<td>R/r</td>
+<td>baaab</td>
+<td>Y/y</td>
+<td>bbaaa</td>
+</tr>
+<tr>
+<td>E/e</td>
+<td>aabaa</td>
+<td>L/l</td>
+<td>ababb</td>
+<td>S/s</td>
+<td>baaba</td>
+<td>Z/z</td>
+<td>bbaab</td>
+</tr>
+<tr>
+<td>F/f</td>
+<td>aabab</td>
+<td>M/m</td>
+<td>abbaa</td>
+<td>T/t</td>
+<td>baabb</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>G/g</td>
+<td>aabba</td>
+<td>N/n</td>
+<td>abbab</td>
+<td>U/u</td>
+<td>babaa</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>事实上，一般情况下，密文最终形式并不会由a和b组成，加密者通常会准备两种不同的字体，分别代表a和b，并且用一段由这两种字体所格式化的虚假信息作为密文，例如密文为：flag<strong>is</strong>he<strong>re</strong>，根据字体的差异，将未加粗字体看作a，加粗字体看作b，得到：aaaab baabb，对照关系表得到明文为：bt.</p>
+<p>弗朗西斯·培根还另外准备了一种方法，将大小写分别看作a和b，这样可以适用在无法使用不同字体的场合，比如在处理纯文字的数据时。</p>
+<p>其实培根密码还有另外一种加密关系：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>a</th>
+<th>AAAAA</th>
+<th>g</th>
+<th>AABBA</th>
+<th>n</th>
+<th>ABBAA</th>
+<th>t</th>
+<th>BAABA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>b</td>
+<td>AAAAB</td>
+<td>h</td>
+<td>AABBB</td>
+<td>o</td>
+<td>ABBAB</td>
+<td>u-v</td>
+<td>BAABB</td>
+</tr>
+<tr>
+<td>c</td>
+<td>AAABA</td>
+<td>i-j</td>
+<td>ABAAA</td>
+<td>p</td>
+<td>ABBBA</td>
+<td>w</td>
+<td>BABAA</td>
+</tr>
+<tr>
+<td>d</td>
+<td>AAABB</td>
+<td>k</td>
+<td>ABAAB</td>
+<td>q</td>
+<td>ABBBB</td>
+<td>x</td>
+<td>BABAB</td>
+</tr>
+<tr>
+<td>e</td>
+<td>AABAA</td>
+<td>l</td>
+<td>ABABA</td>
+<td>r</td>
+<td>BAAAA</td>
+<td>y</td>
+<td>BABBA</td>
+</tr>
+<tr>
+<td>f</td>
+<td>AABAB</td>
+<td>m</td>
+<td>ABABB</td>
+<td>s</td>
+<td>BAAAB</td>
+<td>z</td>
+<td>BABBB</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>在解密培根密码时两种加密关系都要考虑。</p>
+<h2 id="例题分析-4"><a href="#例题分析-4" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-4"><a href="#题目链接-4" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5117&amp;page=1">不仅仅是Morse</a></p>
+<h3 id="分析与解答-4"><a href="#分析与解答-4" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>观察密文，很明显是莫尔斯电码的形式，摩尔斯解密之后，得到如下结果：</p>
+<p><img src="Bacon.png" alt=""></p>
+<p><strong>may be have another deconde</strong>  提示我们这并不是最终结果，后面还有另外一种加密方式，可以看到后面字母由a和b组成，考虑是培根加密，可以编写python程序解密：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">Bacon</span>(<span class="params">in_string</span>):</span><br><span class="line">    first_cipher = [<span class="string">&quot;aaaaa&quot;</span>, <span class="string">&quot;aaaab&quot;</span>, <span class="string">&quot;aaaba&quot;</span>, <span class="string">&quot;aaabb&quot;</span>, <span class="string">&quot;aabaa&quot;</span>, <span class="string">&quot;aabab&quot;</span>, <span class="string">&quot;aabba&quot;</span>, <span class="string">&quot;aabbb&quot;</span>, <span class="string">&quot;abaaa&quot;</span>, <span class="string">&quot;abaab&quot;</span>, <span class="string">&quot;ababa&quot;</span>,</span><br><span class="line">                    <span class="string">&quot;ababb&quot;</span>, <span class="string">&quot;abbaa&quot;</span>, <span class="string">&quot;abbab&quot;</span>, <span class="string">&quot;abbba&quot;</span>, <span class="string">&quot;abbbb&quot;</span>, <span class="string">&quot;baaaa&quot;</span>, <span class="string">&quot;baaab&quot;</span>, <span class="string">&quot;baaba&quot;</span>, <span class="string">&quot;baabb&quot;</span>, <span class="string">&quot;babaa&quot;</span>, <span class="string">&quot;babab&quot;</span>,</span><br><span class="line">                    <span class="string">&quot;babba&quot;</span>, <span class="string">&quot;babbb&quot;</span>, <span class="string">&quot;bbaaa&quot;</span>, <span class="string">&quot;bbaab&quot;</span>]</span><br><span class="line"></span><br><span class="line">    second_cipher = [<span class="string">&quot;aaaaa&quot;</span>, <span class="string">&quot;aaaab&quot;</span>, <span class="string">&quot;aaaba&quot;</span>, <span class="string">&quot;aaabb&quot;</span>, <span class="string">&quot;aabaa&quot;</span>, <span class="string">&quot;aabab&quot;</span>, <span class="string">&quot;aabba&quot;</span>, <span class="string">&quot;aabbb&quot;</span>, <span class="string">&quot;abaaa&quot;</span>, <span class="string">&quot;abaaa&quot;</span>, <span class="string">&quot;abaab&quot;</span>,</span><br><span class="line">                     <span class="string">&quot;ababa&quot;</span>, <span class="string">&quot;ababb&quot;</span>, <span class="string">&quot;abbaa&quot;</span>, <span class="string">&quot;abbab&quot;</span>, <span class="string">&quot;abbba&quot;</span>, <span class="string">&quot;abbbb&quot;</span>, <span class="string">&quot;baaaa&quot;</span>, <span class="string">&quot;baaab&quot;</span>, <span class="string">&quot;baaba&quot;</span>, <span class="string">&quot;baabb&quot;</span>, <span class="string">&quot;baabb&quot;</span>,</span><br><span class="line">                     <span class="string">&quot;babaa&quot;</span>, <span class="string">&quot;babab&quot;</span>, <span class="string">&quot;babba&quot;</span>, <span class="string">&quot;babbb&quot;</span>]</span><br><span class="line">    res1 = <span class="string">&quot;&quot;</span></span><br><span class="line">    res2 = <span class="string">&quot;&quot;</span></span><br><span class="line">    in_string = <span class="built_in">str</span>.lower(in_string)</span><br><span class="line">    str_group = re.findall(<span class="string">&quot;.&#123;5&#125;&quot;</span>, in_string)</span><br><span class="line">    <span class="keyword">for</span> s_g <span class="keyword">in</span> str_group:</span><br><span class="line">        n1 = first_cipher.index(s_g)</span><br><span class="line">        n2 = second_cipher.index(s_g)</span><br><span class="line">        res1 += <span class="built_in">chr</span>(n1 + <span class="number">65</span>)</span><br><span class="line">        res2 += <span class="built_in">chr</span>(n1 + <span class="number">65</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;first_cypher: &quot;</span>, res1)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;second_cypher: &quot;</span>, res2)</span><br></pre></td></tr></table></figure>
+<p>解密得到结果：ATTACKANDDEFENCEWORLDISINTERESTING</p>
+<p>格式化后得到flag值：cyberpeace{attackanddefenceworldisinteresting}</p>
+<h1 id="RSA算法-RSA-algorithm"><a href="#RSA算法-RSA-algorithm" class="headerlink" title="RSA算法(RSA algorithm)"></a>RSA算法(RSA algorithm)</h1><blockquote>
+<p>RSA是1977年由罗纳德·李维斯特（Ron Rivest）、阿迪·萨莫尔（Adi Shamir）和伦纳德·阿德曼（Leonard Adleman）一起提出的。当时他们三人都在麻省理工学院工作。RSA就是他们三人姓氏开头字母拼在一起组成的</p>
+</blockquote>
+<p>RSA算法是引用最为广泛的一种公钥加密算法，所谓公钥加密(public key encryption)，也叫非对称加密。加密过程中，用于对数据加密的密钥称为公钥，对所有人公开，而对数据解密的密钥称为私钥，由接收者所保存，不对外公开。</p>
+<h2 id="加密原理-7"><a href="#加密原理-7" class="headerlink" title="加密原理"></a>加密原理</h2><h3 id="数学原理"><a href="#数学原理" class="headerlink" title="数学原理"></a>数学原理</h3><p>因为用以加密的公钥是对外公开的，那么我们应当保证解密的密钥无法被根据公钥反推出来，那要达到此目的必须使用到单向函数(One-way function)，即对于每一个输入，函数值都容易计算，但给出一个随机的函数值，要计算出原始的输入数据却很困难。常见的比如模运算：m^e mod n = c，已知m,e,n要求出密文c很简单，而已知e,n,c要求出明文m却很困难，RSA算法正是运用了这一特性。</p>
+<p>将加密方程变换：c^d mod n = m，其中d就是用以解密的密钥，它本身也不能被公开的n和e反推出来，根据数论：寻求两个大素数比较简单，而将它们的乘积质因数分解却极为困难。加密方程可以写成：m^e =  kn + c (k为正整数)，将c^d = (m^e - kn)^d带入解密方程中得到：(m^e - kn)^d mod n = m，由于(m^e - kn)^d多项式展开后的结果中只有m^ed项不包含n的乘积，因此方程化简为：m^ed mod n = m，可见，正确选取e和d使其满足此方程成为了算法的核心所在。</p>
+<p>根据欧拉定理：m，n为正整数，且gcd(m,n) = 1，则有m^φ(n) ≡ 1(mod n)，其中φ(n)称为对模n缩系的元素个数，即在小于等于n的正整数中与n互质的数的个数。对于一个大数n而言，要求出φ(n)的值是很困难的，但如果这个数本身就是质数，那么显然φ(n)=n-1。此外，φ(n)还有一个特性：对于互质的两个正整数p,q而言，φ(pq) = φ(p)φ(q)，那么我们在选取n的值时可以先选取互质的两个数p和q，根据以上定理，n = pq，φ(n) = φ(pq) = (p-1)(q-1)。</p>
+<p>根据以上原理，我们将欧拉定理方程进行变换，等式两端同时取k次幂并乘上m，最后变换成模运算的形式得到：m^{kφ(n)+1} mod n = m，与我们之前得到的 m^ed mod n = m 相比照，联立两式：ed = kφ(n) + 1，写成模运算形式：ed mod φ(n) = 1，因此我们可以通过选取加密密钥e来得到解密密钥d，值得注意的是这里e值的选取必须保证gcd(e,φ(n)) = 1，否则d值将不存在，具体数学证明略。</p>
+<p>最终将e和n的值公布，作为加密公钥，将d的值保留作为解密私钥。由于他人未知p和q的值，且n是一个大数的情况下对n进行质因数分解十分困难，也就无法得到φ(n)的值，就无法根据e求得d。</p>
+<p>RSA允许你选择公钥大小。512位密钥被视为不安全；768位密钥不用担心受到除了国家安全管理（NSA）外其他事物的危害；1024位几乎是安全的。</p>
+<p><em>加密原理参考链接</em>：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV14y4y1272w">探秘公钥加密算法RSA</a></p>
+<h3 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h3><p>（1）选取两个大素数p和q，得到乘积n = pq，则φ(n) = (p-1)(q-1)。</p>
+<p>（2）选取一个大整数e，满足gcd(e,φ(n)) = 1。</p>
+<p>（3）根据方程 ed mod φ(n) = 1 确定d的值。</p>
+<p>（4）公开n和e，作为公钥，私密保存d，作为私钥。</p>
+<p>（5）加密方程为：c = m^e mod n.    解密方程为：m = c^d mod n</p>
+<h2 id="例题分析-5"><a href="#例题分析-5" class="headerlink" title="例题分析"></a>例题分析</h2><h3 id="题目链接-5"><a href="#题目链接-5" class="headerlink" title="题目链接"></a>题目链接</h3><p><a target="_blank" rel="noopener" href="https://adworld.xctf.org.cn/task/answer?type=crypto&amp;number=5&amp;grade=0&amp;id=5114&amp;page=1">easy_RSA</a></p>
+<h3 id="分析与解答-5"><a href="#分析与解答-5" class="headerlink" title="分析与解答"></a>分析与解答</h3><p>题目直接给出了p，q，e的值，要求求解d，得到φ(n)后根据 ed mod φ(n) = 1求解即可，这里我直接将模运算写成了 ed = kφ(n) + 1，并遍历k的值，若e能被 kφ(n) + 1 整除则得到解密密钥d。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">p = <span class="number">473398607161</span></span><br><span class="line">q = <span class="number">4511491</span></span><br><span class="line">e = <span class="number">17</span></span><br><span class="line">fai_N = (p - <span class="number">1</span>) * (q - <span class="number">1</span>)</span><br><span class="line">k = <span class="number">0</span></span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    <span class="keyword">if</span> (k * fai_N + <span class="number">1</span>) % e == <span class="number">0</span>:</span><br><span class="line">        d = (k * fai_N + <span class="number">1</span>) // e</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    k += <span class="number">1</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;d值为：&quot;</span>, d)</span><br></pre></td></tr></table></figure>
+<p>运行得到结果：125631357777427553，flag即为：cyberpeace{125631357777427553}。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/">https://lordaeronesz.top/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CTF/">CTF</a><a class="post-meta__tags" href="/tags/Crypto/">Crypto</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/">信息安全</a><a class="post-meta__tags" href="/tags/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/">攻防世界</a></div><div class="post-share"><div class="social-share" data-image="/2021/08/09/Crypto%E5%9F%BA%E7%A1%80/Crypto.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/" title="hexo博客的备份与恢复"><img class="cover" src="/2021/08/25/hexo%E5%8D%9A%E5%AE%A2%E7%9A%84%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/hexo.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">hexo博客的备份与恢复</div></div><div class="info-2"><div class="info-item-1">为了防止误操作或计算机崩溃导致的博客源文件丢失，或满足我们更换电脑进行写作的需求，定期进行备份与恢复就显得很重要了。 备份需备份的文件目录我们在进行备份时，并不需要将整个博客目录全部备份，只备份以下几个用户自定义的即可：scaffolds目录，source目录，themes目录，.gitignore文件，_config.yml文件，package.json文件，其他都是通用的。 首先我们先来观察整个博客目录的结构：  .deploy_git    本目录会在我们部署时生成，也就是github上保存的文件，无需备份。  node_modules    本目录包含了hexo博客依赖的模块，安装时自动生成，无需备份。  public    与.deploy_git类似，是编译后生成的文件静态网页文件，无需备份。  scaffolds    保存了用户文章的模板，需要备份。  source    保存了用户文章的源文件，需要备份。  themes    保存了用户下载的主题文件与配置，需要备份。  .gitignore    保存了推送到github时忽略的文件名，需要备份。  _con...</div></div></div></a><a class="pagination-related" href="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/" title="CSharp事件和委托"><img class="cover" src="/2021/05/29/CSharp%E4%BA%8B%E4%BB%B6%E5%92%8C%E5%A7%94%E6%89%98/CSharp.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">CSharp事件和委托</div></div><div class="info-2"><div class="info-item-1">委托与事件在开发中的应用非常广泛，本文将简单介绍C#中委托和事件的定义、使用方法，以及它们之间的区别和联系。  委托C#中的委托（delegate）类似于C/C++中的函数指针，是一种存在对某个方法的引用的引用类型变量，所有的委托都派生自System.Delegate类。 委托的声明声明委托的语法如下： 1delegate &lt;return type&gt; &lt;delegate name&gt; &lt;parameter list&gt; 比方说，我要声明一个无返回值，无参数的委托。 1public delegate void MyDelegate(); 在声明了委托类型后，必须将其实例化才能生效，可以使用new关键字创建并传入参数（参数为一个特定的方法名）。 1MyDelegate myDelegate = new MyDelegate(Func1); 以上实例中我们实例化了一个带有Func1方法引用的MyDelegate类型变量，并将其赋值给了myDlegate实例。 委托的调用如果想让委托调用它所引用的方法，可以直接仿照方法调用的写法。 1myDelegate(...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2021/12/04/%E8%AE%B0%E4%B8%80%E6%AC%A1CTF%E6%A0%A1%E8%B5%9B/" title="记一次CTF校赛"><img class="cover" src="/2021/12/04/%E8%AE%B0%E4%B8%80%E6%AC%A1CTF%E6%A0%A1%E8%B5%9B/Crypto.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-12-04</div><div class="info-item-2">记一次CTF校赛</div></div><div class="info-2"><div class="info-item-1">本文记录一下刚刚结束的CTF校赛，感觉本次校赛题目出得实在有点坑，但也算学到了不少东西。 Cryptoeasy_ECC问题描述123456789101112131415已知椭圆曲线加密Ep(a,b)参数为p = 15424654874903a = 305423748b = 315284355172G(15079176652031,83237376468)私钥为k = 655321求公钥K(x,y) 思路常规的椭圆曲线加密问题，直接根据加密原理编写解密程序，得到两个结果。根据问题提示，考虑 flag 为两数的异或结果。 解密脚本123456789101112131415161718192021222324252627def add(A, B):    if A == (0, 0):        return B    if B == (0, 0):        return A    x1, y1 = A    x2, y2 = B    if A != B:        λ = (y2 - y1) * pow((x2 - x1), p - 2, p)    else:   ...</div></div></div></a><a class="pagination-related" href="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/" title="ZIP格式分析"><img class="cover" src="/2021/08/29/ZIP%E6%A0%BC%E5%BC%8F%E5%88%86%E6%9E%90/zip.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2021-08-29</div><div class="info-item-2">ZIP格式分析</div></div><div class="info-2"><div class="info-item-1">最近遇到一道CTF题是和zip格式编码相关的，正好我一直以来就对各文件格式编码没有一个系统的认知，就趁这个机会好好学习一下。 简介 ZIP文件格式是一种数据压缩和文档储存的文件格式，原名Deflate，发明者为菲尔·卡茨（Phil Katz），他于1989年1月公布了该格式的资料。ZIP通常使用后缀名“.zip”，它的MIME格式为application/zip。当前，ZIP格式属于几种主流的压缩格式之一，其竞争者包括RAR格式以及开放源码的7z格式。从性能上比较，RAR及7z格式较ZIP格式压缩率较高，而7-Zip由于提供了免费的压缩工具而逐渐在更多的领域得到应用。Microsoft从Windows ME操作系统开始内置对zip格式的支持，即使用户的计算机上没有安装解压缩软件，也能打开和制作zip格式的压缩文件，OS X和流行的Linux操作系统也对zip格式提供了类似的支持。因此如果在网络上传播和分发文件，zip格式往往是最常用的选择。  官方文档如果想要准确系统的了解整个zip格式，最好还是查看官方文档，链接如下： .ZIP File Format Specificatio...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Base64"><span class="toc-number">1.</span> <span class="toc-text">Base64</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">加密原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Base32-Base16"><span class="toc-number">1.2.</span> <span class="toc-text">Base32,Base16</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90"><span class="toc-number">1.3.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5"><span class="toc-number">1.3.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94"><span class="toc-number">1.3.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%87%AF%E6%92%92%E5%AF%86%E7%A0%81-Caesar-Cipher"><span class="toc-number">2.</span> <span class="toc-text">凯撒密码(Caesar Cipher)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-1"><span class="toc-number">2.1.</span> <span class="toc-text">加密原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-1"><span class="toc-number">2.2.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-1"><span class="toc-number">2.2.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-1"><span class="toc-number">2.2.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%91%A9%E5%B0%94%E6%96%AF%E7%94%B5%E7%A0%81-Morse-Code"><span class="toc-number">3.</span> <span class="toc-text">摩尔斯电码(Morse Code)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-2"><span class="toc-number">3.1.</span> <span class="toc-text">加密原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-2"><span class="toc-number">3.2.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-2"><span class="toc-number">3.2.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-2"><span class="toc-number">3.2.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%B9%82%E6%95%B0%E5%8A%A0%E5%AF%86-Binary-idempotent-encryption"><span class="toc-number">4.</span> <span class="toc-text">二进制幂数加密(Binary idempotent encryption)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-3"><span class="toc-number">4.1.</span> <span class="toc-text">加密原理</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81-Rail-fence-Cipher"><span class="toc-number">5.</span> <span class="toc-text">栅栏密码(Rail-fence Cipher)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%A0%E7%BB%9F%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81"><span class="toc-number">5.1.</span> <span class="toc-text">传统栅栏密码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-4"><span class="toc-number">5.1.1.</span> <span class="toc-text">加密原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#W%E5%9E%8B%E6%A0%85%E6%A0%8F%E5%AF%86%E7%A0%81"><span class="toc-number">5.2.</span> <span class="toc-text">W型栅栏密码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-5"><span class="toc-number">5.2.1.</span> <span class="toc-text">加密原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-3"><span class="toc-number">5.2.2.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-3"><span class="toc-number">5.2.2.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-3"><span class="toc-number">5.2.2.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%B9%E6%A0%B9%E5%AF%86%E7%A0%81-Bacon-Cipher"><span class="toc-number">6.</span> <span class="toc-text">培根密码(Bacon Cipher)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-6"><span class="toc-number">6.1.</span> <span class="toc-text">加密原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-4"><span class="toc-number">6.2.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-4"><span class="toc-number">6.2.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-4"><span class="toc-number">6.2.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#RSA%E7%AE%97%E6%B3%95-RSA-algorithm"><span class="toc-number">7.</span> <span class="toc-text">RSA算法(RSA algorithm)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E5%8E%9F%E7%90%86-7"><span class="toc-number">7.1.</span> <span class="toc-text">加密原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E5%AD%A6%E5%8E%9F%E7%90%86"><span class="toc-number">7.1.1.</span> <span class="toc-text">数学原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E6%B5%81%E7%A8%8B"><span class="toc-number">7.1.2.</span> <span class="toc-text">算法流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98%E5%88%86%E6%9E%90-5"><span class="toc-number">7.2.</span> <span class="toc-text">例题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E9%93%BE%E6%8E%A5-5"><span class="toc-number">7.2.1.</span> <span class="toc-text">题目链接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E7%AD%94-5"><span class="toc-number">7.2.2.</span> <span class="toc-text">分析与解答</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

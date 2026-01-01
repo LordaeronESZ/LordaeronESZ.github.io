@@ -1,0 +1,317 @@
+/* 豆瓣翻页按钮美化样式 */
+
+/* 基础按钮样式增强 */
+.idouban-button {
+  cursor: pointer;
+  padding: 8px 16px;
+  text-decoration: none !important;
+  border: 1px solid var(--btn-border-color, #e0e0e0);
+  border-radius: 8px;
+  background-color: var(--btn-bg-color, #f8f9fa);
+  color: var(--btn-text-color, #4c4c4c);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  margin: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 悬停效果 - 颜色变化和轻微放大 */
+.idouban-button:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border-color: transparent;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 悬停时的光泽效果 */
+.idouban-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.idouban-button:hover::before {
+  left: 100%;
+}
+
+/* 点击效果 */
+.idouban-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* 禁用状态 */
+.idouban-button:disabled,
+.idouban-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 上一页/下一页按钮特殊样式 */
+.idouban-button.prev-button::before {
+  content: '« ';
+  margin-right: 4px;
+}
+
+.idouban-button.next-button::after {
+  content: ' »';
+  margin-left: 4px;
+}
+
+/* 翻页容器样式 */
+.idouban-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .idouban-button {
+  background-color: var(--btn-bg-color, #2a2a2a);
+  color: var(--btn-text-color, #e0e0e0);
+  border-color: var(--btn-border-color, #444);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .idouban-button:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+/* 响应式设计 - 移动端优化 */
+@media (max-width: 768px) {
+  .idouban-button {
+    padding: 6px 12px;
+    font-size: 13px;
+    margin: 2px;
+  }
+
+  .idouban-pagination {
+    gap: 6px;
+  }
+}
+
+/* 按钮组样式 */
+.idouban-button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 当前页码按钮样式 */
+.idouban-button.current {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border-color: transparent;
+  cursor: default;
+  font-weight: 600;
+}
+
+.idouban-button.current:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* 添加淡入动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.idouban-pagination {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* ========== 豆瓣标签按钮美化（想玩/在玩/已玩） ========== */
+
+/* 标签按钮容器 */
+.idouban-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 基础标签按钮样式 */
+.idouban-tab {
+  cursor: pointer;
+  padding: 10px 24px;
+  text-decoration: none !important;
+  border: 2px solid transparent;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: #5a5a5a;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.5px;
+}
+
+/* 标签按钮悬停效果 */
+.idouban-tab:hover {
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: #333;
+}
+
+/* 悬停时的光泽效果 */
+.idouban-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.idouban-tab:hover::before {
+  left: 100%;
+}
+
+/* 激活状态的标签按钮 */
+.idouban-tab-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transform: scale(1.05);
+  font-weight: 700;
+}
+
+/* 激活状态悬停效果 */
+.idouban-tab-active:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+  transform: scale(1.08) translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+/* 标签按钮点击效果 */
+.idouban-tab:active {
+  transform: scale(0.98);
+}
+
+.idouban-tab-active:active {
+  transform: scale(1.02);
+}
+
+/* 为不同的标签添加图标（可选） */
+.idouban-tab:nth-child(1)::after {
+  content: ' 💭';
+  margin-left: 4px;
+}
+
+.idouban-tab:nth-child(2)::after {
+  content: ' ♥';
+  margin-left: 4px;
+  color: #e74c3c;
+  text-shadow: 0 0 2px rgba(231, 76, 60, 0.5);
+}
+
+.idouban-tab:nth-child(3)::after {
+  content: ' ✅';
+  margin-left: 4px;
+}
+
+/* 暗色模式下的标签按钮 */
+[data-theme="dark"] .idouban-tab {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  color: #e0e0e0;
+  border-color: #444;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .idouban-tab:hover {
+  background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* 响应式设计 - 移动端标签按钮 */
+@media (max-width: 768px) {
+  .idouban-tabs {
+    gap: 8px;
+  }
+
+  .idouban-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
+  }
+
+  .idouban-tab::after {
+    display: none; /* 移动端隐藏图标以节省空间 */
+  }
+}
+
+/* 标签按钮淡入动画 */
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.idouban-tab {
+  animation: tabFadeIn 0.4s ease-out backwards;
+}
+
+/* 为每个标签添加延迟动画效果 */
+.idouban-tab:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.idouban-tab:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.idouban-tab:nth-child(3) {
+  animation-delay: 0.3s;
+}
+

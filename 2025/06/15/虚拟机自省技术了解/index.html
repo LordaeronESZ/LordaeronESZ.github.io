@@ -1,0 +1,373 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>虚拟机自省技术 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="虚拟机自省技术">
+<meta property="og:url" content="https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg">
+<meta property="article:published_time" content="2025-06-15T15:30:11.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:39.416Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="虚拟化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "虚拟机自省技术",
+  "url": "https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/",
+  "image": "https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg",
+  "datePublished": "2025-06-15T15:30:11.000Z",
+  "dateModified": "2025-12-26T16:26:39.416Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '虚拟机自省技术',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">虚拟机自省技术</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-06-15T15:30:11.000Z" title="发表于 2025-06-15 23:30:11">2025-06-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:39.416Z" title="更新于 2025-12-27 00:26:39">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">748</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>2分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>虚拟机自省技术（Virtual Machine Introspection）是一种通过外部监控虚拟机内部状态的技术，它能够在不依赖虚拟机内运行的软件的情况下，获取和分析虚拟机的内存、CPU 状态、磁盘活动、网络流量等数据。</p>
+<span id="more"></span>
+<p>以下是维基百科中对虚拟机自省技术的描述，我对其进行了中文翻译：</p>
+<blockquote>
+<p><strong>原文链接：</strong> <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Virtual_machine_introspection">Virtual machine introspection - Wikipedia</a></p>
+<p>在计算机领域，虚拟机自省（Virtual Machine Introspection, VMI）是一种监控虚拟机运行状态的技术，这有助于调试和取证分析（forensic analysis）。</p>
+<p><em>introspection</em> 这个术语由 Garfinkel 和 Rosenblum 引入虚拟机领域。他们发明了一种“保护安全应用程序免受恶意软件攻击”的方法，并将其称为 VMI。如今 VMI 是不同的虚拟机取证和分析方法的通用术语。基于 VMI 的方法广泛用于安全应用程序、软件调试和系统管理。</p>
+<p>VMI 工具可以位于虚拟机内部或外部，并通过跟踪事件（中断、内存写入等）或向虚拟机发送请求来工作。虚拟机监视器通常提供底层信息，如内存的原始字节。将这种底层视图转换为对用户有意义的内容也就是所谓的“语义鸿沟”问题。解决这个问题需要分析和理解被监视的系统。</p>
+<p><strong>虚拟机内的 VMI</strong></p>
+<p>运行在虚拟机内部的程序可以提供其他进程的信息。这些信息可以通过网络接口或一些虚拟设备（如串口）发送。虚拟机内自省程序比如 WinDbg 或者与远程调试器交互的 GDB 服务器。</p>
+<p>这种方法的缺点是它需要在虚拟机内中运行一个正常的 OS。如果 OS 挂起或尚未加载，那么自省代理（agent）也无法工作。</p>
+<p><strong>虚拟机外的 VMI</strong></p>
+<p>VMI 工具可以在虚拟机监视器内实现，也可以作为从虚拟机监视器捕获信息（例如内存数据）的单独程序实现。然后，必须对这些数据进行解释，以了解系统实际执行的过程。解释工具中一个比较流行的是 Volatility framwork。该框架能够支持很多主流的操作系统，并从中提取不同的信息，比如进程树和内核对象列表。</p>
+</blockquote>
+<p>主流的 VMI 工具如下：</p>
+<ul>
+<li>LibVMI：开源库（支持主流的虚拟化方案：Xen/KVM/VMware），提供统一的 API 读取虚拟机内存、寄存器，并支持符号解析（如从内存中提取 Windows 的 <code>EPROCESS</code> 结构）。</li>
+<li>Volatility：内存取证框架，可与 VMI 结合分析虚拟机内存快照（如检测恶意进程）。</li>
+<li>DRAKVUF：动态分析工具，通过注入恶意代码并监控虚拟机行为，用于沙箱检测。</li>
+<li>GRR（Google Rapid Response）：结合 VMI 实现远程取证和响应。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/">https://lordaeronesz.top/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a></div><div class="post-share"><div class="social-share" data-image="/2025/06/15/%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E7%9C%81%E6%8A%80%E6%9C%AF%E4%BA%86%E8%A7%A3/kvm.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结"><img class="cover" src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</div></div><div class="info-2"><div class="info-item-1">本文是对 ACSAC &#39;23 论文《Remote attestation of confidential VMs using ephemeral vTPMs》的总结，以及个人的理解和思考。  解决的问题机密虚拟机（CVM）技术为虚拟机提供一个隔离环境，防止受到 hypervisor 等高特权软件的干扰。但是这样的隔离机制作用于虚拟机运行时，在虚拟机启动过程中，此时的完整性（intergrity）保护依赖于度量启动（measured boot）和运行时证明（runtime attestation）。运行时证明需要一个硬件信任根，在物理机上，TPM 芯片可以作为这样的信任根。然而在云计算环境中，云服务提供商通过设备模拟的方式给用户提供 vTPM，使用这样的模拟设备需要信任云服务提供商，这与 CVM 的威胁模型不符。 本文作者提出了一种方法，借助 AMD SEV-SNP 技术，在 CVM 内部模拟一个 vTPM，而无需信任 hypervisor。具备以下安全要求：  隔离性：既与 guest 隔离又与 host 隔离。 安全通信：与物理 TPM 的通信是硬件级隔离的，因此 vT...</div></div></div></a><a class="pagination-related" href="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/" title="MMIO和mmap文件映射的区别"><img class="cover" src="/2025/05/16/MMIO%E5%92%8Cmmap%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E7%9A%84%E5%8C%BA%E5%88%AB/unix.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">MMIO和mmap文件映射的区别</div></div><div class="info-2"><div class="info-item-1">MMIO 和 mmap 文件映射都涉及将外部资源（除 CPU 寄存器和内存以外）映射到进程的地址空间中，但它们并非等同。本文将对二者进行分别介绍，并对比它们之间的区别和联系。  MMIO计算机系统中的设备种类繁多，不同设备它们的物理结构、电气特性可能完全不同。因此为了屏蔽其中的差异，让 CPU 更好的与不同的设备进行交互，各种不同的设备都被抽象成了一系列的外部接口，也就是 设备寄存器 。CPU 与设备交互的方式，就是对这些寄存器进行读写。 那么问题自然应运而生，以什么样的方式，或者更具体地说，执行什么样的指令对设备寄存器进行读写？通常来说有两种：一种是 CPU 采用特殊的 I/O 指令（如 x86 架构下的 in/out 指令），指令中对应的设备寄存器地址位于一片专门的 I/O 地址空间中，这种方式成为端口映射 I/O（Port-Mapped I/O, PMIO）；而另一种则是将设备寄存器的地址映射到进程的虚拟地址空间中，进而直接使用普通的内存读写指令（如 x86 架构下的 mov）对其进行读写，这种方式称为内存映射 I/O（Memory-Mapped I/O），也就是本文要介绍...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/07/%E4%BD%BF%E7%94%A8QEMU%E6%A8%A1%E6%8B%9F%E5%99%A8%E6%A8%A1%E6%8B%9F%E4%B8%80%E4%B8%AA%E7%A1%AC%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96%E7%8E%AF%E5%A2%83/" title="使用QEMU TCG模拟一个硬件虚拟化环境"><img class="cover" src="/2025/09/07/%E4%BD%BF%E7%94%A8QEMU%E6%A8%A1%E6%8B%9F%E5%99%A8%E6%A8%A1%E6%8B%9F%E4%B8%80%E4%B8%AA%E7%A1%AC%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96%E7%8E%AF%E5%A2%83/kvm.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-07</div><div class="info-item-2">使用QEMU TCG模拟一个硬件虚拟化环境</div></div><div class="info-2"><div class="info-item-1">本文将介绍如何使用 QEMU TCG 模拟的方式，构建一个支持硬件虚拟化的环境，使得能够在该模拟器环境下启动一个 KVM 虚拟机。  编译最新 QEMU首先需要下载并编译 QEMU，我们以 x86_64 架构为例，QEMU 选择使用最新版本。 123456789# 下载最新仓库$ git clone https://git.qemu-project.org/qemu.git$ cd qemu# 配置编译目标$ ./configure --target-list=x86_64-softmmu# 编译$ make -j$(nproc) 准备 Linux 内核（选用 6.12.0）接下来，需要准备 Linux 内核，我这里选用的是 6.12.0 版本。硬件虚拟化技术使用 AMD-V，需要在 menuconfig 中启用 KVM for AMD processor support。 1234567891011121314# 下载 6.12 版本内核$ wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.tar.xz$ ...</div></div></div></a><a class="pagination-related" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img class="cover" src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-02</div><div class="info-item-2">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</div></div><div class="info-2"><div class="info-item-1">本文将分享发表在 AsiaCCS ’24 上的论文《SoK: Understanding Designs Choices and Pitfalls of Trusted Execution Environments》，文章系统梳理了不同可信执行环境（TEE）设计上的选择和取舍，个人读完之后很有收获，推荐想做或正在做 TEE 设计相关工作的阅读。  TEE 设计核心挑战文章提出了 TEE 设计过程中的核心挑战：TEE 设计如何保护 TEE 实例使用的资源，同时使不受信任的（宿主机）操作系统能够以有效的方式管理计算资源，以履行 CSP 的职责。 简而言之，就是如何平衡安全隔离和高效性能之间的关系。举个极端的例子，我们可以将虚拟机启动、vCPU 调度、内存分配、异常处理等不可信 hypervisor 的工作完全交给新引入的位于 TCB 中的可信实体（文中称之为 RTPM, TEE Runtime Protection Module）来完成，这样会导致一些问题：在 RTPM 中实现宿主 hypervisor 中复杂的调度策略是不现实的。首先，像 AMD SEV 它的 RTPM 为安全协处...</div></div></div></a><a class="pagination-related" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img class="cover" src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-15</div><div class="info-item-2">现有机密虚拟机设计方案汇总</div></div><div class="info-2"><div class="info-item-1">本文算是一个笔记性质的文章，整理了现有的大部分机密虚拟机（CVM）的设计方法，并主要围绕硬件/固件扩展、内存机密性保护、内存完整性保护、寄存器状态保护几个方面来介绍。覆盖了市面上的大多数 CVM 设计，既包括工业界已商用的方案，如 AMD SEV、Intel TDX 等，也包括一些学术界的方案，如 VirTEE、ZION。  由于 Arm 官方方案 CCA 的标准和软件栈趋近成熟，因此基于 Arm 架构的其它方案如 TwinVisor 和 virtCCA 在此便不再介绍了，以下是个人整理的现有 CVM 方案的列表：  AMD SEV-SNP: 现已商用。 Intel TDX: 现已商用。 Arm: TwinVisor (SOSP ‘21): None virtCCA (arXiv): None CCA (官方方案): 硬件规范成熟，软件栈快速构建中，支持的芯片（Arm v9）还未上市。   IBM PEF: 现已商用，发表论文（EuroSys ‘21）。 RISC-V: CoVE: 社区官方方案，正在建设中 VirtTEE (DAC ‘22): 向下兼容，虚拟机内核无需经过修改。...</div></div></div></a><a class="pagination-related" href="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/" title="机密虚拟机的威胁模型"><img class="cover" src="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/kvm.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-05-06</div><div class="info-item-2">机密虚拟机的威胁模型</div></div><div class="info-2"><div class="info-item-1">本文将介绍近年兴起的机密虚拟机（Confidential Virtual Machine）技术所旨在抵御的威胁模型，主要关注内存机密性（confidentiality）和内存完整性（integrity）两个方面。在解释该威胁可能造成的问题的同时，还将同时介绍现在最主流的机密虚拟机解决方案之一的 AMD SEV-SNP 如何如何应对该威胁。  在正式介绍之前，有必要先明确这样一个概念，在机密虚拟机的威胁模型中，Hypervisor 被认为是不可信的。恶意的 Hypervisor 可能读取虚拟机的内存数据，导致虚拟机用户隐私泄露；或是直接写入虚拟机内存，导致虚拟机运行产生预期之外的结果。 机密性虚拟机内存由于虚拟机的内存是通过第二阶段页表映射（GPA -&gt; HPA）到宿主机内存中，且该页表由 Hypervisor 进行维护。因此在未引入机密虚拟机技术时，Hypervisor 能够直接借助该页表映射，手动进行地址转换并读取虚拟机内存数据。 对于虚拟机内存的机密性，AMD 在最早的 SEV 技术（2016 年）中已经解决。解决方法是为每个虚拟机引入一个 AES 加密密钥，虚拟机指定...</div></div></div></a><a class="pagination-related" href="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/" title="《General overview of AMD SEV-SNP and Intel TDX》中文翻译"><img class="cover" src="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-02-10</div><div class="info-item-2">《General overview of AMD SEV-SNP and Intel TDX》中文翻译</div></div><div class="info-2"><div class="info-item-1">本文为论文《General overview of AMD SEV-SNP and Intel TDX》的中文翻译，翻译工具使用大模型 DeepSeek v3 和通义千问 2.5，经过了本人的核对与校正。由于本人在机密计算领域还处在初学阶段，因此一些专有名词的翻译可能存在问题，欢迎指出。   AMD SEV-SNP 和 Intel TDX 的总体概述    作者：Kevin Kollenda   摘要   可信执行环境（TEEs）在安全关键代码的执行上应用越来越普遍。AMD SEV-SNP 和 Intel TDX 是新开发的硬件扩展，旨在为虚拟机提供可信执行的环境。通过提供额外的完整性保证并基于之前的安全扩展，它们使得在云环境中实现不会危及敏感用户数据的机密计算成为可能。本文介绍了用于实现这些重大安全增益的额外组件和流程。  关键词   可信计算，AMD SEV-SNP，Intel TDX，安全嵌套分页 介绍如今，软件公司正越来越多地将其应用程序迁移到云环境中，而不是在本地托管。这可能会对机密用户数据构成风险，因为云服务提供商（CSP）可以直接访问运行潜在安全关键应用程序的硬件。...</div></div></div></a><a class="pagination-related" href="/2025/10/31/%E4%BD%BF%E7%94%A8QEMU%E5%AE%89%E8%A3%85%E5%B9%B6%E5%90%AF%E5%8A%A8%E4%B8%80%E4%B8%AAUbuntu%E5%8F%91%E8%A1%8C%E7%89%88/" title="使用QEMU安装并启动一个Ubuntu发行版"><img class="cover" src="/2025/10/31/%E4%BD%BF%E7%94%A8QEMU%E5%AE%89%E8%A3%85%E5%B9%B6%E5%90%AF%E5%8A%A8%E4%B8%80%E4%B8%AAUbuntu%E5%8F%91%E8%A1%8C%E7%89%88/ubuntu.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-31</div><div class="info-item-2">使用QEMU安装并启动一个Ubuntu发行版</div></div><div class="info-2"><div class="info-item-1">之前自己编译 QEMU 跑模拟器/虚拟机基本都是跑的一个基于 buildroot 构建的小型根文件系统，虽然也能够完成一些基础的测试，但是功能完备性上相比发行版来说还是要差很多，而且如果想添加新的软件环境也比较麻烦。因此这两天花了点时间倒腾了一下环境，把 QEMU 安装和运行发行版的流程走通，便于后续的学习和研究。  安装系统发行版我选择的是 Ubuntu，没有什么别的原因，只是因为用的最多。而已经安装好 Ubuntu 系统的磁盘镜像可能不太好找（官网只看到 RISC-V 架构有 pre-installed 版本），因此我选择下载 iso 镜像，然后手动安装。这里可以直接选择通过清华镜像源下载： 1wget https://mirrors.tuna.tsinghua.edu.cn/ubuntu-releases/noble/ubuntu-24.04.3-live-server-amd64.iso 我下载的是较新的版本，因此 seabios 可能不支持，需要更现代的固件，虚拟机场景下通常是 OVMF，使用包管理工具安装一下： 1sudo apt install ovmf 找到安装好...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

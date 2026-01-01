@@ -1,0 +1,128 @@
+/* 头像美化样式 */
+
+/* 头像容器 - 添加渐变边框 */
+.avatar-img {
+  position: relative;
+  padding: 3px; /* 为渐变边框留出空间 */
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #4facfe 75%,
+    #00f2fe 100%
+  );
+  background-size: 300% 300%;
+  animation: gradient-rotate 5s ease infinite;
+  box-shadow:
+    0 0 20px rgba(102, 126, 234, 0.4),
+    0 0 40px rgba(118, 75, 162, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* 渐变背景动画 */
+@keyframes gradient-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 头像图片本身 */
+.avatar-img img {
+  border: 2px solid #fff;
+  border-radius: 70px;
+  transition: all 0.3s ease;
+}
+
+/* 鼠标悬停时的效果 */
+.avatar-img:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 0 30px rgba(102, 126, 234, 0.6),
+    0 0 60px rgba(118, 75, 162, 0.4);
+}
+
+.avatar-img:hover img {
+  filter: brightness(1.1);
+}
+
+/* 呼吸灯效果 - 让头像更生动 */
+.avatar-img::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 73px;
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #4facfe 75%,
+    #00f2fe 100%
+  );
+  background-size: 300% 300%;
+  animation: gradient-rotate 5s ease infinite, breathing 3s ease-in-out infinite;
+  opacity: 0;
+  z-index: -1;
+  filter: blur(10px);
+  transition: opacity 0.3s ease;
+}
+
+@keyframes breathing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+/* 悬停时增强呼吸灯效果 */
+.avatar-img:hover::before {
+  opacity: 0.8;
+  animation: gradient-rotate 5s ease infinite, breathing 2s ease-in-out infinite;
+}
+
+/* 暗色模式适配 */
+[data-theme="dark"] .avatar-img {
+  background: linear-gradient(
+    135deg,
+    #4facfe 0%,
+    #00f2fe 25%,
+    #667eea 50%,
+    #764ba2 75%,
+    #f093fb 100%
+  );
+  background-size: 300% 300%;
+  box-shadow:
+    0 0 20px rgba(79, 172, 254, 0.4),
+    0 0 40px rgba(102, 126, 234, 0.2);
+}
+
+[data-theme="dark"] .avatar-img:hover {
+  box-shadow:
+    0 0 30px rgba(79, 172, 254, 0.6),
+    0 0 60px rgba(102, 126, 234, 0.4);
+}
+
+[data-theme="dark"] .avatar-img::before {
+  background: linear-gradient(
+    135deg,
+    #4facfe 0%,
+    #00f2fe 25%,
+    #667eea 50%,
+    #764ba2 75%,
+    #f093fb 100%
+  );
+}

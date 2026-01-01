@@ -1,0 +1,353 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Write the code, change the world">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PageFault">
+<meta property="og:url" content="https://lordaeronesz.top/page/6/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="Write the code, change the world">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/img/madline.png">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="代码、游戏、科技">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/img/madline.png"><script type="application/ld+json"></script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/page/6/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'PageFault',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'home'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="page" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><h1 class="title-seo">PageFault</h1></header><main class="layout" id="content-inner"><div class="recent-posts nc" id="recent-posts"><div class="recent-post-items"><div class="recent-post-item"><div class="post_cover left"><a href="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/" title="OSTEP Projects：Reverse"><img class="post-bg" src="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/img.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="OSTEP Projects：Reverse"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/" title="OSTEP Projects：Reverse">OSTEP Projects：Reverse</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-05-06T01:03:08.000Z" title="发表于 2024-05-06 09:03:08">2024-05-06</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="content">本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 Reverse 部分，包含个人的代码实现和设计思路。  思路题目的要求很简单：按行读取数据，读取完成后将所读取到的所有行反向输出（行间反向，行内不变）。但代码实现上却包含不少细节。 首先是核心问题：如何将读取到行反向输出？首先可以确定的一点是：在所有行读取完成之前，读取到的每一个行都需要进行保存。那么，利用什么数据结构进行保存呢？我们需要这个数据结构能够确定输入的不同行之间的前后相对关系，因此想到使用线性表。由于最终读取到的行数是不确定的，因此不能使用一个固定大小的数组，而应该使用可变长的线性表，如链表、动态数组。而又因为可变数组的扩容操作比较耗时，且我们并不需要对元素进行随机访问，只需要最后输出的时候进行顺序遍历，因此链表就成为了最佳选择。 反转的具体实现可以参考经典问题反转链表，设定一个前驱结点 pre 和当前结点 cur，每次读取到新的行，就动态申请存储该行数据的内存空间，并将 cur 指向这块内存空间，然后将 cur 的 next 域指向...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/" title="OSTEP Projects：Unix Utilities"><img class="post-bg" src="/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/img.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="OSTEP Projects：Unix Utilities"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/05/04/OSTEP%20Projects%EF%BC%9AUnix%20Utilities/" title="OSTEP Projects：Unix Utilities">OSTEP Projects：Unix Utilities</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-05-04T01:03:08.000Z" title="发表于 2024-05-04 09:03:08">2024-05-04</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="content">本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 Unix Utilities 部分，包含个人的代码实现和设计思路。  wcat思路要实现一个 wcat 命令，打印从文件中读取到的所有字符。 编写一个 for 循环遍历所有的参数（需要读取的文件的路径），打开该文件，依照 README 中的提示使用 fgets() 每次读取一行，并将读取到的字符串打印到标准输出即可。 代码1234567891011121314151617181920#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#define BUF_SIZE 1024int main(int argc, char* argv[]) &#123;	char buffer[BUF_SIZE];	for (int i = 1; i &lt; argc; ++i) &#123;		FILE* fp = fopen(argv[i], &quot;r&quot;);		if (fp == NULL) &#...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2024/03/18/%E9%AB%98%E6%95%88%E7%9A%84%E5%8C%BA%E9%97%B4%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%EF%BC%9A%E7%BA%BF%E6%AE%B5%E6%A0%91/" title="高效的区间二叉搜索树：线段树"><img class="post-bg" src="/2024/03/18/%E9%AB%98%E6%95%88%E7%9A%84%E5%8C%BA%E9%97%B4%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%EF%BC%9A%E7%BA%BF%E6%AE%B5%E6%A0%91/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="高效的区间二叉搜索树：线段树"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/03/18/%E9%AB%98%E6%95%88%E7%9A%84%E5%8C%BA%E9%97%B4%E4%BA%8C%E5%8F%89%E6%90%9C%E7%B4%A2%E6%A0%91%EF%BC%9A%E7%BA%BF%E6%AE%B5%E6%A0%91/" title="高效的区间二叉搜索树：线段树">高效的区间二叉搜索树：线段树</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-03-18T01:03:08.000Z" title="发表于 2024-03-18 09:03:08">2024-03-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">与树状数组类似，线段树也是一种用来维护区间信息的数据结构，可以在对数时间复杂度内实现更新和查询等操作。但相较于树状数组多用于前缀和查询不同，线段树的应用范围更为广泛，例如区间最值等问题，代价是需要消耗更多的存储空间。 结构对于一个长度为 7 的数组，根据该数组 nums 元素建立的线段树结构如下图所示。 每个结点存储的值为区间 nums[L ~ R] 的元素和，其中根节点对应的 L = 0, R = 6，即整个数组的元素和。然后每一层的结点将区间均分为 [L, (L + R) / 2] 和 [(L + R) / 2 + 1, R] 两部分。注意按此方式进行划分，得到的两个子区间始终满足：左右区间长度分别为 len1 和 len2，且 len1 == len2 || len1 == len2 + 1。不难得知：这样的结构构成一个完全二叉树，因此使用顺序存储将会变得很方便：根节点下标为 0；对于每个下标为 idx 的结点，其左孩子下标为 2 * idx + 1，右孩子下标为 2 * idx + 2。  构造由于叶子结点的 L 和 R 相等，其值正好为 nums[L]，而每个父结点的值...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2024/03/12/%E8%87%AA%E7%94%A8%E8%80%B3%E6%9C%BA%E7%9B%98%E7%82%B9/" title="自用耳机盘点"><img class="post-bg" src="/2024/03/12/%E8%87%AA%E7%94%A8%E8%80%B3%E6%9C%BA%E7%9B%98%E7%82%B9/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="自用耳机盘点"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/03/12/%E8%87%AA%E7%94%A8%E8%80%B3%E6%9C%BA%E7%9B%98%E7%82%B9/" title="自用耳机盘点">自用耳机盘点</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-03-12T01:03:08.000Z" title="发表于 2024-03-12 09:03:08">2024-03-12</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E7%A0%81/">数码</a></span></div><div class="content">最近几个月看了不少耳机相关的内容，初步了解了一些耳机的参数指标以及选购方案，同时也给自己使用的耳机进行了一波更新换代。本文就简单盘点一下自己之前用过的和现在正在使用的耳机，内容完全基于个人的使用体验。 已退役赛睿 Arctis9x 主要是为了无线连接 xbox 而购入。买之前看了不少网上的评价，包括视频评测以及 RTINGS 网站上的测试，感觉很不错，但是这耳机并没有国行版本，而且海外版售价高达 200 美元，对我而言实在是太贵，就在淘宝花 398 购入了一副所谓的“9成新”的“洋垃圾”。 单就产品本身的素质来说，我觉得还是很不错的。尽管作为游戏耳机，但它的音乐表现依然非常出色，三频的表现十分均衡。参考 RTINGS 网站上对于 9x 的评测，其中 Neutral Sound 项评分高达 7.8 分并给出了 “satisfactory” 的评价。麦克风质量也相当不错，这根可伸缩的麦克风虽小，但却拥有优秀的收音质量和降噪能力，不过我也只是拿到手的时候测试了一下，并没有怎么使用。佩戴方面，耳机头梁采用了松紧带的设计，使得佩戴时不至于压头。耳罩不算很透气，夏天佩戴可能会比较热，但好在相...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2024/03/03/%E5%8A%A8%E6%80%81%E5%89%8D%E7%BC%80%E5%92%8C%E6%95%B0%E7%BB%84%EF%BC%9A%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" title="动态前缀和数组：树状数组"><img class="post-bg" src="/2024/03/03/%E5%8A%A8%E6%80%81%E5%89%8D%E7%BC%80%E5%92%8C%E6%95%B0%E7%BB%84%EF%BC%9A%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="动态前缀和数组：树状数组"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/03/03/%E5%8A%A8%E6%80%81%E5%89%8D%E7%BC%80%E5%92%8C%E6%95%B0%E7%BB%84%EF%BC%9A%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" title="动态前缀和数组：树状数组">动态前缀和数组：树状数组</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-03-03T01:03:08.000Z" title="发表于 2024-03-03 09:03:08">2024-03-03</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">前缀和的不足前缀和是一种常见的算法思想，能够实现在常数时间复杂度下得到某个子区间内所有元素和。以一维数组 nums 为例，定义前缀和数组 preSum，preSum[i] 表示 nums 前 i 个元素的和，利用动态规划的思想，易得 preSum[i] = preSum[i - 1] + nums[i] 的递推关系，因此构造一个前缀和数组的时间复杂度为 O(n)，而查询前 i 个元素的和只需查询 preSum[i] 的值，为常数时间。 前缀和方法在数组元素不发生改变的情况下十分高效，但如果数组元素可能会发生改变，与朴素求和做法（不使用前缀和数组，而是直接遍历区间元素累计求和）相比，前缀和数组需要 O(n) 的时间来进行更新。这两种做法要么查询是 O(1)、更新是 O(n)，要么查询是 O(n)、更新是 O(1)，那有没有一种折衷的方案，使得查询和更新效率都不至于太低呢？本文将介绍的树状数组就符合这样的条件。  树状数组查询由正整数的二进制表示可知，任何一个正整数都可以拆分为为若干个不重复的 2 的幂之和。那么对于一个下标从 1 开始且长度为 n 的数组，它的任意下标 i (1 &...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2024/01/06/%E4%BB%8E%E6%9C%BA%E5%99%A8%E6%8C%87%E4%BB%A4%E7%9A%84%E8%A7%92%E5%BA%A6%E7%9C%8B%E4%B8%80%E4%BA%9B%E4%BD%8D%E7%BA%A7%E6%93%8D%E4%BD%9C/" title="从机器指令的角度看一些位级操作"><img class="post-bg" src="/2024/01/06/%E4%BB%8E%E6%9C%BA%E5%99%A8%E6%8C%87%E4%BB%A4%E7%9A%84%E8%A7%92%E5%BA%A6%E7%9C%8B%E4%B8%80%E4%BA%9B%E4%BD%8D%E7%BA%A7%E6%93%8D%E4%BD%9C/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="从机器指令的角度看一些位级操作"></a></div><div class="recent-post-info"><a class="article-title" href="/2024/01/06/%E4%BB%8E%E6%9C%BA%E5%99%A8%E6%8C%87%E4%BB%A4%E7%9A%84%E8%A7%92%E5%BA%A6%E7%9C%8B%E4%B8%80%E4%BA%9B%E4%BD%8D%E7%BA%A7%E6%93%8D%E4%BD%9C/" title="从机器指令的角度看一些位级操作">从机器指令的角度看一些位级操作</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-01-06T10:59:42.000Z" title="发表于 2024-01-06 18:59:42">2024-01-06</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="content">C/C++ 中有时会遇到一些位级操作，通常是一些隐式的类型转换，它们往往很难凭借高级语言层面的直觉来理解或记忆。本文旨在分析这些操作对应的汇编代码，从机器指令的角度来理解这类操作。  补码数转换为更长的无符号数12345int main() &#123;	short a = -12345;	unsigned b = a;	cout &lt;&lt; a &lt;&lt; &quot; &quot; &lt;&lt; b &lt;&lt; endl; // -12345 4294954951&#125; 首先看以上这个示例，一个短整型数据（2 字节）强制类型转换为无符号整型数据（4 字节）之后，得到的值却是一个看似毫不相关的结果。 123456void showBytes(unsigned char* ptr, size_t sz) &#123;	for (int i = 0; i &lt; sz; ++i) &#123;		printf(&quot;%.2x &quot;, ptr[i]);	&#125;	printf(&quot;\n&quot;);&#125; 首先，为了更好...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2023/10/17/%E9%AB%98%E6%95%88%E7%9A%84LeetCode%E4%BA%8C%E5%8F%89%E6%A0%91%E6%9C%AC%E5%9C%B0IDE%E8%B0%83%E8%AF%95%E6%96%B9%E6%A1%88/" title="高效的LeetCode二叉树本地IDE调试方案"><img class="post-bg" src="/2023/10/17/%E9%AB%98%E6%95%88%E7%9A%84LeetCode%E4%BA%8C%E5%8F%89%E6%A0%91%E6%9C%AC%E5%9C%B0IDE%E8%B0%83%E8%AF%95%E6%96%B9%E6%A1%88/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="高效的LeetCode二叉树本地IDE调试方案"></a></div><div class="recent-post-info"><a class="article-title" href="/2023/10/17/%E9%AB%98%E6%95%88%E7%9A%84LeetCode%E4%BA%8C%E5%8F%89%E6%A0%91%E6%9C%AC%E5%9C%B0IDE%E8%B0%83%E8%AF%95%E6%96%B9%E6%A1%88/" title="高效的LeetCode二叉树本地IDE调试方案">高效的LeetCode二叉树本地IDE调试方案</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2023-10-17T10:59:42.000Z" title="发表于 2023-10-17 18:59:42">2023-10-17</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">在 LeetCode 刷题过程中，有时候遇到一些难以难以直接观察出来的错误，此时通常想要利用单步调试来解决，但奈何只有 LeetCode Plus 会员才可以使用其网页的调试功能。好在绝大部分本地 IDE 都具备十分强大的调试功能，我们只需要将自己的解题代码复制到本地，并编写简单的测试程序即可。但是对于二叉树相关的题，测试数据的编写显得不那么容易，本文编写了一个匹配 LeetCode 题目中的二叉树定义的类，该类包含一些基本的静态函数，能够很方便地实现二叉树的构造和二叉树的遍历。 LeetCode 二叉树的序列表示方式LeetCode 中针对二叉树的输入数据以一个层序遍历序列的形式给出。与通常我们所说的层序序列不同的是，该层序序列包含从根节点到最后一个非空结点之间的所有空结点，该空结点以 null 的标识符给出，以此保证根据此序列所构造二叉树的唯一性（单纯依靠常规的不含空结点的层序序列无法构造一棵唯一的二叉树）。以下是一个简单的例子： 输入： root = [3, 9, 20, null, null, 15, 7]  带构造与遍历的二叉树类为了方便能在本地 IDE 中直接根据输入...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2023/09/17/%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%E7%9A%84%E5%87%A0%E7%A7%8D%E5%86%99%E6%B3%95%E4%B8%8E%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" title="二分搜索的几种写法与常见问题"><img class="post-bg" src="/2023/09/17/%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%E7%9A%84%E5%87%A0%E7%A7%8D%E5%86%99%E6%B3%95%E4%B8%8E%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="二分搜索的几种写法与常见问题"></a></div><div class="recent-post-info"><a class="article-title" href="/2023/09/17/%E4%BA%8C%E5%88%86%E6%90%9C%E7%B4%A2%E7%9A%84%E5%87%A0%E7%A7%8D%E5%86%99%E6%B3%95%E4%B8%8E%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" title="二分搜索的几种写法与常见问题">二分搜索的几种写法与常见问题</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2023-09-17T01:03:08.000Z" title="发表于 2023-09-17 09:03:08">2023-09-17</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">最近在比赛和刷题的时候经常遇到二分答案的题，但时不时会因为一些细节上的错误而浪费时间，本文旨在整理常见的二分搜索的写法、二分搜索可能会遇到的一些小问题，以及 C++ 中与二分搜索相关的库函数，以免今后再犯类似的错误。 二分搜索的写法查找某个值的下标定义函数 binarySearch(nums, target) 为搜索有序数组 nums 中是否存在 i 使得 nums[i] == target，如果是，返回 i，否则返回 -1. 12345678910111213141516int binarySearch(vector&lt;int&gt;&amp; nums, int target) &#123;	int low = 0, high = (int)nums.size() - 1;	while (low &lt;= high) &#123;		int mid = low + (high - low) / 2;		if (nums[mid] == target) &#123;			return mid;		&#125;		else if (nums[mid] &gt; target...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2023/09/09/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E5%9B%9E%E6%BA%AF%E6%B3%95/" title="算法分析与设计编程题 回溯法"><img class="post-bg" src="/2023/09/09/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E5%9B%9E%E6%BA%AF%E6%B3%95/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="算法分析与设计编程题 回溯法"></a></div><div class="recent-post-info"><a class="article-title" href="/2023/09/09/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E5%9B%9E%E6%BA%AF%E6%B3%95/" title="算法分析与设计编程题 回溯法">算法分析与设计编程题 回溯法</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2023-09-09T01:03:08.000Z" title="发表于 2023-09-09 09:03:08">2023-09-09</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">装载问题题目描述 解题代码递归回溯1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950// goods[i]表示货物i的重量, c1,c2分别表示货船1和货船2的载重量vector&lt;vector&lt;int&gt;&gt; optimalLoading(vector&lt;int&gt;&amp; goods, int c1, int c2) &#123;	int n = goods.size(); // 货物数量	int maxSum = 0; // 当前最大载货量	// curSelection[i]表示货物i是否放入货船1中（true表示放入）	vector&lt;bool&gt; curSelection(n, false);	// optimSelection记录maxSum对应的货物存放方式	vector&lt;bool&gt; optimSelection;	// 递归搜索函数	function&lt;void(int, int)...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2023/09/02/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/" title="算法分析与设计编程题 贪心算法"><img class="post-bg" src="/2023/09/02/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/img.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="算法分析与设计编程题 贪心算法"></a></div><div class="recent-post-info"><a class="article-title" href="/2023/09/02/%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90%E4%B8%8E%E8%AE%BE%E8%AE%A1%E7%BC%96%E7%A8%8B%E9%A2%98%20%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/" title="算法分析与设计编程题 贪心算法">算法分析与设计编程题 贪心算法</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2023-09-02T01:03:08.000Z" title="发表于 2023-09-02 09:03:08">2023-09-02</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/">数据结构与算法</a></span></div><div class="content">活动安排问题题目描述  解题代码12345678910111213141516171819vector&lt;bool&gt; greedySelector(vector&lt;vector&lt;int&gt;&gt;&amp; intervals) &#123;    int n = intervals.size();    // 将活动区间按结束时间的从小到大排序    auto cmp = [](vector&lt;int&gt;&amp; interval1, vector&lt;int&gt;&amp; interval2) &#123;        return interval1[1] &lt; interval2[1];    &#125;;    sort(intervals.begin(), intervals.end(), cmp);    vector&lt;bool&gt; res(n, false);    // 结束时间最早的活动必定位于某个最优解之中    int minStart = intervals[0][1];    res[0] = ...</div></div></div></div><nav id="pagination"><div class="pagination"><a class="extend prev" rel="prev" href="/page/5/#content-inner"><i class="fas fa-chevron-left fa-fw"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/#content-inner">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/#content-inner">7</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/#content-inner">11</a><a class="extend next" rel="next" href="/page/7/#content-inner"><i class="fas fa-chevron-right fa-fw"></i></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+            <i class="fas fa-folder-open"></i>
+            <span>分类</span>
+            <a class="card-more-btn" href="/categories/" title="查看更多">
+      <i class="fas fa-angle-right"></i></a>
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/C/"><span class="card-category-list-name">C++</span><span class="card-category-list-count">7</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/CSharp/"><span class="card-category-list-name">CSharp</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/"><span class="card-category-list-name">人工智能</span><span class="card-category-list-count">3</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/"><span class="card-category-list-name">信息安全</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"><span class="card-category-list-name">操作系统</span><span class="card-category-list-count">42</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/"><span class="card-category-list-name">数据结构与算法</span><span class="card-category-list-count">23</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%95%B0%E7%A0%81/"><span class="card-category-list-name">数码</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%B8%B8%E6%88%8F/"><span class="card-category-list-name">游戏</span><span class="card-category-list-count">4</span></a></li>
+          </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>标签</span></div><div class="card-tag-cloud"><a href="/tags/%E6%B8%B8%E6%88%8F/" style="font-size: 1.25em; color: rgb(84, 173, 50);">游戏</a><a href="/tags/%E9%97%B2%E8%B0%88/" style="font-size: 1.25em; color: rgb(69, 93, 50);">闲谈</a><a href="/tags/Rust/" style="font-size: 1.25em; color: rgb(101, 142, 50);">Rust</a><a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 1.45em; color: rgb(158, 110, 149);">操作系统</a><a href="/tags/%E7%BB%8F%E9%AA%8C/" style="font-size: 1.42em; color: rgb(192, 167, 139);">经验</a><a href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/" style="font-size: 1.35em; color: rgb(50, 195, 175);">虚拟化</a><a href="/tags/%E6%9C%BA%E5%AF%86%E8%AE%A1%E7%AE%97/" style="font-size: 1.32em; color: rgb(50, 89, 95);">机密计算</a><a href="/tags/C/" style="font-size: 1.4em; color: rgb(113, 196, 82);">C++</a><a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 1.4em; color: rgb(72, 100, 83);">算法</a><a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/" style="font-size: 1.27em; color: rgb(91, 50, 115);">计算机基础</a><a href="/tags/%E6%B1%87%E7%BC%96%E8%AF%AD%E8%A8%80/" style="font-size: 1.17em; color: rgb(159, 71, 50);">汇编语言</a><a href="/tags/%E4%BD%8D%E8%BF%90%E7%AE%97/" style="font-size: 1.2em; color: rgb(138, 197, 194);">位运算</a><a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 1.17em; color: rgb(141, 50, 184);">矩阵</a><a href="/tags/C/" style="font-size: 1.27em; color: rgb(132, 50, 123);">C</a><a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/" style="font-size: 1.17em; color: rgb(199, 182, 181);">数据结构与算法</a><a href="/tags/NET/" style="font-size: 1.15em; color: rgb(81, 64, 155);">.NET</a><a href="/tags/CSharp/" style="font-size: 1.15em; color: rgb(84, 63, 61);">CSharp</a><a href="/tags/%E4%BA%8B%E4%BB%B6/" style="font-size: 1.15em; color: rgb(50, 50, 85);">事件</a><a href="/tags/%E5%A7%94%E6%89%98/" style="font-size: 1.15em; color: rgb(129, 50, 71);">委托</a><a href="/tags/CTF/" style="font-size: 1.2em; color: rgb(50, 67, 50);">CTF</a><a href="/tags/Crypto/" style="font-size: 1.17em; color: rgb(114, 147, 50);">Crypto</a><a href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/" style="font-size: 1.2em; color: rgb(171, 57, 148);">信息安全</a><a href="/tags/%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8C/" style="font-size: 1.15em; color: rgb(72, 156, 133);">攻防世界</a><a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 1.38em; color: rgb(54, 160, 50);">数据结构</a><a href="/tags/Linux/" style="font-size: 1.3em; color: rgb(50, 50, 84);">Linux</a><a href="/tags/xv6/" style="font-size: 1.3em; color: rgb(183, 179, 50);">xv6</a><a href="/tags/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/" style="font-size: 1.17em; color: rgb(190, 186, 116);">虚拟内存</a><a href="/tags/I-O/" style="font-size: 1.15em; color: rgb(83, 97, 198);">I/O</a><a href="/tags/OpenGL/" style="font-size: 1.17em; color: rgb(50, 50, 156);">OpenGL</a><a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9B%BE%E5%BD%A2%E5%AD%A6/" style="font-size: 1.17em; color: rgb(50, 120, 50);">计算机图形学</a><a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 1.17em; color: rgb(132, 93, 50);">计算机网络</a><a href="/tags/Socket%E7%BC%96%E7%A8%8B/" style="font-size: 1.15em; color: rgb(86, 50, 197);">Socket编程</a><a href="/tags/Ping/" style="font-size: 1.15em; color: rgb(50, 50, 58);">Ping</a><a href="/tags/QEMU/" style="font-size: 1.22em; color: rgb(50, 91, 130);">QEMU</a><a href="/tags/%E6%96%87%E4%BB%B6/" style="font-size: 1.17em; color: rgb(127, 50, 93);">文件</a><a href="/tags/%E7%BC%96%E7%A0%81%E6%A0%BC%E5%BC%8F/" style="font-size: 1.17em; color: rgb(107, 50, 139);">编码格式</a><a href="/tags/%E7%BF%BB%E8%AF%91/" style="font-size: 1.15em; color: rgb(148, 189, 193);">翻译</a><a href="/tags/%E5%8D%9A%E5%AE%A2/" style="font-size: 1.17em; color: rgb(50, 50, 108);">博客</a><a href="/tags/%E5%A4%87%E4%BB%BD/" style="font-size: 1.15em; color: rgb(91, 118, 50);">备份</a><a href="/tags/%E6%89%B9%E5%A4%84%E7%90%86/" style="font-size: 1.17em; color: rgb(50, 154, 50);">批处理</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>归档</span>
+      <a class="card-more-btn" href="/archives/"
+            title="查看更多">
+            <i class="fas fa-angle-right"></i>
+          </a>
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/12/">
+            <span class="card-archive-list-date">
+              十二月 2025
+            </span>
+            <span class="card-archive-list-count">5</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/11/">
+            <span class="card-archive-list-date">
+              十一月 2025
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/10/">
+            <span class="card-archive-list-date">
+              十月 2025
+            </span>
+            <span class="card-archive-list-count">4</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/09/">
+            <span class="card-archive-list-date">
+              九月 2025
+            </span>
+            <span class="card-archive-list-count">7</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/08/">
+            <span class="card-archive-list-date">
+              八月 2025
+            </span>
+            <span class="card-archive-list-count">1</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/07/">
+            <span class="card-archive-list-date">
+              七月 2025
+            </span>
+            <span class="card-archive-list-count">6</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/06/">
+            <span class="card-archive-list-date">
+              六月 2025
+            </span>
+            <span class="card-archive-list-count">2</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/05/">
+            <span class="card-archive-list-date">
+              五月 2025
+            </span>
+            <span class="card-archive-list-count">2</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>网站信息</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">文章数目 :</div><div class="item-count">106</div></div><div class="webinfo-item"><div class="item-name">本站总字数 :</div><div class="item-count">229k</div></div><div class="webinfo-item"><div class="item-name">本站访客数 :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">本站总浏览量 :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">最后更新时间 :</div><div class="item-count" id="last-push-date" data-lastPushDate="2026-01-01T08:40:24.259Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

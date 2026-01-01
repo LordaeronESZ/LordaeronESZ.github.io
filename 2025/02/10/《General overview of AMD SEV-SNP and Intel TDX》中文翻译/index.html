@@ -1,0 +1,444 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>《General overview of AMD SEV-SNP and Intel TDX》中文翻译 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文为论文《General overview of AMD SEV-SNP and Intel TDX》的中文翻译，翻译工具使用大模型 DeepSeek v3 和通义千问 2.5，经过了本人的核对与校正。由于本人在机密计算领域还处在初学阶段，因此一些专有名词的翻译可能存在问题，欢迎指出。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《General overview of AMD SEV-SNP and Intel TDX》中文翻译">
+<meta property="og:url" content="https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="本文为论文《General overview of AMD SEV-SNP and Intel TDX》的中文翻译，翻译工具使用大模型 DeepSeek v3 和通义千问 2.5，经过了本人的核对与校正。由于本人在机密计算领域还处在初学阶段，因此一些专有名词的翻译可能存在问题，欢迎指出。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg">
+<meta property="article:published_time" content="2025-02-10T15:30:11.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:38.541Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="机密计算">
+<meta property="article:tag" content="翻译">
+<meta property="article:tag" content="虚拟化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "《General overview of AMD SEV-SNP and Intel TDX》中文翻译",
+  "url": "https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/",
+  "image": "https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg",
+  "datePublished": "2025-02-10T15:30:11.000Z",
+  "dateModified": "2025-12-26T16:26:38.541Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '《General overview of AMD SEV-SNP and Intel TDX》中文翻译',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">《General overview of AMD SEV-SNP and Intel TDX》中文翻译</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-02-10T15:30:11.000Z" title="发表于 2025-02-10 23:30:11">2025-02-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:38.541Z" title="更新于 2025-12-27 00:26:38">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">10.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>31分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>本文为论文《General overview of AMD SEV-SNP and Intel TDX》的中文翻译，翻译工具使用大模型 DeepSeek v3 和通义千问 2.5，经过了本人的核对与校正。由于本人在机密计算领域还处在初学阶段，因此一些专有名词的翻译可能存在问题，欢迎指出。</p>
+<span id="more"></span>
+<div style="text-align: center; font-weight: bold; font-size: 2.0em;">
+AMD SEV-SNP 和 Intel TDX 的总体概述
+</div>
+
+<div style="text-align: center; font-weight: bold; font-size: 1.5em;">
+作者：<em>Kevin Kollenda</em>
+</div>
+<div style="text-align: left; font-weight: bold; font-size: 1.5em;">
+摘要
+</div>
+
+<p>可信执行环境（TEEs）在安全关键代码的执行上应用越来越普遍。AMD SEV-SNP 和 Intel TDX 是新开发的硬件扩展，旨在为虚拟机提供可信执行的环境。通过提供额外的完整性保证并基于之前的安全扩展，它们使得在云环境中实现不会危及敏感用户数据的机密计算成为可能。本文介绍了用于实现这些重大安全增益的额外组件和流程。</p>
+<div style="text-align: left; font-weight: bold; font-size: 1.5em;">
+关键词
+</div>
+
+<p>可信计算，AMD SEV-SNP，Intel TDX，安全嵌套分页</p>
+<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>如今，软件公司正越来越多地将其应用程序迁移到云环境中，而不是在本地托管。这可能会对机密用户数据构成风险，因为云服务提供商（CSP）可以直接访问运行潜在安全关键应用程序的硬件。可信执行环境（TEEs）提供了一种安全执行代码的方式，而不会将敏感数据泄露给恶意行为者。此前，TEEs 是通过 Intel SGX 实现的。然而，SGX 的工作原理是将应用程序划分为由安全飞地（enclave）保护的可信部分和正常运行的不可信部分。这降低了开发体验，因为开发人员需要了解安全模型并相应地拆分应用程序，而实现一个安全虚拟机（VM）则无需对应用程序代码进行任何调整。</p>
+<p>为了防止信息泄露并保护机密数据，出现了需要关闭虚拟机（VM）访问权限以阻止虚拟机监控程序（hypervisor）访问的需求。AMD 和 Intel 现在基于他们之前的可信计算 CPU 扩展 AMD SEV-ES 和 Intel SGX 进行迭代，以增强虚拟机的完整性保证并最小化可信计算基（TCB）。云服务用户（CSU）能够安全地依赖在云环境中运行的应用程序，充分利用这些新扩展引入的功能。</p>
+<p>AMD 安全嵌套分页（Secure Nested Paging, SNP） 和 Intel 信任域扩展（Trust Domain Extensions, TDX） 是两种基于硬件的 CPU 扩展，旨在提高虚拟机内存数据的机密性和完整性。它们建立在早期扩展（如 Intel SGX 和 AMD SEV-SEM）的基础上，这些早期扩展无法提供足够的完整性保证。这些保证通过允许虚拟机限制对其内存页的写访问以及对安全关键 CPU 指令（如 <code>CPUID</code>）的输出进行加密验证来实现。此外，虚拟机现在可以信任由安全关键组件报告的固件版本与实际运行的版本一致，这对于防止利用已修复问题的回滚攻击（rollback attacks）至关重要。</p>
+<p>与它们的前身扩展 AMD SEV-ES 和 Intel SGX 类似，AMD SEV-SNP 和 Intel TDX 提供了远程认证（remote attestation）能力。生成的认证报告包括虚拟机的状态以及由虚拟机提供的自定义数据（例如用于验证的公钥），这使得云服务用户（CSUs）能够确认其虚拟机已正确启动并执行。</p>
+<p>虽然 AMD SEV-SNP 自 2021 年 3 月以来已适用于所有 AMD EPYC 7003 系列处理器，但 Intel TDX 目前尚未在任何本世代处理器中提供。Linux 内核对 AMD SEV-SNP 和 Intel TDX 的支持于 2022 年 7 月发布的 5.19 版本中引入，并且由于架构相似性，两者共享了一些新添加的代码。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>在本节中，将介绍先前的虚拟机扩展及其功能。此外，由于内存完整性的重要性，还将介绍现代计算机系统中内存访问的过程。</p>
+<h2 id="虚拟机-CPU-扩展的历史"><a href="#虚拟机-CPU-扩展的历史" class="headerlink" title="虚拟机 CPU 扩展的历史"></a>虚拟机 CPU 扩展的历史</h2><p>此前，AMD 和 Intel 开发了多种 CPU 扩展，以支持更可靠且性能更好的虚拟机。其中包括 AMD-V 嵌套分页（Nested Pagint, NP） 和 Intel 扩展页表（Extended Page Table, EPT），它们通过硬件加速的嵌套分页取代了性能较差的基于软件的页虚拟化。</p>
+<p>通过 AMD 安全内存加密（Secure Memory Encryption, SME），为通用计算提供内存加密，以及 AMD 安全加密虚拟化（Secure Encrypted Virtualization, SEV），将 SME 引入由 AMD-V 嵌套分页加速的虚拟机，从而实现了更高的机密性保证。所需的内存加密密钥由集成的低功耗 AMD 安全（协）处理器（AMD SP） 处理，以进一步减少可信组件的数量。目前，Intel 处理器尚未提供硬件辅助的虚拟机内存加密功能，但这将在即将推出的 Intel TDX 扩展中涵盖。虽然 SGX 可以用于虚拟机中以保护虚拟化应用程序（vSGX），但这并不理想，因为一旦为虚拟机启用 SGX，某些虚拟机功能将不可用（例如虚拟机挂起/恢复、快照等）。AMD 还通过引入 AMD SEV-ES（Encrypted State）对其 AMD SEV 扩展进行了迭代，该扩展在虚拟机终止时加密虚拟机的寄存器状态。由于 AMD SEV-ES 已经为虚拟机的寄存器内容提供了完整性保证，因此在 AMD SEV-SNP 中不需要额外的硬件支持来处理虚拟机的状态。</p>
+<p>本世代的处理器会向（恶意的）虚拟机管理器（VMM）提供虚拟机内存的加密内容（通过依赖 SEV），但它们不会阻止对虚拟机内存页的写访问。这使得上述恶意虚拟机监控程序（hypervisor）能够破坏虚拟机的状态，并带来各种重放攻击（replay attacks）的风险。重放攻击是一种攻击向量，恶意行为者在某一时刻获取密文，并在稍后的时间点用这些数据替换未受保护的内存。</p>
+<h2 id="CPU-能力自我报告和安全敏感寄存器"><a href="#CPU-能力自我报告和安全敏感寄存器" class="headerlink" title="CPU 能力自我报告和安全敏感寄存器"></a>CPU 能力自我报告和安全敏感寄存器</h2><p>现代处理器为运行中的系统提供了多种方式来收集有关当前 CPU 的信息。这主要通过调用 <code>CPUID</code> 指令来实现，该指令报告 CPU 可用的硬件扩展、寄存器大小以及其他一些配置细节。虽然虚拟机监控程序（VMM）通常会模拟和调整该指令的输出，以简化虚拟机迁移并限制虚拟机的功能，但这也可能被恶意虚拟机监控程序滥用。尽管此类干扰在大多数情况下只会导致虚拟机的拒绝服务（denial-of-service），但当报告了错误的扩展保存区域（x86 中包含的）值时，也可能导致缓冲区溢出。特定于处理器模型的寄存器（MSR）是处理器使用的各种控制寄存器，用于提供硬件调试功能、性能监控/跟踪数据以及有关可用 CPU 功能的附加信息。虚拟机监控程序可以不受限制地访问这些寄存器，从而可能对虚拟机的执行进行不必要的干预，例如强制调试断点以中断虚拟机的控制流。同样，硬件扩展所使用的 CPU 微代码补丁级别和 CPU 组件的固件版本也可以从软件中查询。如果信任域（TD）不能依赖安全关键硬件组件运行某个预定的版本，就无法保证上述组件中先前已解决的问题和漏洞不会被利用。</p>
+<h2 id="威胁模型"><a href="#威胁模型" class="headerlink" title="威胁模型"></a>威胁模型</h2><p>早期 CPU 扩展（例如 AMD SEV 和 AMD SEV-ES）所依赖的威胁模型包含更多需要信任的组件。这是由于缺乏内存完整性保证，使得恶意实体能够篡改虚拟机的内存。由于 SEV-SNP 和 TDX 防止了这种情况，因此以前被认为可信的组件（例如虚拟机监控程序、具有直接内存访问（DMA）能力的 PCI 设备）现在可以安全地假定为不可信。</p>
+<h2 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h2><p>在典型的 x86_64 系统中，内存是通过页（page）来访问的。分页（paging）用于为每个进程模拟一个完整的虚拟地址空间，而不需要在计算机上实际拥有那么多的内存。它通常还用于页级内存保护，为每个进程提供自己的一组页。因此，用户空间进程无法读取或写入属于其他进程或系统内核的页。分页功能由内存管理单元（MMU）处理，它将应用程序使用的虚拟地址转换为硬件可用的实际物理地址。地址通过将其拆分为不同部分来映射到页。通常，最高有效位对应于页目录项（page directory entry），接下来的位表示页表项（page table entry），剩余的位包含页内的偏移量以及由操作系统设置的各种标志（例如读/写/执行启用）。AMD SEV 允许客户虚拟机使用虚拟机特定的加密密钥选择性地保护和加密内存页，从而限制来自外部源（如虚拟机监控程序）的读取访问。Intel SGX 则采用类似的内存加密方式以单个应用程序为单位来进行加密。</p>
+<h1 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h1><p>SEV-SNP 和 TDX 利用多种硬件技术为虚拟机提供更安全的可信执行环境（TEE）。下文将描述如何实现这一点以及在此过程中涉及哪些组件。</p>
+<h2 id="安全关键组件"><a href="#安全关键组件" class="headerlink" title="安全关键组件"></a>安全关键组件</h2><p>SEV-SNP 和 TDX 所实现的架构改进是通过引入新创建的 CPU 集成组件和模块来实现的。其中 AMD 的 SEV-SNP 实现依赖于 CPU 内置的安全处理器来为虚拟机提供安全环境，而 Intel TDX 使用了一种多组件架构，包括以下部分：</p>
+<ul>
+<li>Intel TDX 模块提供了一种管理 TD 的安全方法，并强制执行各种安全策略。</li>
+<li>Intel 认证代码模块，用于在受保护内存中加载和验证 TDX 模块。</li>
+<li>使用 Intel SGX 创建的 TD Quoting enclave（TDQE）用于远程证明。</li>
+</ul>
+<p>这些组件提供了虚拟机监控程序（hypervisor）创建和配置虚拟机所需的管理接口，并负责拦截针对受 SEV-SNP 或 TDX 保护的虚拟机的任何攻击。与 AMD 的安全处理器（SP）的通信通过一种新的虚拟机管理 API 接口实现，而 Intel 则依赖于额外的 CPU 指令。由于这些组件的数据结构具有安全关键性，外部参与者（例如系统上运行的软件或支持 DMA 的设备）无法访问这些数据结构。这些数据结构包含 CPU 集成安全模块所需的管理信息。例如，SEV-SNP 提供的加密虚拟机保存区域（Virtual Machine Save Area, VMSA），或由使用 TDX 的虚拟机监控程序为每个信任域（TD）发布的虚拟机控制结构（Virtual Machine Control Structure, VMCS）。</p>
+<h2 id="内存完整性保护"><a href="#内存完整性保护" class="headerlink" title="内存完整性保护"></a>内存完整性保护</h2><p>内存完整性保护是 AMD SEV-SNP 和 Intel TDX 引入的主要改进之一。SEV-SNP 和 TDX 都建立了共享（未加密）和私有（加密）内存页之间的分离。一个页是共享还是私有由虚拟地址的最高有效位指示，并在页表遍历（page table walk）中进行验证。共享页仍然可以使用虚拟机监控程序对应的密钥进行加密，但从虚拟机的角度来看，应将其视为不可信。私有（客户）页始终使用虚拟机特定的密钥进行加密，使得外部观察者无法读取内存内容。</p>
+<h3 id="AMD-SEV-SNP"><a href="#AMD-SEV-SNP" class="headerlink" title="AMD SEV-SNP"></a>AMD SEV-SNP</h3><p>AMD SEV-SNP 实现内存完整性改进的核心原则是确保分配了私有内存页的虚拟机始终能够读取它写入这些页的最后一个内存值。SEV-SNP 不仅为常规的内存读写保证了这种行为，还确保了在内存页被交换到持久存储或整个虚拟机迁移到另一台主机时也能保持这种一致性。因此，依赖于用先前读取的密文替换虚拟机内存的重放攻击，以及通过向内存页写入无关数据来破坏虚拟机内存的拒绝服务攻击，都不再可能实现。</p>
+<p>这是通过添加一个在系统范围内共享的反向映射表（Reverse Map Table, RMP）数据结构来实现的，该表跟踪可以分配给虚拟机的每个页的所有者。对于启用了 SNP 的虚拟机所拥有页的 RMP 条目，它还保存了该页应映射到的客户物理地址（gPA）。此外，每个 RMP 条目包含一个验证位，该位在为虚拟机创建页之前被清零。每当对 SNP-VM 的页执行内存写访问时（无论是虚拟机监控程序还是虚拟机本身），都会执行 RMP 检查，以确保只有拥有该页的实体才能修改它。来自外部参与者（例如虚拟机监控程序或其他客户）的内存读取访问不需要使用 RMP 进行验证，因为私有页的内存始终使用虚拟机的特定私钥进行加密。</p>
+<p>只要访问的页不属于启用了 SEV-SNP 的客户虚拟机，虚拟机监控程序的页表遍历就不会受到 RMP 的影响。如果恶意虚拟机监控程序试图覆盖此类页的内存内容，页表遍历将导致页错误（#PF），并且目标页不会受到影响。RMP 检查在常规页表遍历结束时执行，其条目使用系统的物理地址进行索引。修改后的页表遍历与图 1 中的相同，但由于没有客户虚拟机参与，因此不需要第一阶段页转换。</p>
+<p><img src="f1.png" alt=""></p>
+<p>对于启用了 SEV-SNP 的虚拟机，页表遍历更加复杂。使用 AMD-V 提供的加速嵌套页表遍历，首先完成客户虚拟地址（gVA）到客户物理地址（gPA），再到主机系统物理地址（sPA）的初始地址转换。随后调用 RMP 检查，验证该页是否：</p>
+<ul>
+<li>属于虚拟机而非虚拟机监控程序。</li>
+<li>由发起页表遍历的特定客户虚拟机拥有。</li>
+<li>映射到正确的客户物理地址（gPA）。</li>
+</ul>
+<p>这种带有额外嵌套页表遍历的修改版页表遍历如图 1 所示。有关页表状态的更多信息，请参阅附录部分 A。</p>
+<p>如果客户虚拟机正确验证了其私有页，这些内存完整性保证可以防止页重映射攻击。为了确保这些完整性违规行为不可能发生并被 RMP 检查捕获，客户虚拟机必须确保每个客户物理地址（gPA）仅被验证一次。要实现这一点，可以通过在虚拟机启动时执行所有页验证，或者由客户虚拟机跟踪所有先前验证过的 gPA。如果 gPA 和系统物理地址（sPA）之间的单射属性成立，任何由受感染的（恶意的）虚拟机监控程序发起的恶意嵌套页表更改都会导致客户虚拟机在尝试访问重映射的 gPA 时收到虚拟机通信（#VC）异常（因为 <code>RMPUPDATE</code> 会清除验证位）。客户虚拟机应非常谨慎地处理 #VC 异常，因为这是攻击发生的迹象。通常，客户虚拟机会尝试执行任何必要的步骤以保护自己免受恶意虚拟机监控程序的侵害，或者完全终止。</p>
+<h3 id="Intel-TDX"><a href="#Intel-TDX" class="headerlink" title="Intel TDX"></a>Intel TDX</h3><p>Intel TDX 提供了与 AMD SEV-SNP 类似的内存完整性功能。CPU 内置的 TDX 模块为虚拟机监控程序提供了一个间接管理虚拟机的接口，并提供了新的指令 <code>VMLAUNCH-VMX</code> 和 <code>VMRESUME</code> 用于启动和恢复虚拟机。与在系统范围内跟踪每个内存页的所有者不同，TDX 依赖于为虚拟机监控程序维护一个共享的扩展页表（EPT），并为每个虚拟机（Intel 称之为 TD）维护多个私有的扩展页表。由于这些固有的架构差异，从 TD 内部发起的页表遍历（PTW）与 SEV-SNP 使用的页表遍历有很大不同。如图 2 所示，采用 TDX 的系统通过为给定地址选择适当的扩展页表（EPT）来解析客户虚拟地址（gVA）。</p>
+<p><img src="f2.png" alt=""></p>
+<p>私有扩展页表（EPT）的初始化由 Intel TDX 模块处理，该模块将虚拟机监控程序提供的内存页转换为 TD 所需的私有页。页的完整性保护与 SEV-SNP 类似。然而，与依赖客户虚拟机自行验证其私有页不同，Intel TDX 确保页与其关联的客户物理地址（gPA）的映射在 TD 内部以及跨 TD 边界是唯一的，以避免任何与内存混叠（momory aliasing）相关的漏洞。通过为每个缓存行包含一个 1 位的 TD 标识符，以及可选的 28 位消息认证码（Message Authentication Code, MAC）（其中包含 1 位标识符）来区分共享内存和私有内存，从而确保检测到任何未经授权的内存更改。如果攻击者尝试写入由 TDX 模块保护的页，则下次 TD 尝试从受影响的内存读取时会发生 MAC 验证失败。如果使用不带加密 MAC 的逻辑完整性模式（logical-integrity-mode），此类读取访问将导致 TD 所有权检查失败。与 AMD 的实现不同，客户虚拟机对这些失败的处理方式没有影响，它们将被 TDX 模块终止。由于这些完整性违规行为导致的客户虚拟机强制终止不会影响虚拟机监控程序或其他虚拟机。</p>
+<h2 id="特权级和访问控制"><a href="#特权级和访问控制" class="headerlink" title="特权级和访问控制"></a>特权级和访问控制</h2><p>AMD SEV-SNP 和 Intel TDX 依赖于不同种类的特权级别来实现其完整性保证。</p>
+<h3 id="AMD-SEV-SNP-的特权概念"><a href="#AMD-SEV-SNP-的特权概念" class="headerlink" title="AMD SEV-SNP 的特权概念"></a>AMD SEV-SNP 的特权概念</h3><p>由于默认情况下不再允许虚拟机监控程序修改启用了 SEV-SNP 的虚拟机的状态或内存，安全处理器（SP）需要评估这些请求。这些操作可能包括标准的虚拟机管理命令，例如启动、恢复、挂起和终止虚拟机，它们以前完全由虚拟机监控程序处理。安全处理器还使用为启动认证过程的虚拟机提供的适当密钥，执行远程证明（remote attestation）和引用（quoting）功能。</p>
+<p>除了将安全敏感操作转移到安全处理器之外，SEV-SNP 还支持四个额外的可选虚拟机特权级别（Virtual Machine Privilege Level, VMPL）。它们从 VMPL0 到 VMPL3 编号，其中 VMPL0 表示最高访问权限，VMPL3 表示最低访问权限。这些特权级别可用于进一步划分由 RMP 提供的新访问控制，例如在启用了 SEV-SNP 的客户虚拟机中启用硬件辅助的地址空间隔离。分配给客户虚拟机的每个虚拟 CPU（vCPU）在一个 VMPL 中运行，每个 VMPL 只能授予与其当前拥有的权限相当的权限。这是通过调用 <code>RMPADJUST</code> 指令来实现的，该指令相应地更新必要的 RMP 条目。使用 <code>PVALIDATE</code> 进行的初始页验证仅向 VMPL0 授予完整的读、写和执行权限。在嵌套页表遍历期间执行的页表权限检查的限制性意味着，多个页权限需要相等，才能使客户虚拟机访问该页。因此，页权限验证在客户管理的页表和由 AMD-V 提供的虚拟机监控程序管理的嵌套页表中处理，同时还通过由更高特权的 VMPL 管理的 RMP 表进行验证。</p>
+<p>利用这些不同 VMPL 提供的更细粒度的访问控制，SEV-SNP 客户虚拟机可以创建更具限制性的模拟环境。以前由虚拟机监控程序处理的 APIC 虚拟化可以由在 VMPL0 中运行的软件执行，并将结果传递给在客户虚拟机内部运行的较低特权 VMPL。进一步的任务可以委托给以最高特权级别执行的中间层，例如处理在其他 vCPU 中发生的 #VC 异常，从而提供额外的能力以支持客户虚拟机内部不了解 SEV-SNP 的软件。结合 VMPL 提供的所有这些功能，可以在包含 VMPL0 中间代码的 SEV-SNP 客户虚拟机中嵌套传统（非 SEV-SNP）虚拟机。尽管由于这种转换执行的额外模拟会导致性能略有下降，但它可以使传统工作负载安全运行。图 3 概述了这种架构。</p>
+<p><img src="f3.png" alt=""></p>
+<h3 id="访问控制所需的-Intel-TDX-组件"><a href="#访问控制所需的-Intel-TDX-组件" class="headerlink" title="访问控制所需的 Intel TDX 组件"></a>访问控制所需的 Intel TDX 组件</h3><p>由于 Intel TDX 采用多组件架构，虚拟机管理和通信涉及更多步骤。Intel TDX 模块托管在由 CPU 的安全仲裁模式（Secure-Arbitration Mode, SEAM）保护的环境中，分配了尽可能多的保留内存，相关信息在 SEAM 范围寄存器（SEAM-range-register, SEAMRR）中进行配置。SEAM 内存的机密性和完整性保证与 Intel TDX 保护的虚拟机类似。禁止任何外部参与者（例如所有软件，无论其是在虚拟机还是虚拟机监控程序中运行）或支持 DMA 的设备访问 SEAM 内存。然而，SEAM 模式下的 CPU 并不完全具有特权，因为它不允许访问其他安全内存区域，例如 Intel SGX 飞地或 CPU 的系统管理模式使用的内存区域。</p>
+<p>TDX 模块的安装和加载是由新引入的 SEAM 加载器（SEAM Loader, SEAMLDR）执行的，它是集成到 Intel 可信执行技术（Trusted Execution Technology, TXT）堆栈中的一个额外的认证代码模块（Authenticated Code Module, ACM）。在被虚拟机监控程序调用后，SEAMLDR 负责验证并随后将 Intel TDX 模块加载到前述的 SEAM 内存范围（SEAM memory range, SEAMMR）中。此外，SEAMLDR 通过 SEAMMR 内的硬件测量寄存器传递安全版本号（Security-Version Number, SVN），并将 TDX 模块置于 SEAM-VMX 根模式。在此初始化过程之后，VMM 可以通过执行 <code>SEAMCALL</code> 指令与 TDX 模块通信并移交控制权。TDX 模块使用 <code>SEAMRET</code> 指令将执行返回给虚拟机监控程序，确保请求的操作（例如 TD 的创建、删除或启动）得以完成。启动或恢复虚拟机是通过 <code>VMLAUNCH</code> 和 <code>VMRESUME</code> 指令实现的，这些指令在将控制权移交给 TD 之前，将 TDX 模块置于 SEAMVMX 非根操作模式中。</p>
+<p>与 AMD 的单一模块架构不同，远程证明是由一个独立的 SGX TDQE 处理的。</p>
+<h2 id="安全能力报告"><a href="#安全能力报告" class="headerlink" title="安全能力报告"></a>安全能力报告</h2><p>正如在第 2.2 小节中提到的，虚拟机监控程序（VMM）能够控制通过 <code>CPUID</code> 提供的信息或使用 <code>RDMSR</code> 从 MSR 读取的信息，这样会带来一些问题。SEV-SNP 和 TDX 旨在防止虚拟机监控程序向虚拟机提供通过上述指令检索到的错误的 CPU 能力信息。</p>
+<p>启用了 SEV-SNP 的客户机可以指示 AMD 的安全处理器（SP）验证通过虚拟机监控程序传递的 <code>CPUID</code> 数据中是否包含主机上不可用的功能，以及关键的安全尺寸信息是否正确。这种过滤可以在每次调用 <code>CPUID</code> 时动态执行，也可以在初始虚拟机启动时执行。如果选择在启动时处理，SP 会在客户机内存中插入两个特殊页面。其中一个页面包含客户机与 SP 之间通信所用的加密密钥，而另一个页面则保存已验证的 <code>CPUID</code> 值。前者通过客户机的私有内存加密密钥进行安全加密，以防止虚拟机监控程序进行任何不必要的访问。由于验证过程仅在虚拟机启动时执行一次，而并非是每次调用 <code>CPUID</code> 时都进行，因此这是一种性能更优的解决方案。</p>
+<p>在使用 Intel TDX 的客户机上，默认情况下会进行 <code>CPUID</code> 验证，无需显式配置。类似于 SEV-SNP，TDX 模块防止虚拟机监控程序报告超出主机系统实际支持的能力。然而，TDX 客户机可以在每次执行 <code>CPUID</code> 时无条件地启用虚拟化异常，从而使虚拟机的操作系统完全控制虚拟机内部软件接收请求 <code>CPUID</code> 信息的方式。</p>
+<p>SEV-SNP 和 TDX 都通过禁止虚拟机监控程序写入这些对安全性敏感的寄存器，来防止对客户机的 MSRs（例如硬件调试寄存器）的干扰。这一过程是自动处理的，不需要对客户机的操作系统进行任何修改。</p>
+<h2 id="TCB-回滚预防"><a href="#TCB-回滚预防" class="headerlink" title="TCB 回滚预防"></a>TCB 回滚预防</h2><p>回滚攻击（rollback attacks）依赖于将可信计算基（Trusted Computing Base, TCB）中包含的组件版本降级，或者恶意报告组件的旧版本，然后利用在最近版本中已经修复的漏洞进行攻击。</p>
+<p>在 SEV-SNP 系统中，安全处理器（SP）确保其固件不会降级到当前运行版本以下。此外，每个 TCB 组件（如 SP）的固件版本通过加密方式与处理器中集成的芯片背书密钥（Chip Endorsment Key, CEK）合并。由于这些改进，客户机所有者现在可以可靠地相信，他们的虚拟机不会以低于他们预先设置的最低版本阈值的错误报告过的固件版本启动。</p>
+<p>由 TDX 模块管理的 TCB 只有在其中包含的每个组件报告的安全版本号（SVN）都高于组件开发者设定的阈值时，才被认为是最新的。这些 SVN 从硬件寄存器加载到由 SEAM 加载器管理的内存中，该内存除了 TDX 模块外任何人都无法访问，从而防止外部参与者进行篡改。因此，如果将此类模块的版本降级到之前设置的版本以下，会导致 TCB 失去其最新状态。如果虚拟机的启动策略要求使用现代 TCB 版本，但当前并未满足此要求，则该虚拟机将无法启动。</p>
+<h2 id="中断和异常注入"><a href="#中断和异常注入" class="headerlink" title="中断和异常注入"></a>中断和异常注入</h2><p>传统上，虚拟机监控程序可以随时注入中断和异常。通常情况下，这不会对虚拟机造成问题，因为所有主要的虚拟机操作系统都支持正确的中断和异常处理。其中一些虚拟机操作系统包含关于中断和异常如何以及何时发生的内置预设，这是由于虚拟机通常尝试尽可能接近地模拟裸机硬件。客户操作系统可能假设在执行有效指令后不会抛出未知操作码异常（#UD），就像真实硬件一样。然而，虚拟机监控程序可以随时注入这些异常。</p>
+<p>为了防止操作系统在处理这些不常见事件时可能出现的尚未发现的问题，AMD SEV-SNP 提供了两种可选配置模式，客户机可以启用这些模式以限制通常未受保护的中断和异常接口。替代注入（alternate injection）提供了默认的虚拟化中断注入和排队（queuing）接口，这些接口通常由虚拟机监控程序使用，但仅允许从虚拟机内部调用。这防止了恶意虚拟机监控程序干扰客户机操作系统，因为用于保存中断信息的字段只能由其他已经能够与客户机数据交互的实体访问。类似于如何使用 VMPL0 作为中间层实现嵌套虚拟化（如 3.3.1 小节所述），中断和异常处理可以通过具有 VMPL0 权限的软件来实现。然而，客户机可能不希望完全阻止虚拟机监控程序注入中断和异常，因此 SEV-SNP 提供了一个称为受限注入（restricted injection）的额外接口。启用了此模式的客户机会完全阻止虚拟机监控程序进行虚拟中断排队，并严格限制可以注入的中断类型。一种新引入的异常——虚拟机监控程序注入异常（#HV），会通知客户机有关虚拟机监控程序的中断，用以代替原本必要的直接传递给虚拟机的中断。虚拟机处理此事件所需的扩展信息可以通过共享内存页面在虚拟机监控程序和客户机之间传递。</p>
+<p>Intel TDX 同样在虚拟机控制结构中跟踪虚拟中断信息和 APIC 数据，这些数据受到保护，防止虚拟机监控程序的访问。用于保存这些信息的页面在 TD 启动时使用与虚拟机关联的私钥来获取。Intel VM-X 进行了调整，以防止将异常传递到信任域，因为虚拟中断和注入的中断由 CPU 硬件管理。确保虚拟机操作系统对中断优先级和屏蔽所做的假设也由 TD 的虚拟中断虚拟化处理。所有这些保证都不需要对客户机操作系统进行任何修改。</p>
+<h2 id="远程证明"><a href="#远程证明" class="headerlink" title="远程证明"></a>远程证明</h2><p>远程证明（remote attestation）是计算服务用户（CSUs）所需的关键功能，因为他们希望验证其部署的虚拟机按照预期运行且未被篡改。证明报告由 CPU 内置组件生成，例如 AMD 系统上的安全处理器（SP）或 Intel 主机上的 TDQE，这些报告包含关于虚拟机本身的多种信息（在启动后和运行期间收集）。先前的扩展仅允许在可信执行环境启动后进行证明，但 SEV-SNP 和 TDX 还支持运行时证明。</p>
+<p>证明过程始终由客户虚拟机发起。SEV-SNP 虚拟机通过使用 <code>SNP_GUEST_REQUEST</code> 固件 API 调用请求安全处理器（SP）为其生成报告，而 TDX 客户虚拟机则调用 TDX 模块的 <code>TDCALL</code> 指令。SEV-SNP 客户虚拟机只需与安全处理器通信，而不需要与其他实体交互来处理证明。这与 TDX 信任域（TD）不同，TDX 信任域首先会请求 TDX 模块生成一般证明报告，然后请求虚拟机监控程序（VMM）使用 TDQE 对其进行引用。引用飞地不能由 TDX 模块直接使用，因为它运行在 SGX 飞地中，SEAM 无法访问。通常，这些信息包括在虚拟机启动期间收集的元数据、一般系统信息、安全敏感组件的版本（例如 TDX 模块或安全处理器的固件）以及由信任域（TD）提供的任意数据。在启用了 SEV-SNP 的系统上，客户虚拟机的所有者还可以在启动后签发一个签名的身份块（Identity Block, IDB），以区分客户虚拟机并使用提供的校验和验证启动。TDX 证明报告还包括在证明过程中创建的 <code>TDINFO_STRUCT</code> 中标识 TD 所有者的字段。虚拟机填充的任意数据通常用于向另一方提供虚拟机的公钥，以便以安全的方式进行通信。云服务用户（CSU）可以信任证明报告是正确生成的，因为报告中包含了参与证明的每个组件的版本以及安全敏感的 CPU 功能（例如同步多线程、SEM）的状态。报告使用每个执行 SEV-SNP 证明的 AMD 芯片独有的版本化芯片背书密钥（VCEK）签名，或者依赖于 Intel TDX 客户虚拟机的供应认证飞地（Provisioning Certification Enclave, PCE）提供的签名密钥。随后，请求认证的一方可以通过使用公司提供的签名验证报告来验证这些报告。图 4 概述了为 SEV-SNP 客户虚拟机生成和传输证明报告的过程。</p>
+<p><img src="f4.png" alt=""></p>
+<p>由于上述 TDX 的多组件架构，成功传输证明报告需要更多步骤，如图 5 所示。首先，TDX 虚拟机要求 TDX 模块生成证明报告（图 5.1），类似于 SEV-SNP 客户虚拟机从安全处理器（SP）请求报告。使用这个新创建的报告（图 5.2），TD 将其传递给虚拟机监控程序以进行签名过程（图 5.3）。虚拟机监控程序将认证数据传递给 TDQE（图 5.4），TDQE 负责对报告进行加密验证。随后，签名后的信息被传递回虚拟机监控程序（图 5.5）和信任域（图 5.6），最终将报告传递回远程方。</p>
+<p><img src="f5.png" alt=""></p>
+<h2 id="虚拟机迁移和密封"><a href="#虚拟机迁移和密封" class="headerlink" title="虚拟机迁移和密封"></a>虚拟机迁移和密封</h2><p>由于信任域可能希望在虚拟机执行之间保存数据，SEV-SNP 和 TDX 提供了将数据安全写入持久化存储的方法。SEV-SNP 客户虚拟机可以简单地请求安全处理器（SP）生成本地密封密钥，虚拟机可以信任这些密钥未被恶意行为者篡改，并使用它们来加密不受 SEV-SNP 内存保护的数据。</p>
+<p>SEV-SNP 引入了一个新的 CPU 组件，称为迁移代理（Migration Agent, MA），用于执行客户虚拟机迁移。该代理在同一个主机上的 SEV-SNP 虚拟机内运行，负责验证迁移是否可以安全执行。由于该代理在每个系统上都是活动的，因此需要在客户虚拟机应迁移离开的源物理机和应迁移到的目标机器上运行。TDX 也使用称为迁移信任域（MigTD）的特定服务信任域进行机密虚拟机迁移，该域以类似于 AMD 的 MA 的安全方式处理迁移过程。几乎所有现代云服务提供商（CSP）都支持（运行中的）虚拟机迁移，以简化维护工作并实现动态负载均衡。实时迁移由在两个系统上运行的代理管理，这些代理处理从源到目标的数据重新加密。客户虚拟机需要确保其静态数据（例如不在内存中的数据）通过其他方式（如全盘加密）进行加密，因为 TDX 和 SEV-SNP 都不处理此类数据的保护。</p>
+<h1 id="相关工作"><a href="#相关工作" class="headerlink" title="相关工作"></a>相关工作</h1><p>虽然 SEV-SNP 引入的完整性保证解决了前一代 SEV-ES 扩展中的很多问题，但新的针对于 SEV-SNP 系统的攻击向量已经出现。通过故障注入（fault injection）漏洞攻击 SP，可以提取 SEV-SNP 密钥并解密私有的内存。由于这严重影响了远程证明过程，因此在当前一代 AMD 处理器上无法依赖它来安全地创建报告。此外，还可能存在侧信道攻击（side channel attacks），因为 SEV-SNP 并不阻止对（加密的）虚拟机私有页面的读取访问，这些访问可以用于泄露客户机寄存器值或用于恢复密钥。目前还没有已知的针对 Intel TDX 的漏洞，因为尚未存在实现该技术的硬件。</p>
+<p>对在可信执行环境（TEE）中运行应用程序且无需修改这些应用程序的高需求，也促使了 Gramine 和 Secure CONtainer Environment（SCONE）的创建。两者都通过依赖 SGX 飞地来提供安全环境，利用其机密性保证。Gramine 是一个库操作系统（LibOS），它可以封装一个应用程序，同时保持较低的内存占用，并处理应用程序可能需要的所有操作系统功能。SCONE 允许应用程序在安全的 Docker 容器内运行，并通过提供一个 C 库来保证 TCB（可信计算基）较小。</p>
+<p>IBM 正在为基于 Power ISA 的计算机提供类似的完整性保证，这些保证由 SEV-SNP 和 TDX 确保，使用一种称为保护执行设施（protected execution facility）的基于虚拟机的 TEE。该功能在自 2017 年起可用的 IBM POWER9 芯片上得到支持，并增强了访问控制限制，依赖于多种现有技术，如安全启动和可信平台模块（TPM）。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>SEV-SNP 和 TDX 在 SEV-SEM 和 SGX 提供的内存机密性保证的基础上，通过强制执行额外的完整性保证，进一步增强了安全性。之所以要转为在基于虚拟机的可信执行环境（TEE）中运行应用程序，在于这减少了开发工作量，因为无需对应用程序代码进行调整。这些新技术允许在由外部参与者管理的系统上安全处理敏感用户数据，这是在云中推动可信执行环境的持续努力中的一个重要里程碑。</p>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><h2 id="页表状态"><a href="#页表状态" class="headerlink" title="页表状态"></a>页表状态</h2><p>在 RMP 中跟踪的所有页面都使用页面状态属性进行分类。页面只能处于表 1 所示的以下状态之一。</p>
+<p>处于虚拟机监控程序状态的页面对应于前述的共享（未加密）页面，这些页面可以由虚拟机监控程序或 SEV-SNP 虚拟机自由访问。分配给 SEV-SNP 虚拟机并已由客户机成功验证的页面被标记为 Guest-Valid 状态，这些页面被视为私有页面。通过调用新的 CPU 指令（如 <code>PVALIDATE</code> 或 <code>RMPUPDATE</code>）或使用 AMD 安全处理器中包含的虚拟机管理 API，可以在不同状态之间进行转换。<code>PVALIDATE</code> 指令在客户机内部使用，将页面从 Guest-Invalid 状态移动到 Guest-Valid 状态，并在过程中对其进行验证。这通常是在客户机接收到使用 <code>RMPUPDATE</code> 指令分配的页面后完成的，因为 <code>RMPUPDATE</code> 会清除验证位，将页面标记为不受信任。使用 <code>RMPUPDATE</code> 指令可以从虚拟机监控程序向启用 SEV-SNP 的客户机分配页面，或者从客户机返回给虚拟机监控程序。直接从软件修改 RMP 是被禁止的，只有通过 AMD 安全处理器才能实现，这对于内存访问控制至关重要。</p>
+<p>将页面转变为 <code>Metadata</code>、<code>Firmware</code> 或 <code>Context</code> 状态需要调用 AMD 安全处理器的管理 API，这会使页面变为不可变（immutable）状态，并将其配置为请求的状态。</p>
+<p><img src="t1.png" alt=""></p>
+<h2 id="开发经验"><a href="#开发经验" class="headerlink" title="开发经验"></a>开发经验</h2><p>要开发利用 SEV-SNP 和 TDX 新引入的功能的软件，需要一个稳定的函数和指令规范以及支持这些扩展的硬件。虽然 AMD 已经提供了支持 SEV-SNP 的处理器，但 Intel 当前一代芯片仍缺乏任何硬件支持。然而，Intel 已经发布了 TDX 的应用二进制接口（ABI），使开发者能够开始软件的开发。AMD 通过一个 Rust 库提供对安全处理器的 API 访问，该库自 2022 年 10 月起支持 SEV-SNP。利用这些库和工具可以创建虚拟机并与必要的安全组件进行通信。用于验证证明报告的证书由芯片制造商发布，并且每一代芯片的证书都是公开可用的。</p>
+<p>由于在页表遍历过程中使用的新组件需要对内存写入客户机私有页面进行额外的访问验证，性能可能会下降。实际影响尚未测量，因为 AMD 和 Intel 最近和正在进行的开发工作仍在影响实现细节。之前讨论的 CPU 测量指令（如 <code>CPUID</code>）也因为安全处理器和 TDX 模块提供的额外验证而变得较慢。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/">https://lordaeronesz.top/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/%E8%99%9A%E6%8B%9F%E5%8C%96/">虚拟化</a><a class="post-meta__tags" href="/tags/%E6%9C%BA%E5%AF%86%E8%AE%A1%E7%AE%97/">机密计算</a><a class="post-meta__tags" href="/tags/%E7%BF%BB%E8%AF%91/">翻译</a></div><div class="post-share"><div class="social-share" data-image="/2025/02/10/%E3%80%8AGeneral%20overview%20of%20AMD%20SEV-SNP%20and%20Intel%20TDX%E3%80%8B%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/cloud.jpeg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/" title="机密虚拟机的威胁模型"><img class="cover" src="/2025/05/06/%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B/kvm.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">机密虚拟机的威胁模型</div></div><div class="info-2"><div class="info-item-1">本文将介绍近年兴起的机密虚拟机（Confidential Virtual Machine）技术所旨在抵御的威胁模型，主要关注内存机密性（confidentiality）和内存完整性（integrity）两个方面。在解释该威胁可能造成的问题的同时，还将同时介绍现在最主流的机密虚拟机解决方案之一的 AMD SEV-SNP 如何如何应对该威胁。  在正式介绍之前，有必要先明确这样一个概念，在机密虚拟机的威胁模型中，Hypervisor 被认为是不可信的。恶意的 Hypervisor 可能读取虚拟机的内存数据，导致虚拟机用户隐私泄露；或是直接写入虚拟机内存，导致虚拟机运行产生预期之外的结果。 机密性虚拟机内存由于虚拟机的内存是通过第二阶段页表映射（GPA -&gt; HPA）到宿主机内存中，且该页表由 Hypervisor 进行维护。因此在未引入机密虚拟机技术时，Hypervisor 能够直接借助该页表映射，手动进行地址转换并读取虚拟机内存数据。 对于虚拟机内存的机密性，AMD 在最早的 SEV 技术（2016 年）中已经解决。解决方法是为每个虚拟机引入一个 AES 加密密钥，虚拟机指定...</div></div></div></a><a class="pagination-related" href="/2025/02/03/%E5%B0%86D%E7%9B%98%E7%A9%BA%E9%97%B4%E5%88%92%E5%88%86%E7%BB%99C%E7%9B%98/" title="将D盘空间划分给C盘"><img class="cover" src="/2025/02/03/%E5%B0%86D%E7%9B%98%E7%A9%BA%E9%97%B4%E5%88%92%E5%88%86%E7%BB%99C%E7%9B%98/win11.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">将D盘空间划分给C盘</div></div><div class="info-2"><div class="info-item-1">前段时间换了刚刚换了新的机械革命的笔记本，发现拿到手时磁盘已经预先分好了区，但是 C 盘（系统盘）只分了 200 GB。在装了 WSL 等一些必备的环境后，就只剩下不到 100 GB，感觉很没有安全感（😩），于是就想办法给 C 盘划分更多的空间，以下是一些经验分享。  尝试使用系统自带工具首先，我尝试着使用 Windows 自带的磁盘管理工具（Windows 11 下右键底部的“开始”键）。 开始的设想是：首先对 D 盘进行“压缩卷”将一部分空闲的存储空间转为“未分配”状态，然后对 C 盘执行”扩展卷“将刚腾出来的”未分配“空间给合并。但是发现 C 盘的”扩展卷“选项是灰色的，不可选。查阅资料得知一个磁盘在进行扩展卷时只能合并与之相邻的磁盘分区，而”压缩卷“腾出的空闲空间是位于磁盘右侧的，该空间无法与 C 盘进行合并，只能重新合入 D 盘中。  借助第三方工具要想使得 C 盘能够合并 D 盘的空闲空间，就必须使得 D 盘划分出的空闲空间位于 D 盘的左侧，而这必然涉及到磁盘数据的移动，存在数据丢失的风险，Windows 也并没有提供这样的功能。 于是转而寻求第三方工具的帮助，最...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img class="cover" src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-02</div><div class="info-item-2">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</div></div><div class="info-2"><div class="info-item-1">本文将分享发表在 AsiaCCS ’24 上的论文《SoK: Understanding Designs Choices and Pitfalls of Trusted Execution Environments》，文章系统梳理了不同可信执行环境（TEE）设计上的选择和取舍，个人读完之后很有收获，推荐想做或正在做 TEE 设计相关工作的阅读。  TEE 设计核心挑战文章提出了 TEE 设计过程中的核心挑战：TEE 设计如何保护 TEE 实例使用的资源，同时使不受信任的（宿主机）操作系统能够以有效的方式管理计算资源，以履行 CSP 的职责。 简而言之，就是如何平衡安全隔离和高效性能之间的关系。举个极端的例子，我们可以将虚拟机启动、vCPU 调度、内存分配、异常处理等不可信 hypervisor 的工作完全交给新引入的位于 TCB 中的可信实体（文中称之为 RTPM, TEE Runtime Protection Module）来完成，这样会导致一些问题：在 RTPM 中实现宿主 hypervisor 中复杂的调度策略是不现实的。首先，像 AMD SEV 它的 RTPM 为安全协处...</div></div></div></a><a class="pagination-related" href="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结"><img class="cover" src="/2025/06/28/%E8%AE%BA%E6%96%87%E3%80%8ARemote%20attestation%20of%20confidential%20VMs%20using%20ephemeral%20vTPMs%E3%80%8B%E6%80%BB%E7%BB%93/svsm.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-28</div><div class="info-item-2">论文《Remote attestation of confidential VMs using ephemeral vTPMs》总结</div></div><div class="info-2"><div class="info-item-1">本文是对 ACSAC &#39;23 论文《Remote attestation of confidential VMs using ephemeral vTPMs》的总结，以及个人的理解和思考。  解决的问题机密虚拟机（CVM）技术为虚拟机提供一个隔离环境，防止受到 hypervisor 等高特权软件的干扰。但是这样的隔离机制作用于虚拟机运行时，在虚拟机启动过程中，此时的完整性（intergrity）保护依赖于度量启动（measured boot）和运行时证明（runtime attestation）。运行时证明需要一个硬件信任根，在物理机上，TPM 芯片可以作为这样的信任根。然而在云计算环境中，云服务提供商通过设备模拟的方式给用户提供 vTPM，使用这样的模拟设备需要信任云服务提供商，这与 CVM 的威胁模型不符。 本文作者提出了一种方法，借助 AMD SEV-SNP 技术，在 CVM 内部模拟一个 vTPM，而无需信任 hypervisor。具备以下安全要求：  隔离性：既与 guest 隔离又与 host 隔离。 安全通信：与物理 TPM 的通信是硬件级隔离的，因此 vT...</div></div></div></a><a class="pagination-related" href="/2025/09/08/AMD%20SEV%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BAASID%E7%AE%A1%E7%90%86/" title="AMD SEV机密虚拟机ASID管理"><img class="cover" src="/2025/09/08/AMD%20SEV%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BAASID%E7%AE%A1%E7%90%86/amd.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-08</div><div class="info-item-2">AMD SEV机密虚拟机ASID管理</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Linux 内核中，AMD SEV 机密虚拟机对虚拟机号 ASID 的管理设计，基于的内核版本为 Linux 5.10。  数据结构AMD SEV 中对 ASID 管理的核心代码位于 arch/x86/kvm/svm/sev.c 中，以下是与之相关的数据结构定义： 1234567891011121314/* 定义保护位图的互斥锁 */static DEFINE_MUTEX(sev_bitmap_lock);/* SEV 同时支持的最大 ASID */unsigned int max_sev_asid;/* SEV 应该使用的最小的 ASID */static unsigned int min_sev_asid;/* 待分配的 ASID 位图 */static unsigned long *sev_asid_bitmap;/* 回收的 ASID 位图 */static unsigned long *sev_reclaim_asid_bitmap; AMD SEV 的 ASID 管理采用了 双位图 的设计，包含一张分配位图 sev_asid_bitmap 和一张回收位图 ...</div></div></div></a><a class="pagination-related" href="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结"><img class="cover" src="/2025/07/26/%E8%AE%BA%E6%96%87%E3%80%8ASVSM-KMS%EF%BC%9ASafeguarding%20Keys%20for%20Cloud%20Services%20with%20Encrypted%20Virtualization%E3%80%8B%E6%80%BB%E7%BB%93/KMS.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-26</div><div class="info-item-2">论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》总结</div></div><div class="info-2"><div class="info-item-1">本文将介绍 2024 年发表在 arXiv 上的论文《SVSM-KMS：Safeguarding Keys for Cloud Services with Encrypted Virtualization》。  解决的问题密钥管理服务是云环境中最重要的服务之一。集中式密钥管理系统（centralized Key Management System, KMS）通常提供一个统一的平台来进行密钥生成、分发、管理等操作，然而，这会导致可信计算基（TCB）过大，带来单点故障的风险。非集中式的 KMS 是一个方向，但是这会带来为维护多结点一致性的高昂的开销。 云端的安全密钥管理存在许多问题：首先云服务提供商（CSP）拥有对平台的绝对控制权，需要将其视作可信。此外，网络延迟会影响集中式的 KMS 的效率。同时，如果宿主机系统被攻破，还可能导致密钥的泄露。 为了解决这些问题，本文基于 AMD SEV-SNP 所引入的 VMPL 机制和 SVSM 特权软件，设计了 SVSM-KMS，将 KMS 放在 CVM 内的最高 VMPL 特权级，与 host 和 guest 隔离开来。具体来说，本文的贡献如...</div></div></div></a><a class="pagination-related" href="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结"><img class="cover" src="/2025/07/10/%E8%AE%BA%E6%96%87%E3%80%8ADitto%EF%BC%9AElastic%20Confidential%20VMs%20with%20Secure%20and%20Dynamic%20CPU%20Scaling%E3%80%8B%E6%80%BB%E7%BB%93/Ditto1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-10</div><div class="info-item-2">论文《Ditto：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》总结</div></div><div class="info-2"><div class="info-item-1">本文将介绍 2024 年发表在 arXiv 上的论文《DITTO：Elastic Confidential VMs with Secure and Dynamic CPU Scaling》。  解决的问题机密虚拟机（CVM）在带来了强大的机密性和完整性保护的同时，也带来了很多限制，导致虚拟机的性能和灵活性的下降。例如：不支持 vCPU 的热插拔（即运行中动态调整 vCPU 的数量），该特性可以用于在虚拟机运行过程中灵活调整计算能力，应用于 Serverless 等计算环境下。  虽然的商用 CVM 方案还没有任何一家支持 vCPU 热插拔，但是内存的动态调整是可行的。例如 AMD SEV-SNP 下 hypervisor 可以使用 RMPUPDATE 指令将 CVM 的内存进行回收和动态分配。  由于缺少了 vCPU 数量的动态调整能力，现有的机密无服务器环境（OpenWhisk + Kubernetes + 机密容器）要想动态调整运算能力，只能借助于启动新的 CVM，这会带来很大的性能开销。本文提出了“弹性 CVM” 和 “Woker vCPU” 的概念，能够在 CVM 环境下...</div></div></div></a><a class="pagination-related" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img class="cover" src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-15</div><div class="info-item-2">现有机密虚拟机设计方案汇总</div></div><div class="info-2"><div class="info-item-1">本文算是一个笔记性质的文章，整理了现有的大部分机密虚拟机（CVM）的设计方法，并主要围绕硬件/固件扩展、内存机密性保护、内存完整性保护、寄存器状态保护几个方面来介绍。覆盖了市面上的大多数 CVM 设计，既包括工业界已商用的方案，如 AMD SEV、Intel TDX 等，也包括一些学术界的方案，如 VirTEE、ZION。  由于 Arm 官方方案 CCA 的标准和软件栈趋近成熟，因此基于 Arm 架构的其它方案如 TwinVisor 和 virtCCA 在此便不再介绍了，以下是个人整理的现有 CVM 方案的列表：  AMD SEV-SNP: 现已商用。 Intel TDX: 现已商用。 Arm: TwinVisor (SOSP ‘21): None virtCCA (arXiv): None CCA (官方方案): 硬件规范成熟，软件栈快速构建中，支持的芯片（Arm v9）还未上市。   IBM PEF: 现已商用，发表论文（EuroSys ‘21）。 RISC-V: CoVE: 社区官方方案，正在建设中 VirtTEE (DAC ‘22): 向下兼容，虚拟机内核无需经过修改。...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">2.</span> <span class="toc-text">背景</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA-CPU-%E6%89%A9%E5%B1%95%E7%9A%84%E5%8E%86%E5%8F%B2"><span class="toc-number">2.1.</span> <span class="toc-text">虚拟机 CPU 扩展的历史</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CPU-%E8%83%BD%E5%8A%9B%E8%87%AA%E6%88%91%E6%8A%A5%E5%91%8A%E5%92%8C%E5%AE%89%E5%85%A8%E6%95%8F%E6%84%9F%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">2.2.</span> <span class="toc-text">CPU 能力自我报告和安全敏感寄存器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B"><span class="toc-number">2.3.</span> <span class="toc-text">威胁模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E9%A1%B5"><span class="toc-number">2.4.</span> <span class="toc-text">分页</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9E%B6%E6%9E%84"><span class="toc-number">3.</span> <span class="toc-text">架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E5%85%A8%E5%85%B3%E9%94%AE%E7%BB%84%E4%BB%B6"><span class="toc-number">3.1.</span> <span class="toc-text">安全关键组件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%AE%8C%E6%95%B4%E6%80%A7%E4%BF%9D%E6%8A%A4"><span class="toc-number">3.2.</span> <span class="toc-text">内存完整性保护</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AMD-SEV-SNP"><span class="toc-number">3.2.1.</span> <span class="toc-text">AMD SEV-SNP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Intel-TDX"><span class="toc-number">3.2.2.</span> <span class="toc-text">Intel TDX</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%B9%E6%9D%83%E7%BA%A7%E5%92%8C%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6"><span class="toc-number">3.3.</span> <span class="toc-text">特权级和访问控制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AMD-SEV-SNP-%E7%9A%84%E7%89%B9%E6%9D%83%E6%A6%82%E5%BF%B5"><span class="toc-number">3.3.1.</span> <span class="toc-text">AMD SEV-SNP 的特权概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6%E6%89%80%E9%9C%80%E7%9A%84-Intel-TDX-%E7%BB%84%E4%BB%B6"><span class="toc-number">3.3.2.</span> <span class="toc-text">访问控制所需的 Intel TDX 组件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E5%85%A8%E8%83%BD%E5%8A%9B%E6%8A%A5%E5%91%8A"><span class="toc-number">3.4.</span> <span class="toc-text">安全能力报告</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TCB-%E5%9B%9E%E6%BB%9A%E9%A2%84%E9%98%B2"><span class="toc-number">3.5.</span> <span class="toc-text">TCB 回滚预防</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%AD%E6%96%AD%E5%92%8C%E5%BC%82%E5%B8%B8%E6%B3%A8%E5%85%A5"><span class="toc-number">3.6.</span> <span class="toc-text">中断和异常注入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9C%E7%A8%8B%E8%AF%81%E6%98%8E"><span class="toc-number">3.7.</span> <span class="toc-text">远程证明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%BF%81%E7%A7%BB%E5%92%8C%E5%AF%86%E5%B0%81"><span class="toc-number">3.8.</span> <span class="toc-text">虚拟机迁移和密封</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E5%B7%A5%E4%BD%9C"><span class="toc-number">4.</span> <span class="toc-text">相关工作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%99%84%E5%BD%95"><span class="toc-number">6.</span> <span class="toc-text">附录</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%B5%E8%A1%A8%E7%8A%B6%E6%80%81"><span class="toc-number">6.1.</span> <span class="toc-text">页表状态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E5%8F%91%E7%BB%8F%E9%AA%8C"><span class="toc-number">6.2.</span> <span class="toc-text">开发经验</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>

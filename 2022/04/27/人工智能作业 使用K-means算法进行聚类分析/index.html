@@ -1,0 +1,481 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>人工智能作业 使用K-means算法进行聚类分析 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文将介绍如何使用 K-means 算法对给定的坐标数据进行聚类分析。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="人工智能作业 使用K-means算法进行聚类分析">
+<meta property="og:url" content="https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="本文将介绍如何使用 K-means 算法对给定的坐标数据进行聚类分析。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/AI.jpg">
+<meta property="article:published_time" content="2022-04-27T15:48:47.000Z">
+<meta property="article:modified_time" content="2025-12-26T16:26:38.652Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="人工智能">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/AI.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "人工智能作业 使用K-means算法进行聚类分析",
+  "url": "https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/",
+  "image": "https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/AI.jpg",
+  "datePublished": "2022-04-27T15:48:47.000Z",
+  "dateModified": "2025-12-26T16:26:38.652Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'medium_zoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '人工智能作业 使用K-means算法进行聚类分析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">人工智能作业 使用K-means算法进行聚类分析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-04-27T15:48:47.000Z" title="发表于 2022-04-27 23:48:47">2022-04-27</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-26T16:26:38.652Z" title="更新于 2025-12-27 00:26:38">2025-12-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/">人工智能</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><p>本文将介绍如何使用 K-means 算法对给定的坐标数据进行聚类分析。<br><span id="more"></span></p>
+<h1 id="使用K-means算法进行聚类分析"><a href="#使用K-means算法进行聚类分析" class="headerlink" title="使用K-means算法进行聚类分析"></a>使用K-means算法进行聚类分析</h1><h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><blockquote>
+<p>K-means算法对data中数据进行聚类分析</p>
+<p>（1）算法原理描述</p>
+<p>（2）算法结构</p>
+<p>（3）写出K-means具体功能函数（不能直接调用sklearn.cluster(Means)功能函数)具体函数功能中返回值包括 数据类标签，累中心，输入包括：数据，类别数</p>
+<p>（4）可视化画图，不同类数据采用不同颜色</p>
+<p>（5）算法分析</p>
+<p>  类类方差，平均方差，不同初始点对聚类结果的影响？</p>
+<p>  如何解决？</p>
+</blockquote>
+<h2 id="算法描述"><a href="#算法描述" class="headerlink" title="算法描述"></a>算法描述</h2><ol>
+<li><p><strong>数据结构设计</strong>：   数据点使用自定义数据类型point，包含x和y两个变量。  中心点一个大小为k的数组center进行存储，从文本中提取的坐标数据使用可变数组coords进行存储，不同的坐标点分组采用一个可变的二维数组group进行存储。  </p>
+</li>
+<li><p><strong>函数介绍：</strong> </p>
+<p>extraCoords(): 从文本文件中提取坐标数据并存入coords中，提取算法为：首先使用传入文件路径初始化文件IO流fileStream，再逐个输出fileStream中的数据。若为字母，则不接收。否则两个一组接收，并使用stod()函数接收到的字符串转换成double类型并存入coords中。  </p>
+<p>drawFigures()：用于将传入坐标数组的数据绘制在屏幕上，由于该函数代码逻辑较为简单且程序段较短，因此设置为内联函数以减少函数调用开销。  </p>
+<p>clusterAnalysis()：核心算法程序，即Kmeans算法的原理： </p>
+<ol>
+<li><p>首先输入分组k 的值，即通过指定分组数目得到 k 个分组； </p>
+</li>
+<li><p>从数据集中随机选取 k 个数据点作为初始中心；  </p>
+</li>
+<li><p>对集合中每一数据点，计算与每一个中心点的距离，离哪个中心点距离近，就加入中心点对应的组。  </p>
+</li>
+<li><p>对k个组计算距离的平均值  </p>
+</li>
+<li><p>如果两次求得的均值距离的平均值小于某一个设置的阈值，可以认为我们进行的聚类已经达到期望的结果，算法终止。  </p>
+</li>
+<li><p>如果两次求得的均值距离大于某一个设置的阈值，继续迭代，如果迭代次数大于设定的值，那么终止。  </p>
+</li>
+</ol>
+</li>
+<li><p><strong>程序运行说明：</strong>本程序绘图功能借助了第三方库easyX，如需运行请先前往安装：<a target="_blank" rel="noopener" href="https://easyx.cn/">https://easyx.cn/</a>  程序运行前将数据文件放置于源程序根目录下，并更名为data.txt.  </p>
+</li>
+</ol>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;graphics.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;fstream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Kmeans</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">struct</span> <span class="title class_">point</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="type">double</span> x, y;</span><br><span class="line">		<span class="built_in">point</span>(<span class="type">double</span> x = <span class="number">0</span>, <span class="type">double</span> y = <span class="number">0</span>) : <span class="built_in">x</span>(x), <span class="built_in">y</span>(y) &#123;&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="type">const</span> <span class="type">int</span> iterLimit = <span class="number">100</span>;</span><br><span class="line">	<span class="type">const</span> <span class="type">double</span> criDiff = <span class="number">1e-6</span>;</span><br><span class="line">	<span class="function">vector&lt;point&gt; <span class="title">extraCoords</span><span class="params">(<span class="type">const</span> string&amp; path)</span> </span>&#123;</span><br><span class="line">		<span class="function">ifstream <span class="title">fileStream</span><span class="params">(path)</span></span>;</span><br><span class="line">		vector&lt;point&gt; coords;</span><br><span class="line">		<span class="keyword">while</span> (!fileStream.<span class="built_in">eof</span>()) &#123;</span><br><span class="line">			string s;</span><br><span class="line">			fileStream &gt;&gt; s;</span><br><span class="line">			<span class="keyword">if</span> (<span class="built_in">isalpha</span>(s[<span class="number">0</span>]))</span><br><span class="line">				<span class="keyword">continue</span>;</span><br><span class="line">			<span class="type">double</span> x = <span class="number">0</span>, y = <span class="number">0</span>;</span><br><span class="line">			x = <span class="built_in">stod</span>(s);</span><br><span class="line">			fileStream &gt;&gt; s;</span><br><span class="line">			y = <span class="built_in">stod</span>(s);</span><br><span class="line">			coords.<span class="built_in">emplace_back</span>(x, y);</span><br><span class="line">		&#125;</span><br><span class="line">		fileStream.<span class="built_in">close</span>();</span><br><span class="line">		<span class="keyword">return</span> coords;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">inline</span> <span class="type">void</span> <span class="title">drawFigures</span><span class="params">(<span class="type">const</span> vector&lt;point&gt;&amp; coords)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; coord : coords) &#123;</span><br><span class="line">			<span class="type">int</span> x = <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(coord.x * <span class="number">50</span>);</span><br><span class="line">			<span class="type">int</span> y = <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(coord.y * <span class="number">50</span>);</span><br><span class="line">			<span class="built_in">rectangle</span>(x - <span class="number">1</span>, y - <span class="number">1</span>, x + <span class="number">1</span>, y + <span class="number">1</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">clusterAnalysis</span><span class="params">(<span class="type">const</span> string&amp; path, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">auto</span> coords = <span class="built_in">extraCoords</span>(path);</span><br><span class="line">		<span class="function">vector&lt;point&gt; <span class="title">center</span><span class="params">(k)</span></span>;</span><br><span class="line">		<span class="built_in">srand</span>((<span class="type">unsigned</span> <span class="type">int</span>)<span class="built_in">time</span>(<span class="literal">NULL</span>));</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">			<span class="type">int</span> randIndex = <span class="built_in">rand</span>() % coords.<span class="built_in">size</span>();</span><br><span class="line">			center[i] = coords[randIndex];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">double</span> difference = DBL_MAX;</span><br><span class="line">		vector&lt;vector&lt;point&gt;&gt; <span class="built_in">group</span>(k);</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> times = <span class="number">0</span>; difference / k &gt; criDiff &amp;&amp; times &lt; iterLimit; ++times) &#123; <span class="comment">// 迭代</span></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">auto</span>&amp; g : group) &#123; <span class="comment">// 清空分组</span></span><br><span class="line">				g.<span class="built_in">clear</span>();</span><br><span class="line">			&#125;</span><br><span class="line">			difference = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; coords.<span class="built_in">size</span>(); ++i) &#123; <span class="comment">// 将所有点根据离中心点的距离进行归类</span></span><br><span class="line">				<span class="type">double</span> minDis = DBL_MAX;</span><br><span class="line">				<span class="type">int</span> minInd = <span class="number">0</span>;</span><br><span class="line">				<span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; center.<span class="built_in">size</span>(); ++j) &#123;</span><br><span class="line">					<span class="type">double</span> dis = <span class="built_in">sqrt</span>(<span class="built_in">pow</span>((center[j].x - coords[i].x), <span class="number">2</span>) </span><br><span class="line">						+ <span class="built_in">pow</span>((center[j].y - coords[i].y), <span class="number">2</span>));</span><br><span class="line">					<span class="keyword">if</span> (dis &lt; minDis) &#123;</span><br><span class="line">						minDis = dis;</span><br><span class="line">						minInd = j;</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">				group[minInd].<span class="built_in">emplace_back</span>(coords[i]);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123; <span class="comment">// 更新各组的中心点</span></span><br><span class="line">				<span class="type">double</span> avgX = <span class="number">0</span>, avgY = <span class="number">0</span>;</span><br><span class="line">				<span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; group[i].<span class="built_in">size</span>(); ++j) &#123;</span><br><span class="line">					avgX += group[i][j].x;</span><br><span class="line">					avgY += group[i][j].y;</span><br><span class="line">				&#125;</span><br><span class="line">				avgX /= group[i].<span class="built_in">size</span>();</span><br><span class="line">				avgY /= group[i].<span class="built_in">size</span>();</span><br><span class="line">				difference += <span class="built_in">sqrt</span>(<span class="built_in">pow</span>((center[i].x - avgX), <span class="number">2</span>)</span><br><span class="line">					+ <span class="built_in">pow</span>((center[i].y - avgY), <span class="number">2</span>));	</span><br><span class="line">				center[i] = <span class="built_in">point</span>(avgX, avgY);</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">//debug</span></span><br><span class="line">			cout &lt;&lt; <span class="string">&quot;times: &quot;</span> &lt;&lt; times &lt;&lt; endl;</span><br><span class="line">			cout &lt;&lt; <span class="string">&quot;central point: &quot;</span> &lt;&lt; endl;</span><br><span class="line">			<span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; c : center) &#123;</span><br><span class="line">				cout &lt;&lt; c.x &lt;&lt; <span class="string">&quot; &quot;</span> &lt;&lt; c.y &lt;&lt; endl;</span><br><span class="line">			&#125;</span><br><span class="line">			cout &lt;&lt; <span class="string">&quot;---------------------------------&quot;</span> &lt;&lt; endl;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">initgraph</span>(<span class="number">800</span>, <span class="number">800</span>);</span><br><span class="line">		<span class="built_in">setorigin</span>(<span class="number">400</span>, <span class="number">400</span>);</span><br><span class="line">		vector&lt;<span class="type">int</span>&gt; color = &#123; RED, GREEN, BLUE, YELLOW &#125;;</span><br><span class="line">		<span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">			<span class="built_in">setcolor</span>(color[i % color.<span class="built_in">size</span>()]);</span><br><span class="line">			<span class="built_in">circle</span>(center[i].x * <span class="number">50</span>, center[i].y * <span class="number">50</span>, <span class="number">3</span>); <span class="comment">// 绘制中心</span></span><br><span class="line">			<span class="built_in">drawFigures</span>(group[i]); <span class="comment">// 绘制各点</span></span><br><span class="line">		&#125;</span><br><span class="line">		cin.<span class="built_in">get</span>();</span><br><span class="line">		<span class="built_in">closegraph</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	Kmeans kmeans;</span><br><span class="line">	kmeans.<span class="built_in">clusterAnalysis</span>(<span class="string">&quot;./data.txt&quot;</span>, <span class="number">4</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="实验结果分析"><a href="#实验结果分析" class="headerlink" title="实验结果分析"></a>实验结果分析</h2><p><img src="f1.png" alt=""></p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">迭代次数</th>
+<th style="text-align:center">中心点1</th>
+<th style="text-align:center">中心点2</th>
+<th style="text-align:center">中心点3</th>
+<th style="text-align:center">中心点4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">(0.227226, 3.04983)</td>
+<td style="text-align:center">(2.78284, -2.05254)</td>
+<td style="text-align:center">(-3.52982, 3.21916)</td>
+<td style="text-align:center">(-3.53974, -2.89384)</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">(1.88871, 3.14692)</td>
+<td style="text-align:center">(2.86928, -2.54779)</td>
+<td style="text-align:center">(-2.77105, 2.77596)</td>
+<td style="text-align:center">(-3.38237, -2.94734)</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td style="text-align:center">(2.62653, 3.10868)</td>
+<td style="text-align:center">(2.80293, -2.73151)</td>
+<td style="text-align:center">(-2.46154, 2.78738)</td>
+<td style="text-align:center">(-3.38237, -2.94734)</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td style="text-align:center">(2.62653, 3.10868)</td>
+<td style="text-align:center">(2.80293, -2.73151)</td>
+<td style="text-align:center">(-2.46154, 2.78738)</td>
+<td style="text-align:center">(-3.38237, -2.94734)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>运行结果如图所示，输入的  k 为4，将各点分成了4类，每一类用不同的颜色进行表示，类的中心点为该颜色下的小圆圈。根据肉眼观察，聚类的结果较为合理。但是由于 K-means 算法初始点的选取是随机的，因此可能会导致聚类的结果不尽相同，如下图所示：  </p>
+<p><img src="f2.png" alt=""></p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center">迭代次数</th>
+<th style="text-align:center">中心点1</th>
+<th style="text-align:center">中心点2</th>
+<th style="text-align:center">中心点3</th>
+<th style="text-align:center">中心点4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">(2.72345, -2.26244)</td>
+<td style="text-align:center">(-3.01524, -2.54552)</td>
+<td style="text-align:center">(-0.17289, 3.07096)</td>
+<td style="text-align:center">(-4.01179, -3.20733)</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">(2.86928, -2.54779)</td>
+<td style="text-align:center">(-2.77631, -2.51946)</td>
+<td style="text-align:center">(0.0469085, 3.05288)</td>
+<td style="text-align:center">(-4.27929, -3.17607)</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td style="text-align:center">(2.86928, -2.54779)</td>
+<td style="text-align:center">(-2.73086, -2.60718)</td>
+<td style="text-align:center">(0.0469085, 3.05288)</td>
+<td style="text-align:center">(-4.35316, -3.03354)</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td style="text-align:center">(2.86928, -2.54779)</td>
+<td style="text-align:center">(-2.73086, -2.60718)</td>
+<td style="text-align:center">(0.0469085, 3.05288)</td>
+<td style="text-align:center">(-4.35316, -3.03354)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>可见，由于初始中心点的选取不同，最终导致聚类的结果产生了差异，且本次聚类的结果相对来说不够合理。</p>
+<h2 id="实验体会"><a href="#实验体会" class="headerlink" title="实验体会"></a>实验体会</h2><p>本次实验算法原理并不复杂，关键在于对文本数据的提取与转换，以及将数据可视化的绘制在屏幕上。文本数据提取部分我采用了文件IO流与字符串转换函数stod()。而数据可视化方面，由于本实验只有其画点这一极为基础的图形需求，因此我采用了一个较为轻量化图形库easyX，使用简单且代码量很少。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/">https://lordaeronesz.top/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%AE%97%E6%B3%95/">算法</a><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">数据结构</a><a class="post-meta__tags" href="/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/">人工智能</a></div><div class="post-share"><div class="social-share" data-image="/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90/AI.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/" title="停止等待协议的模拟实现"><img class="cover" src="/2022/05/05/%E5%81%9C%E6%AD%A2%E7%AD%89%E5%BE%85%E5%8D%8F%E8%AE%AE%E7%9A%84%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/%E8%AE%A1%E7%BD%91.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">停止等待协议的模拟实现</div></div><div class="info-2"><div class="info-item-1">协议原理 设计思路基本传输本次实验我采用了程序模拟的方式实现。发送方和接收方都为一个数组，传输过程即为发送方数组向接收方数组传递数据，并使用随机数生成的方式模拟传输过程中可能出现的差错，并且传输时间也为一个在 50 - 150 ms 间的随机数，用一个迭代器来模拟此时发送方的数据位置。 传输过程为一个循环语句，终止条件为发送迭代器到达发送方数组的末尾位置。 选择重传每次进行传输，传输时间就会累加，在一轮传输的最后判断累计时间是否超过了规定 tout，如果未超过，代表数据成功接收，发送迭代器自增 1。 否则，不进行操作，下一次循环将会再次尝试发送该数据。 舍弃重复帧存在这么一种情况，接收方成功接收了发送方的数据，并返回了一个 ACK 帧，但是此 ACK 帧还未到达发送方就已被其判定为超时，那么发送方将会重新发送上一次的数据帧，若该数据帧成功到达接收方，那么接收方需要将该数据帧舍弃（因此上一次传输时接收方已成功接受了该数据帧）。实现方法是判断接受数组的最后一个元素（即上一次接收的元素）是否与此时接受的相同，若相同，则不接收，并重新发送 ACK 帧。 代码实现1234567891011...</div></div></div></a><a class="pagination-related" href="/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8AStar%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E5%85%AB%E6%95%B0%E7%A0%81%E9%97%AE%E9%A2%98/" title="人工智能作业 使用AStar算法解决八数码问题"><img class="cover" src="/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8AStar%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E5%85%AB%E6%95%B0%E7%A0%81%E9%97%AE%E9%A2%98/AI.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">人工智能作业 使用AStar算法解决八数码问题</div></div><div class="info-2"><div class="info-item-1">八数码问题是一个经典的搜索问题，本文将介绍如何使用启发式搜索—— AStar 算法来求解八数码问题。 使用AStar算法解决八数码问题问题描述 八数码问题的A星搜索算法实现  要求：设计估价函数，并采用c或python编程实现，以八数码为例演示A星算法的搜索过程，争取做到直观、清晰地演示算法，代码要适当加注释。 八数码难题：在3×3方格棋盘上，分别放置了标有数字1,2,3,4,5,6,7,8的八张牌，初始状态S0可自己随机设定，使用的操作有：空格上移，空格左移，空格右移，空格下移。试采用A*算法编一程序实现这一搜索过程。  算法描述预估值的设计A* 算法的花费为 f(n) = g(n) + h(n)，其中 g(n) 为搜索深度，定义为状态单元 state 的成员变量，在每次生成子节点时将其加一。h(n) 为不对位的将牌数，将该部分的计算重载于 state 的小于运算符中，并将 f(n) = g(n) + h(n) 的值作为状态单元的比较值。 数据结构设计 每个状态用一个结构体表示，其中 depth 为状态深度，str 为该状态字符串，并重载小于运算符用于计算最优。 open 表使...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8AStar%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E5%85%AB%E6%95%B0%E7%A0%81%E9%97%AE%E9%A2%98/" title="人工智能作业 使用AStar算法解决八数码问题"><img class="cover" src="/2022/04/27/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E4%BD%9C%E4%B8%9A%20%E4%BD%BF%E7%94%A8AStar%E7%AE%97%E6%B3%95%E8%A7%A3%E5%86%B3%E5%85%AB%E6%95%B0%E7%A0%81%E9%97%AE%E9%A2%98/AI.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-04-27</div><div class="info-item-2">人工智能作业 使用AStar算法解决八数码问题</div></div><div class="info-2"><div class="info-item-1">八数码问题是一个经典的搜索问题，本文将介绍如何使用启发式搜索—— AStar 算法来求解八数码问题。 使用AStar算法解决八数码问题问题描述 八数码问题的A星搜索算法实现  要求：设计估价函数，并采用c或python编程实现，以八数码为例演示A星算法的搜索过程，争取做到直观、清晰地演示算法，代码要适当加注释。 八数码难题：在3×3方格棋盘上，分别放置了标有数字1,2,3,4,5,6,7,8的八张牌，初始状态S0可自己随机设定，使用的操作有：空格上移，空格左移，空格右移，空格下移。试采用A*算法编一程序实现这一搜索过程。  算法描述预估值的设计A* 算法的花费为 f(n) = g(n) + h(n)，其中 g(n) 为搜索深度，定义为状态单元 state 的成员变量，在每次生成子节点时将其加一。h(n) 为不对位的将牌数，将该部分的计算重载于 state 的小于运算符中，并将 f(n) = g(n) + h(n) 的值作为状态单元的比较值。 数据结构设计 每个状态用一个结构体表示，其中 depth 为状态深度，str 为该状态字符串，并重载小于运算符用于计算最优。 open 表使...</div></div></div></a><a class="pagination-related" href="/2023/07/03/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%BC%96%E7%A8%8B%E9%A2%98%20%E9%A1%BA%E5%BA%8F%E8%A1%A8/" title="数据结构编程题 顺序表"><img class="cover" src="/2023/07/03/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%BC%96%E7%A8%8B%E9%A2%98%20%E9%A1%BA%E5%BA%8F%E8%A1%A8/img.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2023-07-03</div><div class="info-item-2">数据结构编程题 顺序表</div></div><div class="info-2"><div class="info-item-1">删除最小值题目描述从顺序表中删除具有最小值的元素（假设唯一）并由函数返回被删元素的值。空出的位置由最后一个元素填补，若顺序表为空，则显示出错信息并退出运行。 解题代码123456789101112131415bool deleteMin(vector&lt;int&gt;&amp; nums, int&amp; val) &#123;    if (nums.empty()) &#123;        return false;    &#125;    int minVal = INT32_MAX, minIdx = 0;    for (int i = 0; i &lt; nums.size(); ++i) &#123;        if (minVal &gt; nums[i]) &#123;            minVal = nums[i];            minIdx = i;        &#125;    &#125;    nums[minIdx] = nums.back();    val = minVal;    return true;&...</div></div></div></a><a class="pagination-related" href="/2022/01/16/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC276%E5%9C%BA/" title="LeetCode周赛总结 第276场"><img class="cover" src="/2022/01/16/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC276%E5%9C%BA/leetcode.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-16</div><div class="info-item-2">LeetCode周赛总结 第276场</div></div><div class="info-2"><div class="info-item-1">本次周赛相对比较简单，前三题花的时间比较短，但无奈最后一题还是没思路。。。 将字符串拆分成若干长度为 k 的组题目链接将字符串拆分成若干长度为 k 的组 解题思路遍历字符串 s 的每个字符并加入到一个临时字符串中，当此临时字符串长度为 k 时，加入到结果数组中并清空此字符串。若此时遍历到字符串的最后一个字符且此时临时字符串长度没有达到 k 时，则向其末尾填入字符 fill 直到临时字符串长度达到 k，再加入到结果数组中。 解题代码123456789101112131415161718192021class Solution &#123;public:    vector&lt;string&gt; divideString(string s, int k, char fill) &#123;        vector&lt;string&gt; res;        string newStr;        for (int i = 0; i &lt; s.size(); i++) &#123;            newStr += s[i];            i...</div></div></div></a><a class="pagination-related" href="/2023/08/18/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%BC%96%E7%A8%8B%E9%A2%98%20%E6%9F%A5%E6%89%BE/" title="数据结构编程题 查找"><img class="cover" src="/2023/08/18/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E7%BC%96%E7%A8%8B%E9%A2%98%20%E6%9F%A5%E6%89%BE/img.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2023-08-18</div><div class="info-item-2">数据结构编程题 查找</div></div><div class="info-2"><div class="info-item-1">二叉树定义以下为本文解题代码的二叉树定义。 123456struct TreeNode &#123;	int val;	TreeNode* left, *right;	TreeNode(int val = 0, TreeNode* left = nullptr, TreeNode* right = nullptr)		: val(val), left(left), right(right) &#123;&#125;&#125;; 递归二分查找题目描述写出二分查找的递归算法。初始调用时，left 为1，right 为 n. 解题代码1234567891011bool recurBS(vector&lt;int&gt;&amp; nums, int target, int left, int right) &#123;	if (left &gt; right) return false;	int mid = (left + right) / 2;	if (nums[mid] == target) return true;	else if (nums[mid] &gt; target)...</div></div></div></a><a class="pagination-related" href="/2023/02/05/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC331%E5%9C%BA/" title="LeetCode周赛总结 第331场"><img class="cover" src="/2023/02/05/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC331%E5%9C%BA/leetcode.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-05</div><div class="info-item-2">LeetCode周赛总结 第331场</div></div><div class="info-2"><div class="info-item-1">从数量最多的堆取走礼物题目链接从数量最多的堆取走礼物 解题思路直接按照流程模拟即可，将数组 gifts 的元素放入优先队列中，然后每次从中选出最大值 maxGift，再将 sqrt(maxGift) 放回队列，重复 k 次，计算队列剩余的值总和。 解题代码123456789101112131415161718class Solution &#123;public:    long long pickGifts(vector&lt;int&gt;&amp; gifts, int k) &#123;        // 这里求 gifts 总和要注意累加初始值定义为 0ll（long long 类型），否则 int 可能溢出        // 当然也可以不求初始总数量，而在循环结束后直接统计剩余的数量        long long sum = accumulate(gifts.begin(), gifts.end(), 0ll);        priority_queue&lt;int&gt; Q(gifts.begin(), gifts.end());        lon...</div></div></div></a><a class="pagination-related" href="/2022/01/23/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC277%E5%9C%BA/" title="LeetCode周赛总结 第277场"><img class="cover" src="/2022/01/23/LeetCode%E5%91%A8%E8%B5%9B%E6%80%BB%E7%BB%93%20%E7%AC%AC277%E5%9C%BA/leetcode.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2022-01-23</div><div class="info-item-2">LeetCode周赛总结 第277场</div></div><div class="info-2"><div class="info-item-1">本次周赛没想到比上周还要简单，前三题都可以用非常简单的方法快速解决，第四题如果想对了方向其实也比较简单。  元素计数题目链接元素计数 解题思路相当基础的题目，要同时具有一个严格较小元素和一个严格较大元素，只需要保证这个数 num 满足 num &gt; minVal &amp;&amp; num &lt; maxVal即可。 解题代码12345678910111213141516class Solution &#123;public:    int countElements(vector&lt;int&gt;&amp; nums) &#123;        int minVal = INT32_MAX, maxVal = INT32_MIN;        for (int i = 0; i &lt; nums.size(); i++) &#123;            minVal = min(minVal, nums[i]);            maxVal = max(maxVal, nums[i]);        &#125;        int res =...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8K-means%E7%AE%97%E6%B3%95%E8%BF%9B%E8%A1%8C%E8%81%9A%E7%B1%BB%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">使用K-means算法进行聚类分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.2.</span> <span class="toc-text">算法描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">1.3.</span> <span class="toc-text">代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C%E5%88%86%E6%9E%90"><span class="toc-number">1.4.</span> <span class="toc-text">实验结果分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C%E4%BD%93%E4%BC%9A"><span class="toc-number">1.5.</span> <span class="toc-text">实验体会</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"><img src="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/sok1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结"/></a><div class="content"><a class="title" href="/2025/12/02/%E8%AE%BA%E6%96%87%E3%80%8ASoK%EF%BC%9AUnderstanding%20Designs%20Choices%20and%20Pitfalls%20of%20Trusted%20Execution%20Environments%E3%80%8B%E6%80%BB%E7%BB%93/" title="论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结">论文《SoK：Understanding Designs Choices and Pitfalls of Trusted Execution Environments》总结</a><time datetime="2025-12-02T15:30:11.000Z" title="发表于 2025-12-02 23:30:11">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>
