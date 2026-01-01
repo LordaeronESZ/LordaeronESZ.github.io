@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /js/
+Disallow: /css/
+
+Sitemap: https://lordaeronesz.top/sitemap.xml
+Sitemap: https://lordaeronesz.top/baidusitemap.xml
