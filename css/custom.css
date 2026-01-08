@@ -24,3 +24,38 @@ body,
 .author-info-description {
   font-family: tzy, 'Segoe UI', sans-serif !important;
 }
+
+/* 修复娱乐菜单子菜单层级问题 - 确保子菜单在个人信息块之上 */
+/* 提高整个page-header的层级 */
+#page-header {
+  z-index: 1000 !important;
+}
+
+/* 确保导航栏继承高层级 */
+#nav {
+  z-index: 1001 !important;
+  position: relative !important;
+}
+
+/* 确保子菜单在导航栏的层叠上下文中也有高层级 */
+#nav .menus_items .menus_item {
+  z-index: 1002 !important;
+  position: relative !important;
+}
+
+#nav .menus_items .menus_item .menus_item_child {
+  z-index: 1003 !important;
+}
+
+/* 降低侧边栏层级 */
+#aside-content {
+  z-index: 1 !important;
+}
+
+.sticky_layout {
+  z-index: auto !important;
+}
+
+.card-widget {
+  z-index: auto !important;
+}
