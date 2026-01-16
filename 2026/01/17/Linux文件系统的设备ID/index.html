@@ -1,0 +1,429 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux文件系统的设备ID | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文将介绍 Linux 文件系统中的文件的设备 ID 相关内容，基于的内核版本为 6.18。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux文件系统的设备ID">
+<meta property="og:url" content="https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="本文将介绍 Linux 文件系统中的文件的设备 ID 相关内容，基于的内核版本为 6.18。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg">
+<meta property="article:published_time" content="2026-01-17T15:30:11.000Z">
+<meta property="article:modified_time" content="2026-01-16T16:17:40.614Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="文件系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux文件系统的设备ID",
+  "url": "https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/",
+  "image": "https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg",
+  "datePublished": "2026-01-17T15:30:11.000Z",
+  "dateModified": "2026-01-16T16:17:40.614Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.7/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Linux文件系统的设备ID',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">107</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Linux文件系统的设备ID</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-17T15:30:11.000Z" title="发表于 2026-01-17 23:30:11">2026-01-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-01-16T16:17:40.614Z" title="更新于 2026-01-17 00:17:40">2026-01-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span></div></div></div><article class="container post-content" id="article-container"><p>本文将介绍 Linux 文件系统中的文件的设备 ID 相关内容，基于的内核版本为 6.18。</p>
+<span id="more"></span>
+<p>为了介绍设备 ID 的概念，我们借助 <code>stat</code> 工具来对打印几个不同类型文件的元数据信息。</p>
+<p>首先是一个位于磁盘文件系统下的普通文件 <code>file.txt</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">stat</span> file.txt</span><br><span class="line">  File: file.txt</span><br><span class="line">  Size: 392             Blocks: 8          IO Block: 4096   regular file</span><br><span class="line">Device: 8,80    Inode: 16473       Links: 1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到，其 Device 编号为 <code>8,80</code>，具体含义我们后面再解释。</p>
+<p>接下来要查看的是伪文件系统（如 ramfs、procfs 等没有直接关联的磁盘设备的文件系统）下的文件元数据信息，由于我的本地 Linux 环境是 WSL2，因此这里我选取了挂载在 Linux 下的 Windows 磁盘：<code>/mnt/d</code>，顾名思义，它就是我 Windows 系统下的 D 盘。WSL2 通过 9p 协议将 Windows 磁盘挂载到 Linux 下，其并不属于磁盘文件系统，打印的元数据信息如下：</p>
+<blockquote>
+<p>由于 9p 走的网络协议栈，因此 WSL2 下读写 Windows 磁盘文件的性能很差。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">stat</span> /mnt/d/</span><br><span class="line">  File: /mnt/d/</span><br><span class="line">  Size: 4096            Blocks: 0          IO Block: 4096   directory</span><br><span class="line">Device: 0,116   Inode: 1407374883553287  Links: 1</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到，其 Device 编号为 <code>0,116</code>。</p>
+<p>接下来是一个实际的物理磁盘文件（块设备文件），即我的 WSL2 下的根目录的设备文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">stat</span> /dev/sdf</span><br><span class="line">  File: /dev/sdf</span><br><span class="line">  Size: 0               Blocks: 0          IO Block: 4096   block special file</span><br><span class="line">Device: 0,5     Inode: 169         Links: 1     Device <span class="built_in">type</span>: 8,80</span><br></pre></td></tr></table></figure>
+<p>对于设备文件，其既包含 Device 编号（<code>0,5</code>），还包括 Device Type（<code>8,80</code>，注意刚好与前面的第一个实例相匹配），同时明确表明了这是一个块设备文件（block special file）。</p>
+<p>最后一个实例也是设备文件，只不过是一个字符设备文件，这里我选取了 KVM 文件，其打印如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">stat</span> /dev/kvm</span><br><span class="line">  File: /dev/kvm</span><br><span class="line">  Size: 0               Blocks: 0          IO Block: 4096   character special file</span><br><span class="line">Device: 0,5     Inode: 401         Links: 1     Device <span class="built_in">type</span>: 10,232</span><br></pre></td></tr></table></figure>
+<p>可以看到，其 Device 编号与 <code>/dev/sdf</code> 一样。</p>
+<h1 id="设备-ID-构成"><a href="#设备-ID-构成" class="headerlink" title="设备 ID 构成"></a>设备 ID 构成</h1><p>上面提到了两个设备 ID 信息——Device Type 和 Device，它们分别对应 <code>fstat</code> 系统调用返回的 <code>struct stat</code> 结构中的 <code>st_rdev</code> 字段和 <code>st_dev</code> 字段。它们的值都满足 Linux 设备 ID 的规范：编号用一个 32 位无符号整型表示，低 20 位表示次设备号（minor），剩余的高位表示主设备号（major）。相关代码如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* include/linux/types.h:18,21 */</span></span><br><span class="line"><span class="keyword">typedef</span> u32 <span class="type">__kernel_dev_t</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="type">__kernel_dev_t</span> <span class="type">dev_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* include/linux/kdev_t.h:7-12 */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MINORBITS   20</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MINORMASK   ((1U &lt;&lt; MINORBITS) - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MAJOR(dev)  ((unsigned int) ((dev) &gt;&gt; MINORBITS))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MINOR(dev)  ((unsigned int) ((dev) &amp; MINORMASK))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MKDEV(ma,mi) (((ma) &lt;&lt; MINORBITS) | (mi))</span></span><br></pre></td></tr></table></figure>
+<h1 id="设备-ID-获取"><a href="#设备-ID-获取" class="headerlink" title="设备 ID 获取"></a>设备 ID 获取</h1><p>Device Type (<code>st_rdev</code>) 表示一个设备文件（块设备或字符设备）的设备 ID，对于普通文件、目录等其他文件类型来说，该字段是不存在（没有意义）的。Device Type 存储在文件的内存 <code>inode</code> 结构中的 <code>i_rdev</code> 字段，因此 Device Type 是文件粒度的，其在块设备驱动初始化的时候进行设置（具体设置的流程不在本文讨论的范围之内）。</p>
+<p>设备 ID 的主设备号表示设备的类型（如磁盘设备、内存设备、串口设备等），次设备号表示本设备在主设备类型中的编号。以下是一些设备号分配的示例：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>设备</th>
+<th>主设备号</th>
+<th>次设备号</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/dev/sda</code></td>
+<td>8</td>
+<td>0</td>
+<td>第一个 SCSI 磁盘</td>
+</tr>
+<tr>
+<td><code>/dev/sdb</code></td>
+<td>8</td>
+<td>16</td>
+<td>第二个 SCSI 磁盘（16 的倍数）</td>
+</tr>
+<tr>
+<td><code>/dev/ram0</code></td>
+<td>1</td>
+<td>0</td>
+<td>第一个 RAM 设备</td>
+</tr>
+<tr>
+<td><code>/dev/loop0</code></td>
+<td>7</td>
+<td>0</td>
+<td>第一个回环设备</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Device（<code>st_dev</code>） 表示 <strong>一个文件（包括设备文件和非设备文件）所位于的文件系统的设备 ID</strong> 。可以分为两种情况来考虑，即：</p>
+<ol>
+<li>文件位于磁盘文件系统下，那么 <code>st_dev</code> 即该磁盘对应的设备 ID（即上述提到的 <code>st_rdev</code>）。</li>
+<li>文件位于伪文件系统下，那么 <code>st_dev</code> 为该伪文件系统对应的设备 ID。</li>
+</ol>
+<p>前面在介绍设备 ID 构成时有一个没有提到的约定是： <strong>对于主设备号来说，0 值表示该设备是一个伪文件系统。</strong></p>
+<p>Device 值存储在 <code>super_block</code> 结构的 <code>st_dev</code> 字段中，由于存储在超级块中，因此 Device 是文件系统粒度的。对于伪文件系统而言，它在文件系统的挂载阶段使用 Linux 内核中的 IDA（ID Allocator）进行动态分配；对于磁盘文件系统而言，其从块设备中获取，具体来说，根据挂载参数解析出对应磁盘文件，然后获取该磁盘文件的 Device Type，即为整个磁盘文件系统的 Device 值。</p>
+<blockquote>
+<p>有一个细节需要注意，IDA 在进行次设备 ID 分配时，最小是从 1 开始的，因为许多的用户态程序通常认为设备 ID 为 0（主、次设备 ID 都为 0）的设备是无效的，对此内核代码中有明确的说明：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* fs/super.c:1253 */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">get_anon_bdev</span><span class="params">(<span class="type">dev_t</span> *p)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> dev;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * Many userspace utilities consider an FSID of 0 invalid.</span></span><br><span class="line"><span class="comment">     * Always return at least 1 from get_anon_bdev.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    dev = ida_alloc_range(&amp;unnamed_dev_ida, <span class="number">1</span>, (<span class="number">1</span> &lt;&lt; MINORBITS) - <span class="number">1</span>,</span><br><span class="line">            GFP_ATOMIC);</span><br><span class="line">    <span class="keyword">if</span> (dev == -ENOSPC)</span><br><span class="line">        dev = -EMFILE;</span><br><span class="line">    <span class="keyword">if</span> (dev &lt; <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">return</span> dev;</span><br><span class="line"></span><br><span class="line">    *p = MKDEV(<span class="number">0</span>, dev);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>最后，在理解了上述内容后，回看文章开头的四个例子。</p>
+<p>第一个 <code>file.txt</code> 文件的 Device 为 <code>8,80</code>，实际上表示的是磁盘 <code>/dev/sdf</code>，即我的根目录挂载点的磁盘设备。</p>
+<p>第二个 <code>/mnt/d/</code> 文件的 Device 为 <code>0,116</code>，主设备 ID 为 0，满足伪文件系统的定义。</p>
+<p>第三个 <code>/dev/sdf</code> 文件的 Device 为 <code>0,5</code>，可能初看会有些令人困惑，但仔细想想，设备文件 <code>/dev/sdf</code> 是挂载在 <code>/dev</code> 目录下的一个文件，其属于伪文件系统 devtmpfs 的范畴，那么主设备号为 0 也就不奇怪了，实际上 <code>/dev</code> 目录下的所有文件的 Device 值都为 <code>0,5</code>。而 Device Type 就比较明确了，正好和前面的 <code>file.txt</code> 相对应。 </p>
+<p>第四个 <code>/dev/kvm</code> 文件的 Device 也为 <code>0,5</code>，和刚刚所说的一致。而 Device Type 值为 <code>10,232</code>（10 通常表示一个杂项的字符设备），也符合预期。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/">https://lordaeronesz.top/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/Linux/">Linux</a><a class="post-meta__tags" href="/tags/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/">文件系统</a></div><div class="post-share"><div class="social-share" data-image="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img class="cover" src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">使用debugfs分析Ext2下的稀疏文件</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Ext2 文件系统下的稀疏文件表示，并使用 debugfs 对其进行分析。  环境准备12345678910111213141516# 创建一个 2G 大小的 Ext2 磁盘镜像文件dd if=/dev/zero of=ext2.img bs=1M count=2048# 生成一个 8M 大小的全零文件（非稀疏）dd if=/dev/zero of=8M.zero bs=1M count=8# 创建一个 8M 大小的 Ext2 格式化的镜像文件（稀疏）cp 8M.zero 8M.ext2mkfs.ext2 -F 8M.ext2# 将两个 8M 大小的文件拷入 ext2.img 中mkdir -p tmpsudo mount ext2.img tmpsudo cp 8M.zero tmpsudo cp 8M.ext2 tmpumount tmp 稀疏文件的本质稀疏文件即一个文件的起始位置到结束位置之间存在“空洞”（如下图所示），所谓空洞，就是该文件区域没有被分配任何的磁盘空间，体现在 Ext2 文件系统元数据的层面就是——对应的数据块指针为空。  更形式化的描述为：只要...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img class="cover" src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">浅谈rootfs、initramfs和initrd</div></div><div class="info-2"><div class="info-item-1">本文算是之前博客 使用QEMU安装并启动一个Ubuntu发行版 | Lordaeron_ESZ’s blog 的一个 callback，花了一天时间整理了一下有关 rootfs、initramfs 等操作系统启动相关的内容，并在此分享出来。  rootfs首先需要理解 rootfs（即根文件系统）的概念。本质上来说，rootfs 就是挂载在根目录（/ 目录）上的文件系统，而无关具体的文件系统类型。 另外，rootfs 根据系统启动时刻的不同，分为两个阶段，一阶段为系统启动初期的内存 rootfs（通常为 ramfs 和 tmpfs，下面将具体介绍），二阶段为完成基本的模块加载等操作之后的磁盘 rootfs（包括 ext4、zfs 和 btrfs 等等）。 ramfs 和 tmpfsramfs 只是一个简单的文件系统，用作一阶段 rootfs 的文件系统类型，它与磁盘文件系统最大的区别就在于 它没有可供回写的后备设备 ，以 Linux 6.12 内核版本为例（下同），其 ramfs 的代码实现： 1234567891011/* fs/ramfs/file-mmu.c */const...</div></div></div></a><a class="pagination-related" href="/2025/11/11/%E4%BD%BF%E7%94%A8QEMU%E8%B0%83%E8%AF%95Linux%E5%86%85%E6%A0%B8/" title="使用QEMU调试Linux内核"><img class="cover" src="/2025/11/11/%E4%BD%BF%E7%94%A8QEMU%E8%B0%83%E8%AF%95Linux%E5%86%85%E6%A0%B8/qemu.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">使用QEMU调试Linux内核</div></div><div class="info-2"><div class="info-item-1">本文是一个快速记录，旨在记录使用 QEMU 调试 Linux 内核的方法，文章内容比较短，内容也比较浅显，不会对具体原理进行分析，主打一个够用。使用的 QEMU 版本为 6.2，Linux 内核版本为 5.10，指令集架构为 x86_64。  使用 monitor使用 monitor 的前提是要先启用该功能，一般将其设置在指定的 telnet 端口（如 6789）： 1-monitor telnet:localhost:6789,server,nowait,nodelay 使用 monitor 调试的基本场景是内核 crash 时，打开 QEMU 的 monitor，打印此时的寄存器值。为了保证 RIP 的值准确，需要在 QEMU 模拟器的内核命令行参数中关闭内核地址空间随机化： 1-append &quot;nokaslr&quot; 打开新的终端使用 telnet 连接到指定端口： 123456789101112131415161718192021222324252627282930313233343536373839$ telnet localhost 6789Trying...</div></div></div></a><a class="pagination-related" href="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/" title="OSTEP Projects：KV"><img class="cover" src="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/img.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-05-08</div><div class="info-item-2">OSTEP Projects：KV</div></div><div class="info-2"><div class="info-item-1">本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 KV 部分，包含个人的代码实现和设计思路。  思路题目要求实现一个最简单的数据库，以支持数据的持久化。 每个操作由格式为 op,[arg1],[arg2] 的命令给出，那么首先要解决的问题就是参数的分离，再根据操作符 op 来对不同的操作进行特殊处理。字符串划分这里采用的是 strsep() 函数：该函数接收两个参数 char** stringp 和 const char* delim，stringp 是指向待分割字符串 string 的指针，delim 则是指定的分隔符，该函数的操作是查找 string 中第一个 delim 的位置 it，并将 stringp 指向 string 中 it + 1 的位置，同时返回string 开头到  it 所有字符所构成的子串（加上 &#39;\0&#39; 终结符）。 插入操作没什么好说的，直接使用 fprintf() 写入文件即可。对于查找和删除，则需要将数据从文件（数据库）中读取到内存，存储在特定的数...</div></div></div></a><a class="pagination-related" href="/2025/10/12/Linux%E5%86%85%E6%A0%B8%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%99%A8%E7%9A%84%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B/" title="Linux内核物理内存管理器的建立过程"><img class="cover" src="/2025/10/12/Linux%E5%86%85%E6%A0%B8%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%99%A8%E7%9A%84%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B/linux.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-12</div><div class="info-item-2">Linux内核物理内存管理器的建立过程</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Linux 内核中物理内存管理结构的建立过程，主要分为获取物理内存布局、早期内存管理器和最终内存管理器三个阶段，本文将以 x86_64 架构为例，内核代码基于 Linux 5.10 版本来介绍。  获取物理内存布局当 x86_64 系统启动，BIOS 将控制权交给 Bootloader（如 GRUB） 之后，此时 CPU 模式还处于 实模式 下，可以进行 BIOS 中断调用，Bootloader 将会通过反复调用（每次只能获取一段内存区域的信息） int 0x15 eax=0xE820 这个中断来获取计算机的物理内存布局。  0x15 号中断还有 0xE801, 0x88 的功能号，都用于获取物理内存布局，只不过功能更简单。  存储获取到的每段内存区域信息的数据结构如下，包括起始地址、大小、类型。 123456/* arch/x86/include/uapi/asm/bootparam.h */struct boot_e820_entry &#123;	__u64 addr;	__u64 size;	__u32 type;&#125; __attribute__((p...</div></div></div></a><a class="pagination-related" href="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/" title="OSTEP Projects：Reverse"><img class="cover" src="/2024/05/06/OSTEP%20Projects%EF%BC%9AReverse/img.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-05-06</div><div class="info-item-2">OSTEP Projects：Reverse</div></div><div class="info-2"><div class="info-item-1">本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 Reverse 部分，包含个人的代码实现和设计思路。  思路题目的要求很简单：按行读取数据，读取完成后将所读取到的所有行反向输出（行间反向，行内不变）。但代码实现上却包含不少细节。 首先是核心问题：如何将读取到行反向输出？首先可以确定的一点是：在所有行读取完成之前，读取到的每一个行都需要进行保存。那么，利用什么数据结构进行保存呢？我们需要这个数据结构能够确定输入的不同行之间的前后相对关系，因此想到使用线性表。由于最终读取到的行数是不确定的，因此不能使用一个固定大小的数组，而应该使用可变长的线性表，如链表、动态数组。而又因为可变数组的扩容操作比较耗时，且我们并不需要对元素进行随机访问，只需要最后输出的时候进行顺序遍历，因此链表就成为了最佳选择。 反转的具体实现可以参考经典问题反转链表，设定一个前驱结点 pre 和当前结点 cur，每次读取到新的行，就动态申请存储该行数据的内存空间，并将 cur 指向这块内存空间，然后将 cur 的 next 域指向...</div></div></div></a><a class="pagination-related" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img class="cover" src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-27</div><div class="info-item-2">使用debugfs分析Ext2下的稀疏文件</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Ext2 文件系统下的稀疏文件表示，并使用 debugfs 对其进行分析。  环境准备12345678910111213141516# 创建一个 2G 大小的 Ext2 磁盘镜像文件dd if=/dev/zero of=ext2.img bs=1M count=2048# 生成一个 8M 大小的全零文件（非稀疏）dd if=/dev/zero of=8M.zero bs=1M count=8# 创建一个 8M 大小的 Ext2 格式化的镜像文件（稀疏）cp 8M.zero 8M.ext2mkfs.ext2 -F 8M.ext2# 将两个 8M 大小的文件拷入 ext2.img 中mkdir -p tmpsudo mount ext2.img tmpsudo cp 8M.zero tmpsudo cp 8M.ext2 tmpumount tmp 稀疏文件的本质稀疏文件即一个文件的起始位置到结束位置之间存在“空洞”（如下图所示），所谓空洞，就是该文件区域没有被分配任何的磁盘空间，体现在 Ext2 文件系统元数据的层面就是——对应的数据块指针为空。  更形式化的描述为：只要...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">107</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">52</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E5%A4%87-ID-%E6%9E%84%E6%88%90"><span class="toc-number">1.</span> <span class="toc-text">设备 ID 构成</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E5%A4%87-ID-%E8%8E%B7%E5%8F%96"><span class="toc-number">2.</span> <span class="toc-text">设备 ID 获取</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/" title="Linux文件系统的设备ID"><img src="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux文件系统的设备ID"/></a><div class="content"><a class="title" href="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/" title="Linux文件系统的设备ID">Linux文件系统的设备ID</a><time datetime="2026-01-17T15:30:11.000Z" title="发表于 2026-01-17 23:30:11">2026-01-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理"><img src="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/git.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="个人常用git命令整理"/></a><div class="content"><a class="title" href="/2025/12/23/%E4%B8%AA%E4%BA%BA%E5%B8%B8%E7%94%A8git%E5%91%BD%E4%BB%A4%E6%95%B4%E7%90%86/" title="个人常用git命令整理">个人常用git命令整理</a><time datetime="2025-12-23T15:30:11.000Z" title="发表于 2025-12-23 23:30:11">2025-12-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总"><img src="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/sev4.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="现有机密虚拟机设计方案汇总"/></a><div class="content"><a class="title" href="/2025/12/15/%E7%8E%B0%E6%9C%89%E6%9C%BA%E5%AF%86%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88%E6%B1%87%E6%80%BB/" title="现有机密虚拟机设计方案汇总">现有机密虚拟机设计方案汇总</a><time datetime="2025-12-15T15:30:11.000Z" title="发表于 2025-12-15 23:30:11">2025-12-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="浅谈rootfs、initramfs和initrd"/></a><div class="content"><a class="title" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd">浅谈rootfs、initramfs和initrd</a><time datetime="2025-12-13T15:30:11.000Z" title="发表于 2025-12-13 23:30:11">2025-12-13</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.7/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>
