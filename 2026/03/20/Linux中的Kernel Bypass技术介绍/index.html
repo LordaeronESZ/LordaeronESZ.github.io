@@ -1,0 +1,430 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Linux中的Kernel Bypass技术介绍 | PageFault</title><meta name="author" content="Chaoqun Zheng"><meta name="copyright" content="Chaoqun Zheng"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Kernel Bypass（内核旁路）是一种经典的系统设计哲学。 操作系统内核为了通用性，引入了大量的上下文切换、锁竞争、数据拷贝等开销，将原本属于内核的服务（如网络协议栈、文件系统、设备驱动、调度等）直接“上移”至用户态，让业务应用程序直接与底层数据进行交互，从而带来了极致的性能，这便是 Kernel Bypass 的核心理念。 本文将从几个不同的模块出发，介绍 Linux 内核中常见的 Ker">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux中的Kernel Bypass技术介绍">
+<meta property="og:url" content="https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="PageFault">
+<meta property="og:description" content="Kernel Bypass（内核旁路）是一种经典的系统设计哲学。 操作系统内核为了通用性，引入了大量的上下文切换、锁竞争、数据拷贝等开销，将原本属于内核的服务（如网络协议栈、文件系统、设备驱动、调度等）直接“上移”至用户态，让业务应用程序直接与底层数据进行交互，从而带来了极致的性能，这便是 Kernel Bypass 的核心理念。 本文将从几个不同的模块出发，介绍 Linux 内核中常见的 Ker">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/linux.jpg">
+<meta property="article:published_time" content="2026-03-20T02:46:29.000Z">
+<meta property="article:modified_time" content="2026-03-20T10:59:55.027Z">
+<meta property="article:author" content="Chaoqun Zheng">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="高性能存储">
+<meta property="article:tag" content="高性能网络">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/linux.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Linux中的Kernel Bypass技术介绍",
+  "url": "https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/",
+  "image": "https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/linux.jpg",
+  "datePublished": "2026-03-20T02:46:29.000Z",
+  "dateModified": "2026-03-20T10:59:55.027Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Chaoqun Zheng",
+      "url": "https://lordaeronesz.top"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.svg"><link rel="canonical" href="https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.7/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.json","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Linux中的Kernel Bypass技术介绍',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/footer.css"><link rel="stylesheet" href="/css/douban.css"><link rel="stylesheet" href="/css/title.css"><link rel="stylesheet" href="/css/page-transition.css"><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/avatar.css"><meta name="generator" content="Hexo 8.1.1"></head><body><script>window.paceOptions = {
+  restartOnPushState: false
+}
+
+btf.addGlobalFn('pjaxSend', () => {
+  Pace.restart()
+}, 'pace_restart')
+
+</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">54</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">PageFault</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/books/"><i class="fa-fw fas fa-book"></i><span> 书籍</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/games/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li></ul></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Linux中的Kernel Bypass技术介绍</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-20T02:46:29.000Z" title="发表于 2026-03-20 10:46:29">2026-03-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-20T10:59:55.027Z" title="更新于 2026-03-20 18:59:55">2026-03-20</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>10分钟</span></span></div></div></div><article class="container post-content" id="article-container"><p>Kernel Bypass（内核旁路）是一种经典的系统设计哲学。</p>
+<p>操作系统内核为了通用性，引入了大量的上下文切换、锁竞争、数据拷贝等开销，将原本属于内核的服务（如网络协议栈、文件系统、设备驱动、调度等）直接“上移”至用户态，让业务应用程序直接与底层数据进行交互，从而带来了极致的性能，这便是 Kernel Bypass 的核心理念。</p>
+<p>本文将从几个不同的模块出发，介绍 Linux 内核中常见的 Kernel Bypass 基本设计理念。受限于篇幅的原因，本文不会对每个方案的具体技术细节（如传输协议等）进行描述。</p>
+<span id="more"></span>
+<h1 id="设备驱动"><a href="#设备驱动" class="headerlink" title="设备驱动"></a>设备驱动</h1><h2 id="UIO-与-VFIO"><a href="#UIO-与-VFIO" class="headerlink" title="UIO 与 VFIO"></a>UIO 与 VFIO</h2><p>UIO（Userspace IO） 与 VFIO（Virtual Function IO） 常用于编写自定义硬件加速卡驱动，且是下文将介绍的 DPDK/SPDK 的底层支撑。</p>
+<p>它的基本原理是：传统驱动必须实现在内核中。而 UIO/VFIO 机制使得内核只负责最基础的资源分配，而把硬件的设备寄存器通过 <code>mmap</code> 暴露给用户态，让用户程序能够直接读写设备寄存器来控制设备。VFIO 更是结合了 IOMMU 硬件，不仅实现了旁路，还保证了多个用户态驱动之间、以及与宿主机之间的内存安全隔离。</p>
+<p>UIO 是最简单的用户态驱动模型，核心设计就是将设备寄存器地址映射到用户态，然后由用户程序自行编写驱动逻辑。</p>
+<blockquote>
+<p>Q：DMA 安全如何保证？DMA 缓冲区是如何确定？</p>
+<p>A：UIO 完全无法保证 DMA 安全，理论上用户态驱动可以直接向设备寄存器写入错误的物理地址发起 DMA 请求，从而可能导致内核崩溃。DMA 缓冲区由用户缓冲区来提供，但是问题在于用户自己所持有的是虚拟地址，而 DMA 需要的是物理地址。解决方法主要是：</p>
+<ul>
+<li><p><code>mmap(hugetlbfs) + 读取/proc/self/pagemap</code> 从而获得相应的物理地址；</p>
+</li>
+<li><p>借助内核中的 UIO 驱动来分配 DMA 缓冲区，然后 <code>mmap</code> 给用户态。</p>
+</li>
+</ul>
+</blockquote>
+<p>而 VFIO 基于 IOMMU 引入了一层 <code>iova -&gt; phys</code> 的间接层，允许用户态传入 <code>(vaddr, iova)</code> 的 VFIO 的请求，内核需要：</p>
+<ol>
+<li>在页表建立 <code>vaddr -&gt; phys</code> 的映射；</li>
+<li>在 IOMMU 页表建立 <code>iova -&gt; phys</code> 的映射。</li>
+</ol>
+<blockquote>
+<p>Q：VFIO 的 DMA 映射为什么包括 <code>(vaddr, iova)</code>，直接将 <code>vaddr -&gt; phys</code> 的映射插入到 IOMMU 页表中不行吗？为什么要选择插入 <code>iova -&gt; phys</code> 的映射？</p>
+<p>A：有以下几个原因：</p>
+<ol>
+<li>VFIO 最初为虚拟机设备直通设计，而在虚拟机设备直通中，DMA 地址转换逻辑是：<code>gpa/iova -&gt; hpa</code>，而虚拟机内存则是 VMM（如 QEMU） 通过 <code>mmap</code> 映射的一段用户态内存，该内存不满足 <code>va == gpa/iova</code>；</li>
+<li>如果不考虑虚拟机，由于一些较老的设备仅支持 32 位寻址，在 64 位系统下，用户态虚拟地址通常都位于高位，超过了 32 位的地址空间，导致设备无法发起对该地址的 DMA 访存。</li>
+</ol>
+</blockquote>
+<h1 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h1><h2 id="DPDK"><a href="#DPDK" class="headerlink" title="DPDK"></a>DPDK</h2><p>DPDK（Data Plane Development Kit）的基本原理是：借助 UIO/VFIO 技术将网卡的寄存器和 DMA 缓冲区直接映射到用户态，并在用户态实现一套网络协议栈，最后基于 <code>LD_PRELOAD</code> 等方式将原本 POSIX API 中的 socket 操作替换为 DPDK 的版本。它使用轮询模式驱动（Poll Mode Driver, PMD）代替传统的中断机制，用户态在一个循环中不断主动读取网卡队列，实现了真正的零拷贝和无系统调用收发包。</p>
+<blockquote>
+<p>Q：DPDK 的 PMD 机制需要特定的网卡支持吗？</p>
+<p>A：不需要，而是需要 PMD 驱动来支持特定的网卡。例如为了用 PMD 模式代替原本网卡设备的中断驱动模式，PMD 驱动需要在配置网卡设备时，通过写入网卡的特定设备寄存器，将网卡的中断触发功能给关闭。</p>
+</blockquote>
+<h2 id="XDP-AF-XDP"><a href="#XDP-AF-XDP" class="headerlink" title="XDP/AF_XDP"></a>XDP/AF_XDP</h2><p>XDP（eXpress Data Path）的基本原理是：在 Linux 内核网络协议栈中，<code>sk_buff</code> 分配与流转的性能开销非常巨大。XDP 的作用就是借助 eBPF 机制，在 Linux 网络协议栈中插入一个 hook，该 hook 位于网卡驱动程序中、网卡刚刚通过 DMA 将数据拷贝到内存，且内核还没来得及分配 <code>sk_buff</code> 前。此时数据包还是一串裸的字节流，XDP 允许在该阶段运行一段自定义程序，自定义程序主要完成下列工作：</p>
+<ul>
+<li>eBPF 程序可以直接读取这串字节流，完成诸如解析以太网头、IP 头、TCP/UDP 头等操作，并可以直接在原内存地址上进行写入。</li>
+<li>处理完包后，向网卡驱动返回一个执行指令（Return Code），告诉网卡接下来怎么做。共有 5 种：<ul>
+<li><code>XDP_DROP</code>（丢弃）：直接在网卡驱动层把包丢掉。不分配 <code>sk_buff</code>，不进内核。主要用于 DDoS 防护（如 Cloudflare）。</li>
+<li><code>XDP_PASS</code>（放行）：把包还给 Linux 内核，按照正常的流程分配 <code>sk_buff</code>，走传统 TCP/IP 协议栈。（如把 SSH 管理流量放行）。</li>
+<li><code>XDP_TX</code>（原路返回）：修改完数据包后，直接从当前收包的网卡返回。可用于做负载均衡器。</li>
+<li><code>XDP_REDIRECT</code>（重定向）：把包重定向到另一张网卡、另一个 CPU，或者重定向到用户态的 AF_XDP Socket。</li>
+<li><code>XDP_ABORTED</code>（异常终止）：程序出错，丢弃数据包并记录错误。</li>
+</ul>
+</li>
+</ul>
+<p>XDP 相比 DPDK 的优势主要在于：Linux 内核原生支持，且不用接管物理网卡，比如可以在 eBPF 中添加简单的规则对网络进行分流，选择是否走 AF_XDP 或是走内核网络协议栈，这样其他的应用程序将不受 XDP 的影响。</p>
+<h2 id="RDMA"><a href="#RDMA" class="headerlink" title="RDMA"></a>RDMA</h2><p>RDMA（Remote Direct Memory Access）技术在近年迎来了爆发式的应用和增长，主要用于高性能计算、分布式存储、AI 训练集群等场景。</p>
+<p>其基本原理是：在传统的 TCP/IP 网络下，本机虽然有 DMA 来完成内存到网卡的数据搬运，但是 CPU 仍然需要完成协议解析等繁重工作。RDMA（Remote DMA）则相当于是 DMA 设计理念的“跨主机推广”，直接实现主机 A 内存 -&gt; 主机 A 网卡 -&gt; 主机 B 网卡 -&gt; 主机 B 内存。网卡硬件直接处理网络协议，并直接读写远端机器的用户态内存区域，从而带来了极低的延迟。</p>
+<h1 id="存储与文件系统"><a href="#存储与文件系统" class="headerlink" title="存储与文件系统"></a>存储与文件系统</h1><h2 id="SPDK"><a href="#SPDK" class="headerlink" title="SPDK"></a>SPDK</h2><p>SPDK（Storage Performance Development Kit）的原理与 DPDK 类似，利用 UIO/VFIO 将 NVMe 驱动移到了用户态，采用无锁、轮询、零拷贝的设计。它绕过了内核的 VFS、Page Cache、BIO 调度、中断处理等，用户态应用直接向 NVMe 硬件提交 I/O 请求。</p>
+<h2 id="io-uring"><a href="#io-uring" class="headerlink" title="io_uring"></a>io_uring</h2><p>io_uring 是 Linux 内核近年引入的一个新的 I/O 模型，它并非严格的 Kernel Bypass。它的基本原理是：借助 <code>mmap</code>，使得内核态和用户态共享 ring buffer（提交队列 SQ 和完成队列 CQ），应用程序直接从中发起 I/O 请求和检测 I/O 请求是否完成，从而避免频繁的系统调用导致的上下文切换开销。听上去与 Virtio 设计的核心思想十分类似：利用共享内存，把“跨边界通信”从“陷入驱动”变成“内存驱动”。只不过 io_uring 优化的是用户态与内核态的边界，而 Virtio 优化的是 guest 与 hypervisor 的边界。</p>
+<blockquote>
+<p>Q：SQ/CQ 队列中的请求是什么层次的？是 BIO 请求吗？</p>
+<p>A：并不是，如果是 BIO，就相当于 Bypass 掉了文件系统层，还需要和 SPDK 一样在用户态实现文件系统。实际上 io_uring 的请求条目只是相当于对原本 <code>read</code>/<code>write</code> 等系统调用的打包。总结来说就是：io_uring <strong>只绕过了控制面，而没有绕过数据面。</strong></p>
+</blockquote>
+<h2 id="Direct-I-O"><a href="#Direct-I-O" class="headerlink" title="Direct I/O"></a>Direct I/O</h2><p>Direct I/O 属于部分 Kernel Bypass，其基本原理是：在进行文件读写时，绕过内核的 Page Cache 层，在文件系统将文件读写请求“翻译”为设备读写请求后，直接对存储设备进行读写，不用先经过 Page Cache 缓存。应用场景如数据库、自研存储引擎等，这些存储系统通常会在用户态实现自己的高性能缓存，因此内核中的 Page Cache 缓存就显得多余了，Direct I/O 正是提供了这样 Bypass 的能力。</p>
+<h2 id="DAX"><a href="#DAX" class="headerlink" title="DAX"></a>DAX</h2><p>DAX（Direct Access）是一种“让存储像内存一样被访问”的机制，结合非易失性内存（如 Intel Optane）来使用。它可以使用类似内存的编程模型（直接使用访存指令进行读写而不用 <code>read</code>/<code>write</code> 系统调用），来对持久化设备进行操作。路径大概是：访存 -&gt; 文件系统 -&gt; 设备，绕过了 Page Cache 和 Block 层。</p>
+<h1 id="任务调度"><a href="#任务调度" class="headerlink" title="任务调度"></a>任务调度</h1><h2 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h2><p>协程（Coroutines）广泛应用在高并发网络服务中，用以替代线程，称为任务调度的基本单位。这主要是因为线程在面对搞并发场景时，会面临性能和内存的双重开销：一方面，每个线程都有自己独立的线程栈（Linux 中通常为 2MB ~ 8MB）。如果同时启动 1 万个线程，栈内存就要占用数十 GB。另一方面，当线程发生阻塞（例如等待网络读写）被操作系统挂起并切换到另一个线程时，必须经历用户态/内核态切换所带来的开销，在高并发场景下，大量这样的开销堆积起来所带来的总开销是不可接收的。</p>
+<p>协程（也被称为用户态线程、虚拟线程、绿色线程等）的基本原理是：将上下文的切换转移到用户态来完成，因此相较于需要陷入内核的线程切换，协程切换仅需保存恢复极少量的寄存器，绕过了内核 <code>clone</code> 系统调用和用户态/内核态上下文切换开销，同时还减少了大量线程栈内存空间的资源浪费。操作系统内核只负责分配少量的物理线程，而成千上万个协程的创建、休眠、唤醒和销毁，全部由用户态（协程库）负责管理。</p>
+<h1 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h1><p>前面讨论了这么多的 Kernel Bypass 方案，核心理念都是将内核中的某些模块（设备驱动、网络协议栈等）搬到用户态来完成。似乎和微内核的理念比较类似？既然这些 Kernel Bypass 方案的追求是高性能，那为什么大量 OS 服务位于用户态的微内核 OS 的性能却一直为人所诟病？</p>
+<p>需要注意的是，“在用户态执行”本身并不能带来高性能，真正带来高性能的，是“消除边界”。Kernel Bypass 是在 <strong>消除边界</strong> ，而微内核是在 <strong>制造更多的边界</strong> 。对于 Kernel Bypass 而言，业务应用程序与驱动、网络协议栈等 OS 服务位于同一个地址空间中，因此它们之间原本由用户态/内核态带来的边界被消除，应用程序与 OS 服务位于同一个地址空间中，它们之间的通信直接通过函数调用（function call）来完成。而对于微内核 OS 来说，这样的边界非但没有被消除，反而带来了更长的调用路径：应用程序要想请求 OS 服务，必须经过 IPC（进程间通信），而该 IPC 仍然需要经过底层的微内核，应用 -&gt; 微内核 -&gt; OS 服务，特权级切换/上下文切换甚至比传统的宏内核更多更频繁。</p>
+<p>实际上，如果仔细分析会发现，二者的哲学目标也完全不同：</p>
+<ul>
+<li>Kernel Bypass 的哲学是“为了绝对的性能，可以牺牲隔离性”。在 SPDK 框架中，如果实现的 NVMe 驱动代码出现了一个野指针引发段错误，整个业务应用程序可能随之一并崩溃。它放弃了操作系统的容错保护，换取了极致的速度。</li>
+<li>而微内核的哲学是“为了绝对的安全、稳定和模块化，可以牺牲部分性能”。在微内核 OS 中，如果网卡驱动（一个用户态进程）出现 BUG 崩溃了，微内核可以将其杀死并重启，而不会影响到其他的 OS 服务模块，为操作系统带来了更高的安全性和稳定性。</li>
+</ul>
+<p>真正和 Kernel Bypass 类似的操作系统架构其实是 Unikernel，它的设计理念是一个操作系统只运行一个应用程序，从而可以将操作系统视作“静态链接库”，直接和应用程序打包在一起，运行在裸机上。近年最为著名的 Unikernel 当属 <a target="_blank" rel="noopener" href="https://github.com/unikraft/unikraft">Unikraft</a>。</p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://martins3.github.io/kernel/why-by-pass.html">Kernel Bypass | Deep Dark Fantasy</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/715131358">DPDK 简介（1）：架构、原理 - 知乎</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/397919872">什么是DPDK？DPDK的原理及学习学习路线总结 - 知乎</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/685912286">聊一聊Linux网络性能王者_XDP技术 - 知乎</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/1981389363964289756">RDMA技术详解：从基础原理到应用实践 - 知乎</a></li>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/v_vYmKsVQPmwDv9lGM47wQ">图文详解io_uring高性能异步IO架构（原理篇）</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top">Chaoqun Zheng</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/">https://lordaeronesz.top/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://lordaeronesz.top" target="_blank">PageFault</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="post-meta__tags" href="/tags/Linux/">Linux</a><a class="post-meta__tags" href="/tags/%E9%AB%98%E6%80%A7%E8%83%BD%E5%AD%98%E5%82%A8/">高性能存储</a><a class="post-meta__tags" href="/tags/%E9%AB%98%E6%80%A7%E8%83%BD%E7%BD%91%E7%BB%9C/">高性能网络</a></div><div class="post-share"><div class="social-share" data-image="/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/linux.jpg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/03/18/Linux%E4%B8%AD%E7%9A%84eventfd/" title="Linux中的eventfd"><img class="cover" src="/2026/03/18/Linux%E4%B8%AD%E7%9A%84eventfd/linux.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Linux中的eventfd</div></div><div class="info-2"><div class="info-item-1">本质本质上是内核维护的 64 位无符号整型计数器，用作一种轻量级的事件通知机制，可用于线程间、父子进程间以及内核态与用户态之间高效通信。基本操作方式如下：  创建返回一个文件描述符 fd。 写操作：向 fd 写入一个 8 字节整数，内核将这个值累加到内部计数器上。 读操作：从 fd 读取时，返回当前计数器值，并将内核计数器清零（信号量模式 EFD_SEMAPHORE 为减 1）。  相较于信号，eventfd 可以深度融入 I/O 多路复用体系，计数器值支持累加，且处理上下文高度安全。 示例父子进程通信以下是一个 eventfd 结合 epoll 实现的父子进程通信的代码示例： 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768#include &lt;stdio.h&gt;#include &lt;stdlib.h&gt;#include &lt;unistd.h&gt;#in...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/07/Linux%E5%86%85%E6%A0%B8initcall%E5%88%9D%E5%A7%8B%E5%8C%96%E6%9C%BA%E5%88%B6/" title="Linux内核initcall初始化机制"><img class="cover" src="/2025/09/07/Linux%E5%86%85%E6%A0%B8initcall%E5%88%9D%E5%A7%8B%E5%8C%96%E6%9C%BA%E5%88%B6/linux.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-07</div><div class="info-item-2">Linux内核initcall初始化机制</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Linux 内核的初始化函数结构，其通过 initcall 机制来实现，其核心是一系列优先级不同的宏，用于控制初始化函数的执行顺序。本文的实验的内核环境基于 Linux 5.10。  initcall 的级别与执行顺序Linux 内核定义了多个初始化级别（按照执行顺序从高到低排列）：     宏定义 级别名 优先级值 用途说明     early_initcall(fn) early - 早期的初始化，在 SMP 初始化之前   pure_initcall(fn) pure 0 用于初始化不能被静态初始化的变量   core_initcall(fn) core 1 核心子系统初始化   postcore_initcall(fn) postcore 2 核心子系统之后的初始化   arch_initcall(fn) arch 3 架构相关初始化   subsys_initcall(fn) subsys 4 子系统初始化   fs_initcall(fn) fs 5 文件系统初始化   rootfs_initcall(fn) rootfs - 根文件系统初始化   dev...</div></div></div></a><a class="pagination-related" href="/2025/10/12/Linux%E5%86%85%E6%A0%B8%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%99%A8%E7%9A%84%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B/" title="Linux内核物理内存管理器的建立过程"><img class="cover" src="/2025/10/12/Linux%E5%86%85%E6%A0%B8%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%99%A8%E7%9A%84%E5%BB%BA%E7%AB%8B%E8%BF%87%E7%A8%8B/linux.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-12</div><div class="info-item-2">Linux内核物理内存管理器的建立过程</div></div><div class="info-2"><div class="info-item-1">本文将介绍 Linux 内核中物理内存管理结构的建立过程，主要分为获取物理内存布局、早期内存管理器和最终内存管理器三个阶段，本文将以 x86_64 架构为例，内核代码基于 Linux 5.10 版本来介绍。  获取物理内存布局当 x86_64 系统启动，BIOS 将控制权交给 Bootloader（如 GRUB） 之后，此时 CPU 模式还处于 实模式 下，可以进行 BIOS 中断调用，Bootloader 将会通过反复调用（每次只能获取一段内存区域的信息） int 0x15 eax=0xE820 这个中断来获取计算机的物理内存布局。  0x15 号中断还有 0xE801, 0x88 的功能号，都用于获取物理内存布局，只不过功能更简单。  存储获取到的每段内存区域信息的数据结构如下，包括起始地址、大小、类型。 123456/* arch/x86/include/uapi/asm/bootparam.h */struct boot_e820_entry &#123;	__u64 addr;	__u64 size;	__u32 type;&#125; __attribute__((p...</div></div></div></a><a class="pagination-related" href="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/" title="浅谈rootfs、initramfs和initrd"><img class="cover" src="/2025/12/13/%E6%B5%85%E8%B0%88rootfs%E3%80%81initramfs%E5%92%8Cinitrd/initramfs.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">浅谈rootfs、initramfs和initrd</div></div><div class="info-2"><div class="info-item-1">本文算是之前博客 使用QEMU安装并启动一个Ubuntu发行版 | Lordaeron_ESZ’s blog 的一个 callback，花了一天时间整理了一下有关 rootfs、initramfs 等操作系统启动相关的内容，并在此分享出来。  rootfs首先需要理解 rootfs（即根文件系统）的概念。本质上来说，rootfs 就是挂载在根目录（/ 目录）上的文件系统，而无关具体的文件系统类型。 另外，rootfs 根据系统启动时刻的不同，分为两个阶段，一阶段为系统启动初期的内存 rootfs（通常为 ramfs 和 tmpfs，下面将具体介绍），二阶段为完成基本的模块加载等操作之后的磁盘 rootfs（包括 ext4、zfs 和 btrfs 等等）。 ramfs 和 tmpfsramfs 只是一个简单的文件系统，用作一阶段 rootfs 的文件系统类型，它与磁盘文件系统最大的区别就在于 它没有可供回写的后备设备 ，以 Linux 6.12 内核版本为例（下同），其 ramfs 的代码实现： 1234567891011/* fs/ramfs/file-mmu.c */const...</div></div></div></a><a class="pagination-related" href="/2025/09/13/%E5%85%B3%E4%BA%8ELinux%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/" title="关于Linux信号的一些思考"><img class="cover" src="/2025/09/13/%E5%85%B3%E4%BA%8ELinux%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/linux.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-13</div><div class="info-item-2">关于Linux信号的一些思考</div></div><div class="info-2"><div class="info-item-1">今天偶然间看到一个介绍 Linux 信号的视频：别再杀进程了！让 Ctrl+C 变成“喵”…（用信号实现）哔哩哔哩_bilibili ，虽然讲的东西很基础，但也引发了我思考一些之间没有很关注的问题。在与 LLM “讨论” 一番过后，便想将这些思考记录下来，算是查漏补缺吧。  信号的一面有关信号的具体用法，不是本文关注的重点，这部分内容可以翻看《深入理解计算机系统》（CSAPP）的异常控制流章节，这也是我最早建立对“信号”认识的地方。 先下定义：信号的本质是操作系统提供的一种进程间通信（IPC）机制，其他两种主要的进程间通信进制为共享内存和消息传递。  其中管道通常也被认为是一种特殊的消息传递机制，它们的核心设计都是不依赖于两个进程（以下称作 A 和 B）共享一段内存空间，而是将内核作为一个中间层，将数据代为转发，即 A -&gt; kernel -&gt; B。只不过常规的消息传递转发的是结构化的数据，而管道通常直接进行数据流的传递。  与共享内存和消息传递不同，信号通常并不直接传送数据，而是传达一系列预设编号的通知，进程在收到通知后，根据通知类别的不同，进行分发处理。简单类比就...</div></div></div></a><a class="pagination-related" href="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/" title="OSTEP Projects：KV"><img class="cover" src="/2024/05/08/OSTEP%20Projects%EF%BC%9AKV/img.jpeg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-05-08</div><div class="info-item-2">OSTEP Projects：KV</div></div><div class="info-2"><div class="info-item-1">本文将介绍操作系统导论（Operating Systems: Three Easy Pieces）作者所开源的操作系统相关课程项目 的 KV 部分，包含个人的代码实现和设计思路。  思路题目要求实现一个最简单的数据库，以支持数据的持久化。 每个操作由格式为 op,[arg1],[arg2] 的命令给出，那么首先要解决的问题就是参数的分离，再根据操作符 op 来对不同的操作进行特殊处理。字符串划分这里采用的是 strsep() 函数：该函数接收两个参数 char** stringp 和 const char* delim，stringp 是指向待分割字符串 string 的指针，delim 则是指定的分隔符，该函数的操作是查找 string 中第一个 delim 的位置 it，并将 stringp 指向 string 中 it + 1 的位置，同时返回string 开头到  it 所有字符所构成的子串（加上 &#39;\0&#39; 终结符）。 插入操作没什么好说的，直接使用 fprintf() 写入文件即可。对于查找和删除，则需要将数据从文件（数据库）中读取到内存，存储在特定的数...</div></div></div></a><a class="pagination-related" href="/2025/11/11/%E4%BD%BF%E7%94%A8QEMU%E8%B0%83%E8%AF%95Linux%E5%86%85%E6%A0%B8/" title="使用QEMU调试Linux内核"><img class="cover" src="/2025/11/11/%E4%BD%BF%E7%94%A8QEMU%E8%B0%83%E8%AF%95Linux%E5%86%85%E6%A0%B8/qemu.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-11</div><div class="info-item-2">使用QEMU调试Linux内核</div></div><div class="info-2"><div class="info-item-1">本文是一个快速记录，旨在记录使用 QEMU 调试 Linux 内核的方法，文章内容比较短，内容也比较浅显，不会对具体原理进行分析，主打一个够用。使用的 QEMU 版本为 6.2，Linux 内核版本为 5.10，指令集架构为 x86_64。  使用 monitor使用 monitor 的前提是要先启用该功能，一般将其设置在指定的 telnet 端口（如 6789）： 1-monitor telnet:localhost:6789,server,nowait,nodelay 使用 monitor 调试的基本场景是内核 crash 时，打开 QEMU 的 monitor，打印此时的寄存器值。为了保证 RIP 的值准确，需要在 QEMU 模拟器的内核命令行参数中关闭内核地址空间随机化： 1-append &quot;nokaslr&quot; 打开新的终端使用 telnet 连接到指定端口： 123456789101112131415161718192021222324252627282930313233343536373839$ telnet localhost 6789Trying...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/madline.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Chaoqun Zheng</div><div class="author-info-description">Write the code, change the world</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">54</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">13</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/LordaeronESZ"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://leetcode.cn/lordaeronesz/" target="_blank" title="LeetCode"><i class="fa-solid fa-l" style="color: #ECA541;"></i></a><a class="social-icon" href="https://space.bilibili.com/34507428" target="_blank" title="Bilibili"><i class="fa-brands fa-bilibili" style="color: #E57D99;"></i></a><a class="social-icon" href="https://www.zhihu.com/people/luo-dan-lun-ershazi" target="_blank" title="Zhihu"><i class="fa-brands fa-zhihu" style="color: #4068ED;"></i></a><a class="social-icon" href="mailto:1667510710@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E5%A4%87%E9%A9%B1%E5%8A%A8"><span class="toc-number">1.</span> <span class="toc-text">设备驱动</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#UIO-%E4%B8%8E-VFIO"><span class="toc-number">1.1.</span> <span class="toc-text">UIO 与 VFIO</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C"><span class="toc-number">2.</span> <span class="toc-text">网络</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DPDK"><span class="toc-number">2.1.</span> <span class="toc-text">DPDK</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XDP-AF-XDP"><span class="toc-number">2.2.</span> <span class="toc-text">XDP&#x2F;AF_XDP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RDMA"><span class="toc-number">2.3.</span> <span class="toc-text">RDMA</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%98%E5%82%A8%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="toc-number">3.</span> <span class="toc-text">存储与文件系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#SPDK"><span class="toc-number">3.1.</span> <span class="toc-text">SPDK</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#io-uring"><span class="toc-number">3.2.</span> <span class="toc-text">io_uring</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Direct-I-O"><span class="toc-number">3.3.</span> <span class="toc-text">Direct I&#x2F;O</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DAX"><span class="toc-number">3.4.</span> <span class="toc-text">DAX</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">4.</span> <span class="toc-text">任务调度</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%8F%E7%A8%8B"><span class="toc-number">4.1.</span> <span class="toc-text">协程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%9D%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">思考</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">6.</span> <span class="toc-text">参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/" title="Linux中的Kernel Bypass技术介绍"><img src="/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/linux.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux中的Kernel Bypass技术介绍"/></a><div class="content"><a class="title" href="/2026/03/20/Linux%E4%B8%AD%E7%9A%84Kernel%20Bypass%E6%8A%80%E6%9C%AF%E4%BB%8B%E7%BB%8D/" title="Linux中的Kernel Bypass技术介绍">Linux中的Kernel Bypass技术介绍</a><time datetime="2026-03-20T02:46:29.000Z" title="发表于 2026-03-20 10:46:29">2026-03-20</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/03/18/Linux%E4%B8%AD%E7%9A%84eventfd/" title="Linux中的eventfd"><img src="/2026/03/18/Linux%E4%B8%AD%E7%9A%84eventfd/linux.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux中的eventfd"/></a><div class="content"><a class="title" href="/2026/03/18/Linux%E4%B8%AD%E7%9A%84eventfd/" title="Linux中的eventfd">Linux中的eventfd</a><time datetime="2026-03-18T02:29:06.000Z" title="发表于 2026-03-18 10:29:06">2026-03-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/09/%E4%BD%BF%E7%94%A8VSCode+clangd%E6%8F%92%E4%BB%B6%E9%85%8D%E7%BD%AEC%E9%A1%B9%E7%9B%AEIDE%E7%8E%AF%E5%A2%83/" title="使用VSCode+clangd插件配置C项目IDE环境"><img src="/2026/02/09/%E4%BD%BF%E7%94%A8VSCode+clangd%E6%8F%92%E4%BB%B6%E9%85%8D%E7%BD%AEC%E9%A1%B9%E7%9B%AEIDE%E7%8E%AF%E5%A2%83/clangd.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用VSCode+clangd插件配置C项目IDE环境"/></a><div class="content"><a class="title" href="/2026/02/09/%E4%BD%BF%E7%94%A8VSCode+clangd%E6%8F%92%E4%BB%B6%E9%85%8D%E7%BD%AEC%E9%A1%B9%E7%9B%AEIDE%E7%8E%AF%E5%A2%83/" title="使用VSCode+clangd插件配置C项目IDE环境">使用VSCode+clangd插件配置C项目IDE环境</a><time datetime="2026-02-09T15:30:11.000Z" title="发表于 2026-02-09 23:30:11">2026-02-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/" title="Linux文件系统的设备ID"><img src="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/linux.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Linux文件系统的设备ID"/></a><div class="content"><a class="title" href="/2026/01/17/Linux%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E5%A4%87ID/" title="Linux文件系统的设备ID">Linux文件系统的设备ID</a><time datetime="2026-01-17T15:30:11.000Z" title="发表于 2026-01-17 23:30:11">2026-01-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件"><img src="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/sparse.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用debugfs分析Ext2下的稀疏文件"/></a><div class="content"><a class="title" href="/2025/12/27/%E4%BD%BF%E7%94%A8debugfs%E5%88%86%E6%9E%90Ext2%E4%B8%8B%E7%9A%84%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6/" title="使用debugfs分析Ext2下的稀疏文件">使用debugfs分析Ext2下的稀疏文件</a><time datetime="2025-12-27T15:30:11.000Z" title="发表于 2025-12-27 23:30:11">2025-12-27</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2021 - 2026 By Chaoqun Zheng</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div><div class="footer_custom_text"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index"><img class="icp-icon"><span>赣 ICP 备 2021004196 号 - 1</span></a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.7/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+      }
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (false) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script src="/js/page-transition.js"></script><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/fireworks.min.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3"></script></div></div></body></html>
